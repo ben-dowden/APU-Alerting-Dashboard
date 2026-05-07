@@ -1,0 +1,8 @@
+.superpowers/
+node_modules/
+dist/
+.env
+.env.local
+npm-debug.log*
+.dev-server.json
+.dev-server.log
