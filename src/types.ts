@@ -63,6 +63,41 @@ export interface LiveApuFeed {
   demoClockLabel: string;
 }
 
+export type PrototypeScenarioId =
+  | "baseline-night"
+  | "bne-high-burn"
+  | "ground-service-outage"
+  | "quiet-night"
+  | "reporting-heavy";
+
+export interface PrototypeScenario {
+  id: PrototypeScenarioId;
+  name: string;
+  description: string;
+}
+
+export interface PrototypeSettings {
+  scenarioId: PrototypeScenarioId;
+  speedMultiplier: number;
+  isPaused: boolean;
+}
+
+export interface LiveFeedRequest {
+  scenarioId: PrototypeScenarioId;
+  demoMinute: number;
+  now?: Date;
+}
+
+export interface HistoricalRecordsRequest {
+  scenarioId: PrototypeScenarioId;
+}
+
+export interface ApuDataClient {
+  listScenarios(): PrototypeScenario[];
+  getLiveFeed(request: LiveFeedRequest): Promise<LiveApuFeed>;
+  getHistoricalRecords(request: HistoricalRecordsRequest): Promise<HistoricalApuRecord[]>;
+}
+
 export interface HistoricalApuRecord {
   id: string;
   registration: string;

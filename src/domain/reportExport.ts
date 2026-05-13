@@ -1,8 +1,9 @@
-import * as XLSX from "xlsx";
 import type { ReportResult, ReportView } from "../types";
 import { estimateCostAud, formatDuration, minutesBetween, reasonLabels } from "./apuCalculations";
 
-export function createReportWorkbook(report: ReportResult, view: ReportView) {
+type XlsxModule = typeof import("xlsx");
+
+function buildReportWorkbook(XLSX: XlsxModule, report: ReportResult, view: ReportView) {
   const summaryRows = [
     ["APU Reporting Export"],
     ["Generated at", report.generatedAt],
@@ -86,8 +87,14 @@ export function createReportWorkbook(report: ReportResult, view: ReportView) {
   return workbook;
 }
 
-export function downloadReportWorkbook(report: ReportResult, view: ReportView) {
-  const workbook = createReportWorkbook(report, view);
+export async function createReportWorkbook(report: ReportResult, view: ReportView) {
+  const XLSX = await import("xlsx");
+  return buildReportWorkbook(XLSX, report, view);
+}
+
+export async function downloadReportWorkbook(report: ReportResult, view: ReportView) {
+  const XLSX = await import("xlsx");
+  const workbook = buildReportWorkbook(XLSX, report, view);
   const date = report.generatedAt.slice(0, 10);
   XLSX.writeFile(workbook, `apu-report-${report.filters.port}-${report.filters.period}-${date}.xlsx`);
 }

@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
-import { historicalApuRecords } from "../data/historicalApuRecords";
 import { formatDuration, minutesBetween, reasonLabels, summarizeHistory } from "../domain/apuCalculations";
+import type { HistoricalApuRecord } from "../types";
 
-const ports = ["All ports", ...Array.from(new Set(historicalApuRecords.map((record) => record.port)))];
+interface HistoryDashboardProps {
+  records: HistoricalApuRecord[];
+}
 
-export function HistoryDashboard() {
+export function HistoryDashboard({ records }: HistoryDashboardProps) {
   const [selectedPort, setSelectedPort] = useState("All ports");
-  const summary = useMemo(() => summarizeHistory(historicalApuRecords, selectedPort), [selectedPort]);
+  const ports = useMemo(() => ["All ports", ...Array.from(new Set(records.map((record) => record.port)))], [records]);
+  const summary = useMemo(() => summarizeHistory(records, selectedPort), [records, selectedPort]);
 
   const dailyTotals = useMemo(() => {
     const totals = summary.records.reduce<Record<string, number>>((acc, record) => {

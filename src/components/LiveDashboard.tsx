@@ -12,10 +12,9 @@ import {
 import { useMemo, useState } from "react";
 import { AircraftCard } from "./AircraftCard";
 import { MetricCard } from "./MetricCard";
-import { historicalApuRecords } from "../data/historicalApuRecords";
 import type { PortOption } from "../data/portPreference";
 import { burnBenchmarkLabels, createBurnRateBenchmark, type BurnBenchmarkHorizon } from "../domain/apuBenchmarks";
-import type { AircraftApuSnapshot, ApuReasonCode, LiveApuEvent } from "../types";
+import type { AircraftApuSnapshot, ApuReasonCode, HistoricalApuRecord, LiveApuEvent } from "../types";
 
 interface LiveDashboardProps {
   snapshots: AircraftApuSnapshot[];
@@ -33,6 +32,7 @@ interface LiveDashboardProps {
     costPerActiveApuHour: number;
     reasonCaptureRate: number;
   };
+  historicalRecords: HistoricalApuRecord[];
   selectedPort: PortOption;
   portOptions: readonly PortOption[];
   demoMinute: number;
@@ -68,6 +68,7 @@ export function LiveDashboard({
   snapshots,
   events,
   metrics,
+  historicalRecords,
   selectedPort,
   portOptions,
   demoMinute,
@@ -83,8 +84,8 @@ export function LiveDashboard({
   const [benchmarkHorizon, setBenchmarkHorizon] = useState<BurnBenchmarkHorizon>("1wk");
   const progress = `${Math.min(100, Math.round((demoMinute / 60) * 100))}%`;
   const benchmark = useMemo(
-    () => createBurnRateBenchmark(historicalApuRecords, selectedPort, benchmarkHorizon, metrics.burnRateAudPerHour),
-    [benchmarkHorizon, metrics.burnRateAudPerHour, selectedPort],
+    () => createBurnRateBenchmark(historicalRecords, selectedPort, benchmarkHorizon, metrics.burnRateAudPerHour),
+    [benchmarkHorizon, historicalRecords, metrics.burnRateAudPerHour, selectedPort],
   );
   const benchmarkTone = benchmark.status === "above" ? "negative" : benchmark.status === "below" ? "positive" : "neutral";
   const benchmarkCopy = benchmark.status === "above"

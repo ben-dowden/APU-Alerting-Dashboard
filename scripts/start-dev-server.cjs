@@ -4,14 +4,13 @@ const path = require("node:path");
 
 const cwd = path.resolve(__dirname, "..");
 const port = process.env.PORT || "5173";
-const command = process.platform === "win32"
-  ? `npm.cmd run dev -- --host 127.0.0.1 --port ${port}`
-  : `npm run dev -- --host 127.0.0.1 --port ${port}`;
+const host = process.env.HOST || "127.0.0.1";
+const viteBin = path.join(cwd, "node_modules", "vite", "bin", "vite.js");
 
-const child = cp.spawn(command, [], {
+const child = cp.spawn(process.execPath, [viteBin, "--host", host, "--port", port], {
   cwd,
   detached: true,
-  shell: true,
+  shell: false,
   stdio: "ignore",
   windowsHide: true,
 });
@@ -23,8 +22,9 @@ fs.writeFileSync(
   JSON.stringify(
     {
       pid: child.pid,
+      host,
       port: Number(port),
-      url: `http://127.0.0.1:${port}`,
+      url: `http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${port}`,
       startedAt: new Date().toISOString(),
     },
     null,
@@ -32,4 +32,4 @@ fs.writeFileSync(
   ),
 );
 
-console.log(`Started APU dashboard dev server at http://127.0.0.1:${port} (pid ${child.pid})`);
+console.log(`Started APU dashboard dev server at http://${host === "0.0.0.0" ? "127.0.0.1" : host}:${port} (pid ${child.pid})`);

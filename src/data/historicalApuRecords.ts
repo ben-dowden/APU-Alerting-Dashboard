@@ -1,4 +1,4 @@
-import type { ApuReasonCode, AvailabilityState, HistoricalApuRecord } from "../types";
+import type { ApuReasonCode, AvailabilityState, HistoricalApuRecord, PrototypeScenarioId } from "../types";
 
 interface HistoricalSeed {
   registration: string;
@@ -120,19 +120,32 @@ function addMonths(date: Date, monthsBack: number) {
   return copy;
 }
 
-export function buildHistoricalRecords(baseDate = new Date("2026-05-07T12:00:00+10:00")): HistoricalApuRecord[] {
-  const records: HistoricalApuRecord[] = [];
+interface HistoricalBuildOptions {
+  idPrefix?: string;
+  monthCount?: number;
+  durationScale?: number;
+}
 
-  for (let monthOffset = 0; monthOffset < 12; monthOffset += 1) {
-    monthlySeeds.forEach((seed, seedIndex) => {
+export function buildHistoricalRecords(
+  baseDate = new Date("2026-05-07T12:00:00+10:00"),
+  seeds = monthlySeeds,
+  options: HistoricalBuildOptions = {},
+): HistoricalApuRecord[] {
+  const records: HistoricalApuRecord[] = [];
+  const monthCount = options.monthCount ?? 12;
+  const idPrefix = options.idPrefix ?? "hist";
+  const durationScale = options.durationScale ?? 1;
+
+  for (let monthOffset = 0; monthOffset < monthCount; monthOffset += 1) {
+    seeds.forEach((seed, seedIndex) => {
       const start = addMonths(baseDate, monthOffset);
       start.setUTCDate(Math.max(1, 26 - seedIndex * 2));
       start.setUTCHours(seed.startHour, seedIndex % 2 === 0 ? 10 : 35, 0, 0);
-      const durationMinutes = seed.durationMinutes + ((monthOffset + seedIndex) % 4) * 8;
+      const durationMinutes = Math.round((seed.durationMinutes + ((monthOffset + seedIndex) % 4) * 8) * durationScale);
       const stop = new Date(start.getTime() + durationMinutes * 60000);
 
       records.push({
-        id: `hist-${monthOffset}-${seedIndex}`,
+        id: `${idPrefix}-${monthOffset}-${seedIndex}`,
         registration: seed.registration,
         aircraftType: seed.aircraftType,
         port: seed.port,
@@ -149,4 +162,73 @@ export function buildHistoricalRecords(baseDate = new Date("2026-05-07T12:00:00+
   return records;
 }
 
-export const historicalApuRecords = buildHistoricalRecords();
+const bneHighBurnSeeds: HistoricalSeed[] = [
+  ...monthlySeeds.map((seed) => ({
+    ...seed,
+    port: "BNE",
+    bay: seed.port === "BNE" ? seed.bay : `Bay ${seed.bay.replace(/\D/g, "").padStart(2, "0")}`,
+    pcaAvailability: "available" as AvailabilityState,
+    gpuAvailability: "available" as AvailabilityState,
+    durationMinutes: Math.round(seed.durationMinutes * 1.35),
+    reasonCode: seed.reasonCode === "none" ? "turnaround-pressure" : seed.reasonCode,
+  })),
+  {
+    registration: "VH-BNE",
+    aircraftType: "737-MAX",
+    port: "BNE",
+    bay: "Bay 54",
+    startHour: 23,
+    durationMinutes: 185,
+    pcaAvailability: "available",
+    gpuAvailability: "available",
+    reasonCode: "turnaround-pressure",
+  },
+];
+
+const groundServiceOutageSeeds: HistoricalSeed[] = monthlySeeds.map((seed, index) => ({
+  ...seed,
+  pcaAvailability: index % 2 === 0 ? "unavailable" : seed.pcaAvailability,
+  gpuAvailability: index % 3 === 0 ? "unavailable" : seed.gpuAvailability,
+  reasonCode: index % 2 === 0 ? "pca-unavailable" : index % 3 === 0 ? "gpu-unavailable" : seed.reasonCode,
+  durationMinutes: Math.round(seed.durationMinutes * 1.15),
+}));
+
+const quietNightSeeds: HistoricalSeed[] = monthlySeeds.slice(0, 5).map((seed, index) => ({
+  ...seed,
+  durationMinutes: Math.max(12, Math.round(seed.durationMinutes * 0.35)),
+  reasonCode: index === 0 ? "crew-request" : "none",
+}));
+
+const reportingHeavySeeds: HistoricalSeed[] = [
+  ...monthlySeeds,
+  ...monthlySeeds.map((seed, index) => ({
+    ...seed,
+    registration: `VH-R${String(index + 1).padStart(2, "0")}`,
+    bay: `Bay ${60 + index}`,
+    durationMinutes: seed.durationMinutes + 42,
+    reasonCode: index % 2 === 0 ? "turnaround-pressure" : seed.reasonCode,
+  })),
+];
+
+const scenarioHistoricalRecords: Record<PrototypeScenarioId, HistoricalApuRecord[]> = {
+  "baseline-night": buildHistoricalRecords(),
+  "bne-high-burn": buildHistoricalRecords(new Date("2026-05-07T12:00:00+10:00"), bneHighBurnSeeds, {
+    idPrefix: "bne",
+  }),
+  "ground-service-outage": buildHistoricalRecords(new Date("2026-05-07T12:00:00+10:00"), groundServiceOutageSeeds, {
+    idPrefix: "outage",
+  }),
+  "quiet-night": buildHistoricalRecords(new Date("2026-05-07T12:00:00+10:00"), quietNightSeeds, {
+    idPrefix: "quiet",
+    durationScale: 0.85,
+  }),
+  "reporting-heavy": buildHistoricalRecords(new Date("2026-05-07T12:00:00+10:00"), reportingHeavySeeds, {
+    idPrefix: "reporting",
+  }),
+};
+
+export function getHistoricalApuRecords(scenarioId: PrototypeScenarioId): HistoricalApuRecord[] {
+  return [...(scenarioHistoricalRecords[scenarioId] ?? scenarioHistoricalRecords["baseline-night"])];
+}
+
+export const historicalApuRecords = scenarioHistoricalRecords["baseline-night"];

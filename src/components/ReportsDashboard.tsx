@@ -1,19 +1,22 @@
 import { useMemo, useState } from "react";
-import { historicalApuRecords } from "../data/historicalApuRecords";
 import { portOptions, readPortPreference, type PortOption } from "../data/portPreference";
 import { downloadReportWorkbook } from "../domain/reportExport";
 import { createReportResult } from "../domain/reportingEngine";
-import type { ReportFilters, ReportView } from "../types";
+import type { HistoricalApuRecord, ReportFilters, ReportView } from "../types";
 import { OpsReportView } from "./reports/OpsReportView";
 import { ReportControls } from "./reports/ReportControls";
 import { SavingsReportView } from "./reports/SavingsReportView";
+
+interface ReportsDashboardProps {
+  records: HistoricalApuRecord[];
+}
 
 function defaultPort() {
   const preferred = readPortPreference();
   return preferred === "All" ? "All" : preferred;
 }
 
-export function ReportsDashboard() {
+export function ReportsDashboard({ records }: ReportsDashboardProps) {
   const [view, setView] = useState<ReportView>("ops");
   const [filters, setFilters] = useState<ReportFilters>({
     port: defaultPort(),
@@ -21,20 +24,24 @@ export function ReportsDashboard() {
     metric: "cost",
   });
   const [exportError, setExportError] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
-  const report = useMemo(() => createReportResult(historicalApuRecords, filters), [filters]);
+  const report = useMemo(() => createReportResult(records, filters), [filters, records]);
 
   function handleFiltersChange(nextFilters: ReportFilters) {
     setExportError("");
     setFilters(nextFilters);
   }
 
-  function handleExport() {
+  async function handleExport() {
     setExportError("");
+    setIsExporting(true);
     try {
-      downloadReportWorkbook(report, view);
+      await downloadReportWorkbook(report, view);
     } catch (error) {
       setExportError(error instanceof Error ? error.message : "Export failed");
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -44,8 +51,9 @@ export function ReportsDashboard() {
         view={view}
         filters={filters}
         portOptions={portOptions as readonly PortOption[]}
-        exportDisabled={report.records.length === 0}
+        exportDisabled={report.records.length === 0 || isExporting}
         exportError={exportError}
+        isExporting={isExporting}
         onViewChange={setView}
         onFiltersChange={handleFiltersChange}
         onExport={handleExport}

@@ -1,4 +1,11 @@
-import type { AircraftApuFeedRecord, AvailabilityState, LiveApuEvent, LiveApuFeed } from "../types";
+import type {
+  AircraftApuFeedRecord,
+  AvailabilityState,
+  LiveApuEvent,
+  LiveApuFeed,
+  PrototypeScenario,
+  PrototypeScenarioId,
+} from "../types";
 
 interface LiveTemplate {
   id: string;
@@ -327,6 +334,176 @@ const timelineEvents = [
   },
 ] satisfies Omit<LiveApuEvent, "id" | "timeLabel">[];
 
+export const prototypeScenarios: PrototypeScenario[] = [
+  {
+    id: "baseline-night",
+    name: "Baseline night",
+    description: "Current mixed-port night operations demo.",
+  },
+  {
+    id: "bne-high-burn",
+    name: "BNE high burn",
+    description: "Concentrated Brisbane APU opportunities for leadership walkthroughs.",
+  },
+  {
+    id: "ground-service-outage",
+    name: "Ground-service outage",
+    description: "PCA/GPU disruption and recovery across the night shift.",
+  },
+  {
+    id: "quiet-night",
+    name: "Quiet night",
+    description: "Low-alert view for empty states and mobile layout checks.",
+  },
+  {
+    id: "reporting-heavy",
+    name: "Reporting heavy",
+    description: "Normal live feed with richer historical reporting data.",
+  },
+];
+
+function buildBneHighBurnTemplates(): LiveTemplate[] {
+  return liveTemplates.map((template, index) =>
+    index < 9
+      ? {
+          ...template,
+          id: `BNE-${template.registration}`,
+          port: "BNE",
+          location: "Brisbane Domestic",
+          bay: `Bay ${String(32 + index).padStart(2, "0")}`,
+          portTemperatureC: 30,
+          pcaAvailability: "available",
+          gpuAvailability: "available",
+          nextBayMinutes: Math.max(template.nextBayMinutes, 130),
+          baseRuntimeMinutes: Math.max(template.baseRuntimeMinutes, 42 + index * 6),
+          startsAtMinute: undefined,
+          pcaAvailableAtMinute: undefined,
+          gpuAvailableAtMinute: undefined,
+        }
+      : template,
+  );
+}
+
+function buildGroundServiceOutageTemplates(): LiveTemplate[] {
+  return liveTemplates.map((template, index) =>
+    index % 3 === 0
+      ? {
+          ...template,
+          pcaAvailability: "unavailable",
+          gpuAvailability: "unavailable",
+          pcaAvailableAtMinute: 38,
+          gpuAvailableAtMinute: 48,
+          baseRuntimeMinutes: Math.max(template.baseRuntimeMinutes, 24 + index * 3),
+          startsAtMinute: undefined,
+        }
+      : {
+          ...template,
+          gpuAvailability: index % 2 === 0 ? "unavailable" : template.gpuAvailability,
+          gpuAvailableAtMinute: index % 2 === 0 ? 42 : template.gpuAvailableAtMinute,
+        },
+  );
+}
+
+function buildQuietNightTemplates(): LiveTemplate[] {
+  return liveTemplates.slice(0, 10).map((template, index) => ({
+    ...template,
+    pcaAvailability: "available",
+    gpuAvailability: "available",
+    pcaAvailableAtMinute: undefined,
+    gpuAvailableAtMinute: undefined,
+    baseRuntimeMinutes: index < 2 ? 6 + index * 4 : 0,
+    startsAtMinute: index === 2 ? 46 : undefined,
+    nextBayMinutes: Math.min(template.nextBayMinutes, 95),
+  }));
+}
+
+const liveTemplateScenarios: Record<PrototypeScenarioId, LiveTemplate[]> = {
+  "baseline-night": liveTemplates,
+  "bne-high-burn": buildBneHighBurnTemplates(),
+  "ground-service-outage": buildGroundServiceOutageTemplates(),
+  "quiet-night": buildQuietNightTemplates(),
+  "reporting-heavy": liveTemplates,
+};
+
+const bneHighBurnEvents: Omit<LiveApuEvent, "id" | "timeLabel">[] = [
+  {
+    minute: 0,
+    port: "BNE",
+    tone: "info",
+    message: "BNE concentration scenario started",
+    detail: "Most active APU opportunities are clustered around Brisbane Domestic.",
+  },
+  {
+    minute: 8,
+    port: "BNE",
+    registration: "VH-8IA",
+    tone: "critical",
+    message: "Multiple BNE APUs above threshold",
+    detail: "Ground services are available and reason capture should be prioritised.",
+  },
+  {
+    minute: 26,
+    port: "BNE",
+    registration: "VH-YIK",
+    tone: "critical",
+    message: "High burn-rate concentration",
+    detail: "The live BNE burn rate is well above the historical benchmark.",
+  },
+];
+
+const groundServiceOutageEvents: Omit<LiveApuEvent, "id" | "timeLabel">[] = [
+  {
+    minute: 0,
+    port: "All",
+    tone: "watch",
+    message: "Ground-service disruption started",
+    detail: "Selected PCA/GPU services are unavailable early in the demo timeline.",
+  },
+  {
+    minute: 38,
+    port: "All",
+    tone: "success",
+    message: "PCA services recovering",
+    detail: "Recovered PCA availability changes several alerts into avoidable opportunities.",
+  },
+  {
+    minute: 48,
+    port: "All",
+    tone: "success",
+    message: "GPU services recovering",
+    detail: "GPU recovery is reflected in the live aircraft cards.",
+  },
+];
+
+const quietNightEvents: Omit<LiveApuEvent, "id" | "timeLabel">[] = [
+  {
+    minute: 0,
+    port: "All",
+    tone: "success",
+    message: "Quiet night scenario started",
+    detail: "Only a small number of aircraft have active APU burn.",
+  },
+  {
+    minute: 46,
+    port: "BNE",
+    registration: "VH-8IC",
+    tone: "watch",
+    message: "Late APU start detected",
+    detail: "This single watch item keeps the low-volume state realistic.",
+  },
+];
+
+function eventsForScenario(scenarioId: PrototypeScenarioId): Omit<LiveApuEvent, "id" | "timeLabel">[] {
+  if (scenarioId === "bne-high-burn") return bneHighBurnEvents;
+  if (scenarioId === "ground-service-outage") return groundServiceOutageEvents;
+  if (scenarioId === "quiet-night") return quietNightEvents;
+  return timelineEvents;
+}
+
+function templatesForScenario(scenarioId: PrototypeScenarioId): LiveTemplate[] {
+  return liveTemplateScenarios[scenarioId] ?? liveTemplates;
+}
+
 function demoClockLabel(demoMinute: number) {
   const elapsedSeconds = Math.round(demoMinute * 60);
   const hour = 21 + Math.floor(elapsedSeconds / 3600);
@@ -350,9 +527,13 @@ function availabilityAtMinute(
   return demoMinute >= availableAtMinute ? "available" : base;
 }
 
-export async function fetchLiveApuFeed(now = new Date(), demoMinute = 0): Promise<LiveApuFeed> {
+export async function fetchLiveApuFeed(
+  now = new Date(),
+  demoMinute = 0,
+  scenarioId: PrototypeScenarioId = "baseline-night",
+): Promise<LiveApuFeed> {
   const nowMs = now.getTime();
-  const records = liveTemplates.map((template) => {
+  const records = templatesForScenario(scenarioId).map((template) => {
     const runtimeMinutes = runtimeForTemplate(template, demoMinute);
     const apuStartedAt = runtimeMinutes > 0 ? new Date(nowMs - runtimeMinutes * 60000).toISOString() : null;
     const scheduledDepartureAt = new Date(nowMs + Math.max(0, template.nextBayMinutes - demoMinute) * 60000).toISOString();
@@ -370,7 +551,7 @@ export async function fetchLiveApuFeed(now = new Date(), demoMinute = 0): Promis
     };
   });
 
-  const events = timelineEvents
+  const events = eventsForScenario(scenarioId)
     .filter((event) => event.minute <= demoMinute)
     .map((event, index) => ({
       ...event,

@@ -66,8 +66,8 @@ const report: ReportResult = {
 };
 
 describe("createReportWorkbook", () => {
-  it("creates the expected workbook sheets", () => {
-    const workbook = createReportWorkbook(report, "savings");
+  it("creates the expected workbook sheets", async () => {
+    const workbook = await createReportWorkbook(report, "savings");
 
     expect(workbook.SheetNames).toEqual(["Summary", "Reason Breakdown", "Event Detail"]);
     expect(workbook.Sheets.Summary.A1.v).toBe("APU Reporting Export");

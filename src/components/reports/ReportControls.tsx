@@ -19,6 +19,7 @@ interface ReportControlsProps {
   portOptions: readonly PortOption[];
   exportDisabled: boolean;
   exportError: string;
+  isExporting: boolean;
   onViewChange: (view: ReportView) => void;
   onFiltersChange: (filters: ReportFilters) => void;
   onExport: () => void;
@@ -30,6 +31,7 @@ export function ReportControls({
   portOptions,
   exportDisabled,
   exportError,
+  isExporting,
   onViewChange,
   onFiltersChange,
   onExport,
@@ -79,7 +81,7 @@ export function ReportControls({
       <div className="report-export">
         <button onClick={onExport} disabled={exportDisabled}>
           <Download size={16} />
-          Export to Excel
+          {isExporting ? "Exporting..." : "Export to Excel"}
         </button>
         {exportError ? <span role="alert">{exportError}</span> : null}
       </div>

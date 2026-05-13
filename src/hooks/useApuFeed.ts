@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchLiveApuFeed } from "../data/mockApuFeed";
 import { portOptions, readPortPreference, type PortOption, writePortPreference } from "../data/portPreference";
 import { readReason, writeReason } from "../data/reasonStore";
 import { orderSnapshotsByApuRuntime, summarizeSnapshots, toSnapshot } from "../domain/apuCalculations";
-import type { AircraftApuSnapshot, ApuReasonCode, LiveApuEvent } from "../types";
+import type { AircraftApuSnapshot, ApuDataClient, ApuReasonCode, LiveApuEvent, PrototypeSettings } from "../types";
 
 const REFRESH_MS = 15000;
 const DEMO_STEP_MINUTES = REFRESH_MS / 60000;
@@ -13,7 +12,14 @@ interface RefreshOptions {
   advanceDemo?: boolean;
 }
 
-export function useApuFeed() {
+interface UseApuFeedOptions {
+  dataClient: ApuDataClient;
+  prototypeSettings: PrototypeSettings;
+}
+
+const MIN_REFRESH_MS = 1000;
+
+export function useApuFeed({ dataClient, prototypeSettings }: UseApuFeedOptions) {
   const [snapshots, setSnapshots] = useState<AircraftApuSnapshot[]>([]);
   const [events, setEvents] = useState<LiveApuEvent[]>([]);
   const [selectedPort, setSelectedPortState] = useState<PortOption>(() => readPortPreference());
@@ -33,9 +39,13 @@ export function useApuFeed() {
         : Math.min(DEMO_LENGTH_MINUTES, nextDemoMinuteRef.current + DEMO_STEP_MINUTES)
       : nextDemoMinuteRef.current;
     nextDemoMinuteRef.current = currentDemoMinute;
-    const feed = await fetchLiveApuFeed(now, currentDemoMinute);
+    const feed = await dataClient.getLiveFeed({
+      now,
+      demoMinute: currentDemoMinute,
+      scenarioId: prototypeSettings.scenarioId,
+    });
     const nextSnapshots = feed.records.map((record) =>
-      toSnapshot(record, now.toISOString(), readReason(record.registration)),
+      toSnapshot(record, now.toISOString(), readReason(record.registration, { scenarioId: prototypeSettings.scenarioId })),
     );
     setSnapshots(nextSnapshots);
     setEvents(feed.events);
@@ -44,22 +54,28 @@ export function useApuFeed() {
     setLastUpdated(now);
     setNextRefreshAt(new Date(now.getTime() + REFRESH_MS));
     setIsRefreshing(false);
-  }, []);
+  }, [dataClient, prototypeSettings.scenarioId]);
 
   useEffect(() => {
+    nextDemoMinuteRef.current = 0;
     void refresh({ advanceDemo: false });
-    const interval = window.setInterval(() => {
-      void refresh({ advanceDemo: true });
-    }, REFRESH_MS);
-    return () => window.clearInterval(interval);
   }, [refresh]);
 
+  useEffect(() => {
+    if (prototypeSettings.isPaused) return undefined;
+    const refreshMs = Math.max(MIN_REFRESH_MS, REFRESH_MS / prototypeSettings.speedMultiplier);
+    const interval = window.setInterval(() => {
+      void refresh({ advanceDemo: true });
+    }, refreshMs);
+    return () => window.clearInterval(interval);
+  }, [prototypeSettings.isPaused, prototypeSettings.speedMultiplier, refresh]);
+
   const updateReason = useCallback((registration: string, code: ApuReasonCode, note: string) => {
-    const reason = writeReason(registration, code, note);
+    const reason = writeReason(registration, code, note, { scenarioId: prototypeSettings.scenarioId });
     setSnapshots((current) =>
       current.map((snapshot) => (snapshot.registration === registration ? { ...snapshot, reason } : snapshot)),
     );
-  }, []);
+  }, [prototypeSettings.scenarioId]);
 
   const setSelectedPort = useCallback((port: PortOption) => {
     writePortPreference(port);
