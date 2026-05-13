@@ -30,16 +30,14 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <div className="brand-lockup">
-          <div className="brand-mark">VA</div>
           <div>
-            <span>APU Overnight Burn</span>
             <h1>APU Alerting Dashboard</h1>
           </div>
         </div>
-        <nav className="tab-nav" aria-label="Dashboard tabs">
+        <nav className="tab-nav" aria-label="Dashboard sections">
           <button className={activeTab === "live" ? "is-active" : ""} onClick={() => setActiveTab("live")}>
             <Activity size={17} />
-            Live Ops
+            Live ops
           </button>
           <button className={activeTab === "history" ? "is-active" : ""} onClick={() => setActiveTab("history")}>
             <BarChart3 size={17} />

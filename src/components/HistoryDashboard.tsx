@@ -24,8 +24,8 @@ export function HistoryDashboard() {
     <section className="history-layout">
       <div className="history-header">
         <div>
-          <p>Historical burn</p>
-          <h2>APU burn trends from timestamped aircraft events</h2>
+          <p>Historical APU burn</p>
+          <h2>APU burn trends from timestamped aircraft data</h2>
         </div>
         <label>
           Port
@@ -58,7 +58,7 @@ export function HistoryDashboard() {
 
       <div className="history-content">
         <section className="trend-panel">
-          <h3>Last recorded nights</h3>
+          <h3>Recent recorded nights</h3>
           <div className="bar-chart">
             {dailyTotals.map((day) => (
               <div className="bar-row" key={day.day}>

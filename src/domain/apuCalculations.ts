@@ -18,7 +18,7 @@ const severityWeight: Record<AircraftApuSnapshot["severity"], number> = {
 };
 
 export const reasonLabels: Record<string, string> = {
-  none: "No reason captured",
+  none: "No reason recorded",
   "operational-requirement": "Operational requirement",
   "pca-unavailable": "PCA unavailable",
   "gpu-unavailable": "GPU unavailable",

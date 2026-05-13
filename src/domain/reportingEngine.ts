@@ -19,10 +19,10 @@ import {
 } from "./apuCalculations";
 
 export const metricLabels: Record<ReportMetric, string> = {
-  cost: "$ cost",
-  hours: "burn hours",
-  fuel: "fuel kg",
-  events: "event count",
+  cost: "Cost",
+  hours: "Burn hours",
+  fuel: "Fuel (kg)",
+  events: "Events",
 };
 
 export const reasonColours: Record<ApuReasonCode, string> = {
@@ -223,7 +223,7 @@ export function createReportResult(
     ),
     costPerBurnHour: totalMinutes ? Math.round(estimateCostAud(totalMinutes) / (totalMinutes / 60)) : 0,
     topReasonCode: topReason?.reasonCode ?? "none",
-    topReasonLabel: topReason?.reasonLabel ?? "No reason captured",
+    topReasonLabel: topReason?.reasonLabel ?? "No reason recorded",
     savingsScenarios: buildSavingsScenarios(topReason),
   };
 }

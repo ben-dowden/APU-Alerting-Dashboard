@@ -45,8 +45,8 @@ export function ReportControls({
       </div>
 
       <div className="report-control-group" aria-label="Report view">
-        <button className={view === "ops" ? "is-active" : ""} onClick={() => onViewChange("ops")}>Ops View</button>
-        <button className={view === "savings" ? "is-active" : ""} onClick={() => onViewChange("savings")}>Savings View</button>
+        <button className={view === "ops" ? "is-active" : ""} onClick={() => onViewChange("ops")}>Ops view</button>
+        <button className={view === "savings" ? "is-active" : ""} onClick={() => onViewChange("savings")}>Savings view</button>
       </div>
 
       <label>
@@ -79,7 +79,7 @@ export function ReportControls({
       <div className="report-export">
         <button onClick={onExport} disabled={exportDisabled}>
           <Download size={16} />
-          Export Excel
+          Export to Excel
         </button>
         {exportError ? <span role="alert">{exportError}</span> : null}
       </div>

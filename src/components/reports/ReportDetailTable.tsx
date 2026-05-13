@@ -8,7 +8,7 @@ interface ReportDetailTableProps {
 export function ReportDetailTable({ records }: ReportDetailTableProps) {
   return (
     <section className="report-table-panel">
-      <h3>Event detail</h3>
+      <h3>Event details</h3>
       <div className="report-table report-table--detail">
         <div className="report-table__head">
           <span>Aircraft</span>
@@ -18,7 +18,7 @@ export function ReportDetailTable({ records }: ReportDetailTableProps) {
           <span>Cost</span>
         </div>
         {records.length === 0 ? (
-          <div className="report-table__empty">No event records for this filter.</div>
+          <div className="report-table__empty">No event records match the selected filters.</div>
         ) : records.slice(0, 12).map((record) => {
           const minutes = minutesBetween(record.apuStartedAt, record.apuStoppedAt);
           return (

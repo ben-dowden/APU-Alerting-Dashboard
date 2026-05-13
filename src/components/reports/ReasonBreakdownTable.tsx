@@ -20,7 +20,7 @@ export function ReasonBreakdownTable({ rows }: ReasonBreakdownTableProps) {
           <span>Top port</span>
         </div>
         {rows.length === 0 ? (
-          <div className="report-table__empty">No reason records for this filter.</div>
+          <div className="report-table__empty">No reason records match the selected filters.</div>
         ) : rows.map((row) => (
           <div className="report-table__row" key={row.reasonCode}>
             <span>{row.reasonLabel}</span>

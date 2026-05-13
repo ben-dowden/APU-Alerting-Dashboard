@@ -17,10 +17,10 @@ export function SavingsReportView({ report }: SavingsReportViewProps) {
         <section className="report-chart-panel">
           <div className="report-chart-panel__header">
             <h3>Cost by port</h3>
-            <span>$ cost</span>
+            <span>Estimated cost</span>
           </div>
           <div className="reason-chart">
-            {report.portRows.length === 0 ? <div className="empty-state">No port records match this report.</div> : report.portRows.map((row) => (
+            {report.portRows.length === 0 ? <div className="empty-state">No port records match the selected filters.</div> : report.portRows.map((row) => (
               <div className="reason-chart__row" key={row.port}>
                 <span>{row.port}</span>
                 <div className="reason-chart__track">
@@ -36,11 +36,11 @@ export function SavingsReportView({ report }: SavingsReportViewProps) {
 
         <section className="report-chart-panel">
           <div className="report-chart-panel__header">
-            <h3>Trend</h3>
-            <span>$ cost</span>
+            <h3>Cost trend</h3>
+            <span>Estimated cost</span>
           </div>
           <div className="trend-strip">
-            {report.trend.length === 0 ? <div className="empty-state">No trend records match this report.</div> : report.trend.map((bucket) => (
+            {report.trend.length === 0 ? <div className="empty-state">No trend records match the selected filters.</div> : report.trend.map((bucket) => (
               <div className="trend-strip__bar" key={bucket.label}>
                 <div style={{ height: `${Math.max(8, (bucket.estimatedCostAud / maxTrendCost) * 100)}%` }} />
                 <span>{bucket.label.slice(5)}</span>
@@ -52,7 +52,7 @@ export function SavingsReportView({ report }: SavingsReportViewProps) {
         <section className="report-table-panel">
           <h3>Savings scenarios</h3>
           <div className="scenario-list">
-            {report.savingsScenarios.length === 0 ? <div className="empty-state">No savings scenarios for this report.</div> : report.savingsScenarios.map((scenario) => (
+            {report.savingsScenarios.length === 0 ? <div className="empty-state">No savings scenarios are available for this report.</div> : report.savingsScenarios.map((scenario) => (
               <div className="scenario-item" key={scenario.label}>
                 <span>{scenario.label}</span>
                 <strong>${scenario.estimatedSavingsAud}</strong>
