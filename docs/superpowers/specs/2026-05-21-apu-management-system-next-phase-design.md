@@ -12,6 +12,39 @@ The principal v1 surface is the Brisbane Senior Engineer workflow. HQ reporting 
 
 The Senior Engineer surface is a widescreen command board designed to work on a 70-inch TV display in an engineering break-room environment, while remaining usable on a laptop or desktop.
 
+## Visual System
+
+The UI should keep the existing operational Virgin-style language already present in the prototype: white and soft-grey surfaces, deep purple navigation, red/amber/green operational states, dense information, and restrained card styling. It should feel like a working engineering tool, not a marketing dashboard.
+
+Use the current app palette as the starting point:
+
+- Red / missing reason: `#e42a1c`
+- Dark red text: `#b71912`
+- Purple / primary action: `#4d0c9a`
+- Dark purple / structural headers: `#21104d`
+- Green / APU off or complete: `#42a463`
+- Amber / review due: `#d88b00`
+- Ink: `#171726`
+- Muted text: `#626a7a`
+- Border: `#dfe3eb`
+- Page background: `#eef1f5`
+- Panel background: `#ffffff`
+- Soft panel background: `#f7f8fb`
+
+Cards, panels, popovers, tables, and controls should use 6-8px border radius. Avoid nested decorative cards. Use cards only for aircraft, repeated summary panels, popovers, drawers, and settings rows. Page sections should be unframed layout regions or full-width operational bands.
+
+Use icons from `lucide-react` for actions. Avoid verbose action labels where a standard icon plus tooltip is clearer, but the first missing-reason action must be a clear text button.
+
+Typography should stay compact:
+
+- Header title: 22-26px
+- Metric values: 24-30px
+- Aircraft tail: 22-24px
+- Card body: 12-14px
+- Table text: 12-13px
+- No viewport-width font scaling
+- No negative letter spacing
+
 ## Senior Engineer Command Board
 
 The main screen uses a command board layout:
@@ -39,6 +72,77 @@ The benchmark panel supports:
 Only one benchmark is visible at a time. In wallboard mode, the benchmark cycles every five seconds. On desktop, users can manually select a benchmark; after 20 seconds of no benchmark interaction, the panel resumes cycling.
 
 Benchmark deltas show exact absolute and percentage values. The Senior Engineer surface uses runtime and estimated kg fuel, not dollar impact.
+
+### Command Board Layout Details
+
+Target the primary wallboard layout at 16:9 widescreen. The board should fill the available viewport without requiring vertical scrolling for the first page of active aircraft on a 70-inch display. Desktop and laptop users may scroll, but the top scorecard and active queue should remain immediately visible.
+
+Use this hierarchy:
+
+```text
+Header: 60-72px
+Scorecard row: 96-116px
+Benchmark panel: 64-82px
+Main content: remaining height
+```
+
+Main content uses two regions:
+
+```text
+Aircraft board: flexible width
+Ground aircraft table: 300-360px fixed rail
+```
+
+At large widescreen widths, the aircraft board can use three card columns if each card can remain at least 340px wide. At normal desktop widths, use two columns. At narrow widths, collapse to one column and move the side table below the card board.
+
+The header contains:
+
+- Product title: `BNE APU Command Board`
+- Persona/role control on the right, implemented as a compact persona switcher for the POC
+- Feed status chip: `Mock feed`, `Last event`, or `APU feed delay`
+- Current time
+- Optional wallboard/desktop mode indicator
+
+The header should not include the old generic tab-first mental model for the Senior Engineer surface. The role should determine the starting surface.
+
+The scorecard row uses four metric cards:
+
+1. `APU on now`
+2. `Runtime today`
+3. `Fuel burned today`
+4. `Attributed runtime`
+
+Metric cards should be visually even in size and should not contain more than one helper line. Use icons, but keep them secondary to the number:
+
+- `Activity` or `Power` for APU on
+- `Timer` for runtime
+- `Fuel` for kg fuel
+- `CheckCircle2` for attributed runtime
+
+Metric helper text examples:
+
+- `3 active aircraft`
+- `Across BNE ground events`
+- `Estimated from runtime`
+- `Current reason-chain coverage`
+
+The benchmark panel is a single horizontal band below the scorecard. It shows:
+
+```text
+Similar-temp benchmark
++42kg / +6.1% vs matched 3°C temperature bands
+[Similar temp] [Week] [Month] [Year]
+```
+
+On wallboard mode, the active benchmark segment changes every five seconds. The active segment should be indicated by the purple selected state and a subtle progress bar along the bottom edge of the selected chip. Manual selection pauses the loop; after 20 seconds of no benchmark interaction, cycling resumes.
+
+Use colour semantics for deltas:
+
+- Worse than baseline: red icon or delta marker
+- Better than baseline: green icon or delta marker
+- Flat/near-neutral: grey marker
+
+Do not use dollars in this panel.
 
 ## Aircraft Board
 
@@ -74,6 +178,74 @@ The compact side table lists all BNE ground aircraft with:
 - APU elapsed minutes
 - Total ground minutes
 - A small ghost action that scrolls to and focuses the aircraft card
+
+### Aircraft Card UI Details
+
+Each aircraft card should have a stable, scannable structure:
+
+```text
+┌──────────────────────────────────────┐
+│ VH-8IA                 B737-8 / Bay43│
+│ BNE · Domestic remote stand          │
+├──────────────────────────────────────┤
+│ APU ON  1h 24m        Ground 1h 52m  │
+│ Fuel 312kg            Temp 31°C      │
+│ PCA available         GPU unavailable│
+│ Closest tail: VH-YIB · 42m           │
+│ Nearby APU: VH-YIO 78m, VH-8IC 95m   │
+├──────────────────────────────────────┤
+│ Current reason                       │
+│ Cleaning in progress · cleaner aboard│
+│ 24m                                  │
+│ +30m Infrastructure   +30m Logistics │
+├──────────────────────────────────────┤
+│ [↻] [ Change reason ]        [chain] │
+└──────────────────────────────────────┘
+```
+
+Card state styling:
+
+- Missing reason: red left border, light red top cue, primary purple `Select reason` button, red status label `Reason missing`.
+- Review due: amber left border, amber status label `Review due`, primary icon action to keep current reason, secondary `Change reason` button.
+- Current reason valid: neutral/purple cue, current reason block visible, no urgent red/amber pressure.
+- APU off: green left border or green status pill, calm `APU off` label, no reason actions.
+
+The card should not display dollar impact. Replace existing frontline dollar fields with time and kg fuel. HQ views can still use dollar conversion.
+
+Card controls:
+
+- Missing reason: show a clear filled primary button labelled `Select reason`.
+- Review due: show an icon button with `Repeat2` or similar to keep the current reason. Tooltip: `Keep current reason`.
+- Change reason: show a clear secondary text button labelled `Change reason`.
+- Reason chain drawer: show a light ghost icon button, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`.
+- Side table focus action: use a ghost button with an arrow or target-style icon. Tooltip: `Show aircraft card`.
+
+Card movement animation should be subtle and fast:
+
+- Use transform/opacity transitions around 140-180ms.
+- No bouncing or decorative motion.
+- Movement should help users notice priority changes without making the wallboard feel restless.
+
+When a side-table row focuses a card, scroll the card into view and apply a brief focus ring or soft purple glow for about one second. Do not open the drawer automatically.
+
+### Ground Aircraft Side Table
+
+The side table is an index, not a second workflow. It should be compact enough to stay visible on a TV:
+
+```text
+Tail    Bay   APU   APU min   Ground   ↗
+VH-8IA  43    On    84        112      ↗
+VH-YIB  44    Off   0         76       ↗
+VH-YIO  02    On    31        58       ↗
+```
+
+Rows should use understated state cues:
+
+- APU on: small red or amber status dot depending on reason/review state
+- APU off: small green status dot
+- Missing reason: red `Missing` micro-label if space allows
+
+The table should not show benchmark deltas, dollars, or long reason text. Its job is complete ground-aircraft awareness and quick navigation.
 
 ## Spatial Context
 
@@ -136,6 +308,55 @@ The drawer allows users to:
 
 The drawer does not support slicing segments, inserting retrospective segments, editing timestamps, or gamifying retrospective cleanup.
 
+### Reason Chain UI Details
+
+The collapsed card reason block should always show the current reason when an APU is on:
+
+```text
+Current reason
+Cleaning in progress · cleaner aboard
+24m
+```
+
+Previous visible segments appear as compact pills:
+
+```text
++30m Infrastructure unavailable
++30m Logistics / agent on the way
+```
+
+History pills should be muted grey or soft purple, not red/amber unless a past segment is itself being corrected. The current reason block carries the current urgency state.
+
+The drawer opens from the right side of the screen. It should be around 420-520px wide on desktop. On smaller screens it can become a full-height sheet. Opening the drawer should not navigate away from the board.
+
+Drawer structure:
+
+```text
+Header
+- Tail, bay, APU runtime, ground time
+- Current state: Missing reason / Review due / Current / Closed
+
+Current reason section
+- Current category/detail
+- Elapsed time
+- Review due time
+- Change reason action
+- Optional note field
+
+Timeline section
+- Segment 1: category/detail, start-end, duration
+- Segment 2: category/detail, start-end, duration
+- Current segment highlighted
+
+Telemetry section, admin/HQ only if shown
+- Review due/resolved timestamps
+- Response time
+```
+
+Normal Senior Engineer users can see the chain and add a note to the current segment. They can correct the category/detail on a previous segment only through a restrained `Correct reason` action. They cannot edit start/end times.
+
+Closed APU events show the drawer in read-only mode for normal users. The reason chain is locked when the APU-off message arrives.
+
 ## Reason Capture Interaction
 
 Reason capture must be fast and clearly actionable.
@@ -162,6 +383,51 @@ Initial top-level reason categories are:
 - Flight operations / pilot discretion
 - Logistics / agent on the way
 
+Initial BNE detail options should be:
+
+| Category | Detail options |
+| --- | --- |
+| Infrastructure unavailable | PCA unavailable; GPU unavailable; Bay service unavailable; Remote stand / no support |
+| Cleaning in progress | Cleaner onboard; Cleaning not yet attended; Cabin preparation in progress; Cleaning complete / awaiting follow-up |
+| Engineering requirement | Maintenance task in progress; Defect investigation; Engineer not available at aircraft; Return to aircraft not practical |
+| Flight operations / pilot discretion | Pilot discretion; Crew comfort request; Pre-departure operational requirement; Operational instruction |
+| Logistics / agent on the way | Agent on the way; Equipment on the way; Awaiting tow / stand move; Turnaround sequencing |
+
+These labels are starting content for the prototype. HQ/Admin must be able to rename, deactivate, reorder, and adjust review intervals without code changes.
+
+### Reason Popover UI Details
+
+The reason picker is a cascading popover anchored to the card action button. It should not use a modal for the fast path.
+
+Interaction:
+
+1. User clicks `Select reason` or `Change reason`.
+2. A category panel opens directly under or beside the button.
+3. User hovers or clicks a category.
+4. A detail panel opens to the right of the category panel.
+5. User clicks a detail.
+6. The popover closes, the card reason updates, and the card returns to its valid/current state.
+
+The category panel should be about 220-260px wide. The detail panel should be about 240-300px wide. Each row should be large enough to hit comfortably on desktop and a wallboard-connected mouse: roughly 36-42px high.
+
+Use icons sparingly in the category list:
+
+- Infrastructure: `PlugZap` or `Cable`
+- Cleaning: `Sparkles` or `Brush`
+- Engineering: `Wrench`
+- Flight operations: `Plane`
+- Logistics: `Truck` or `Route`
+
+The detail list must show no more than four choices for the selected category. If HQ config creates more than four active details, the admin screen should flag that the reason set is not valid for Senior Engineer fast capture.
+
+After reason selection:
+
+- If this is the first reason, the card leaves `Missing reason`.
+- If this replaces the current reason, a new reason segment starts.
+- If this is a correction on a past segment from the drawer, only the selected segment category/detail changes; timestamps remain unchanged.
+
+The keep-current-reason icon does not create a new visible timeline item. It extends the current segment and records review telemetry behind the scenes.
+
 ## Reason Configuration
 
 Reason taxonomy is governed by HQ/admin users, not by frontline users. The system should support port-specific configuration within that governance model.
@@ -178,6 +444,54 @@ HQ Admin settings manage:
 
 The Senior Engineer workflow consumes this configuration. The taxonomy should not be hard-coded into backend logic.
 
+### Admin Settings UI Details
+
+HQ Admin should have a simple settings area, not a complex enterprise configuration suite.
+
+Settings navigation should include:
+
+- Reason taxonomy
+- Port overrides
+- Fuel price
+- Persona/role preview for the POC
+
+Reason taxonomy screen:
+
+```text
+Category table on left
+Detail editor on right
+```
+
+Category rows show:
+
+- Category name
+- Icon
+- Active/inactive
+- Port applicability summary
+- Number of active details
+
+The detail editor for the selected category shows up to four detail rows per port/default configuration:
+
+- Detail label
+- Review interval in minutes
+- Active/inactive
+- Tags such as `infrastructure`, `provider-related`, `valid operational need`, or `avoidable`
+- Display order controls
+
+If more than four active details are configured for a category, show an inline warning: `Fast capture allows a maximum of 4 active details`.
+
+Port overrides should inherit the global category/detail set by default. BNE can override labels, active details, review intervals, and ordering, but HQ/Admin owns the change.
+
+Fuel price screen:
+
+- Input for fuel price
+- Currency
+- Effective date
+- Source/note
+- Last updated by/persona in POC
+
+HQ reports should show the active fuel price assumption used for dollar conversion.
+
 ## Roles And Permissions
 
 The POC uses a lightweight persona switcher rather than real authentication. The app model should still treat identity as a real concept so Microsoft Entra authentication and group assignment can replace the persona switcher later.
@@ -190,6 +504,28 @@ Prototype roles:
 - Apron Engineer: future role for iPad/mobile prompts, targeted aircraft actions, and reason entry from the line.
 
 Future enterprise mapping should allow Entra groups to map to app roles and port scopes.
+
+### Persona Switcher UI
+
+The POC persona switcher lives in the app header as a compact dropdown. It should feel like a demo utility, not a fake username/password login screen.
+
+Example personas:
+
+- `Senior Engineer - BNE`
+- `HQ Viewer`
+- `HQ Admin`
+- `Apron Engineer (future preview)`
+
+Switching persona changes:
+
+- Default landing surface
+- Available navigation items
+- Port scope
+- Write permissions
+- Whether admin settings are visible
+- Whether HQ dollar reporting is visible
+
+The implementation should still use real app concepts: `currentUser`, `role`, `portScopes`, and `permissions`. Entra group mapping can later supply those values.
 
 ## HQ Reporting
 
@@ -206,6 +542,24 @@ HQ reporting is a secondary view and has no operational write-back except for HQ
 Dollar conversion uses a configurable fuel price from HQ/Admin settings. It must not be hard-coded. Reports should show which fuel price assumption was used.
 
 Frontline surfaces should not show dollar impact as a primary metric.
+
+### HQ Viewer UI Details
+
+HQ Viewer should feel like a monitoring and reporting dashboard, not an action queue.
+
+Primary layout:
+
+- Top filters: date range, port/location, metric, fuel price assumption
+- KPI row: total runtime, fuel kg, dollar impact, attributed runtime, avoidable/runtime opportunity
+- Trend panel: daily/weekly run-rate trend
+- Location performance table: ports/locations, runtime, kg fuel, dollar conversion, attribution percentage
+- Reason breakdown: category/detail contribution
+
+HQ can compare locations. The Senior Engineer surface should not show port-by-port comparison.
+
+HQ charts and tables can use dollars, but they should also keep kg fuel visible so the conversion assumption remains transparent.
+
+Review response-time telemetry belongs in HQ/product diagnostics. It should be aggregated and framed as process insight, not individual monitoring.
 
 ## Scorecard Tone And Gamification
 
