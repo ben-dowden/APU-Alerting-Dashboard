@@ -100,7 +100,7 @@ The header contains:
 - Product title: `BNE APU Command Board`
 - Persona/role control on the right, implemented as a compact persona switcher for the POC
 - Feed status chip: `Mock feed`, `Last event`, or `APU feed delay`
-- METAR temperature chip, such as `BNE METAR 31°C`
+- Temperature chip, such as `BNE 31°C`
 - Current time
 - Optional wallboard/desktop mode indicator
 
