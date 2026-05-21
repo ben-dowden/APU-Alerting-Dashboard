@@ -671,6 +671,65 @@ The prototype should use dummy data with realistic boundaries:
 - Currency
 - Source or note
 
+## Real API Feasibility Discovery
+
+The main integration risk is not whether the UI can show the workflow. It is whether real source systems can be combined into a coherent operational state without overstating data quality.
+
+The implementation should keep the following concepts separate:
+
+- Aircraft currently on ground
+- Aircraft assigned to a bay or stand
+- Aircraft physically confirmed at that location
+- APU on/off state
+- APU event timestamps
+- Reason-chain workflow state
+
+The likely source of truth for `aircraft currently on ground` is unresolved. It may come from an OOOI or flight-state engine, FSE, A-CDM, Aerobahn, FIDs/iFIDS, or another operational system. The prototype should assume this is feasible but not settled.
+
+Discovery questions for FSE / A-CDM:
+
+- Does FSE expose current aircraft bay or stand, or only flight-state milestones?
+- Does Aerobahn expose current bay or stand in a way Virgin Australia can consume?
+- Are A-CDM return fields visible in iFIDS or iGO?
+- Which A-CDM fields are available, and are they available historically or only in the live operational view?
+
+Discovery questions for FIDs / iFIDS / iGO:
+
+- Can iFIDS provide current aircraft bay or stand assignment through an API or extract?
+- Does iFIDS distinguish planned stand assignment from actual current aircraft position?
+- Are iFIDS/iGO fields sufficient to determine when an aircraft should enter and leave the BNE ground-aircraft board?
+- Can assigned stand data be linked reliably to tail registration and flight number?
+
+Discovery questions for Hermes / ACARS / OOOI:
+
+- Do inbound ACARS or OOOI messages include position, bay, terminal, stand, or only event timestamps?
+- Are position or stand fields stored in Hermes, GDW, Sabre IX, or another system?
+- Are these fields persisted for query, or only passed through operationally?
+- Can OOOI events reliably determine aircraft on-ground and off-ground state for the board?
+
+Discovery questions for GE / ACMS:
+
+- Does decoded ACMS contain latitude/longitude, airport, bay, stand, or any other location indicator?
+- What is the refresh cadence for decoded ACMS APU state?
+- Does the feed work while aircraft are parked, being towed, or powered down?
+- Is coverage limited to 737-700/737-800, with 737 MAX requiring a separate data path?
+- Are APU-on and APU-off messages available as timestamped events, or only as sampled state snapshots?
+
+Discovery questions for towing:
+
+- Is there a system of record for tow movements?
+- If there is no tow system, can the app safely assume assigned bay only while aircraft remain on assigned stand?
+- Should the app mark aircraft location as `assigned stand` rather than `current position` whenever tow state is unknown?
+
+The system should carry source and confidence metadata for location-like fields:
+
+- `locationSource`, such as `iFIDS`, `FSE`, `Aerobahn`, or `manual_mock`
+- `locationMeaning`, such as `assigned_stand`, `reported_position`, or `unknown`
+- `locationConfidence`, such as `high`, `medium`, or `low`
+- `locationUpdatedAt`
+
+If real integration cannot prove live position, the UI should continue to use stand assignment language and should not introduce a map or digital twin view.
+
 ## Prototype Boundaries
 
 This phase does not include:
