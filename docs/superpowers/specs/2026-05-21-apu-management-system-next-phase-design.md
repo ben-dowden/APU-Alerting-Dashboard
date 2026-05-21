@@ -730,6 +730,54 @@ The system should carry source and confidence metadata for location-like fields:
 
 If real integration cannot prove live position, the UI should continue to use stand assignment language and should not introduce a map or digital twin view.
 
+## Event-Sourced Integration Direction
+
+The future real-data architecture should be event-sourced. Operational source systems should publish events onto Kafka topics or equivalent enterprise streaming infrastructure. The APU Management System should consume those topics and derive its current read models from the event history.
+
+This direction fits the product because APU management depends on timestamped changes over time:
+
+- APU on/off events
+- Aircraft on-ground/off-ground transitions
+- Stand assignment changes
+- Weather/temperature observations
+- Reason-chain user actions
+- Review due and review resolved workflow events
+
+The UI should not depend on synchronous point-to-point API calls as the primary truth for the command board. Synchronous APIs may still be useful for admin settings, lookup/reference data, user permissions, and historical report queries.
+
+Candidate Kafka topic families:
+
+- `aircraft.flight-state.events`: OOOI, arrival, departure, on-ground/off-ground, flight-state changes.
+- `aircraft.stand-assignment.events`: bay/stand assignment, reassignment, source and confidence.
+- `aircraft.apu-state.events`: APU on/off messages, decoded ACMS state changes, source timestamp, received timestamp.
+- `airport.weather.events`: BNE temperature observations and derived 3 degree Celsius bands.
+- `apu.reason-chain.events`: reason selected, reason changed, current reason kept, note added, event closed.
+- `apu.review-workflow.events`: review due, review resolved, resolution type, response-time telemetry.
+- `apu.reference-data.events`: governed reason taxonomy, port overrides, fuel price assumptions.
+
+Every consumed event should include:
+
+- Source system
+- Source event timestamp
+- Ingestion timestamp
+- Correlation keys, such as tail, flight number, port, bay, and APU event id when available
+- Source event id or idempotency key
+- Confidence or meaning metadata where the event could be interpreted too strongly
+
+The app should maintain derived read models for:
+
+- Current BNE command board
+- Current aircraft cards
+- Ground-aircraft side table
+- Open APU events
+- Reason chains
+- Daily scorecards
+- HQ reports and benchmark aggregations
+
+Replay should be possible for testing and operational correction. If a source event arrives late or out of order, the event model should allow the derived read model to be recalculated rather than manually patched.
+
+For the prototype, Kafka does not need to be running. Dummy data should be shaped like events so that replacing mock arrays with topic consumers later is a natural step.
+
 ## Prototype Boundaries
 
 This phase does not include:
