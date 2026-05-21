@@ -100,8 +100,11 @@ The header contains:
 - Product title: `BNE APU Command Board`
 - Persona/role control on the right, implemented as a compact persona switcher for the POC
 - Feed status chip: `Mock feed`, `Last event`, or `APU feed delay`
+- METAR temperature chip, such as `BNE METAR 31°C`
 - Current time
 - Optional wallboard/desktop mode indicator
+
+Temperature is a port-level condition from METAR, not an aircraft-level fact. It belongs in the command bar or benchmark area rather than on each aircraft card.
 
 The header should not include the old generic tab-first mental model for the Senior Engineer surface. The role should determine the starting surface.
 
@@ -166,9 +169,8 @@ Each active APU card shows:
 - Estimated kg fuel burned
 - Ground service availability when known
 - Closest tail and distance
-- Nearby APU-running aircraft within 100 metres, shown in a compact tooltip or list
-- Current reason and elapsed time
-- Compact history pills for previous reason segments
+- Nearby APU-running aircraft within 100 metres, shown only in a tooltip/list when the user hovers or focuses the proximity row
+- Current reason and elapsed time in `HH:MM` format
 
 The compact side table lists all BNE ground aircraft with:
 
@@ -189,17 +191,16 @@ Each aircraft card should have a stable, scannable structure:
 │ BNE · Domestic remote stand          │
 ├──────────────────────────────────────┤
 │ APU ON  1h 24m        Ground 1h 52m  │
-│ Fuel 312kg            Temp 31°C      │
+│ Fuel 312kg            Closest 42m    │
 │ PCA available         GPU unavailable│
-│ Closest tail: VH-YIB · 42m           │
-│ Nearby APU: VH-YIO 78m, VH-8IC 95m   │
+│ Closest tail: VH-YIB · 42m       [?] │
 ├──────────────────────────────────────┤
 │ Current reason                       │
 │ Cleaning in progress · cleaner aboard│
-│ 24m                                  │
-│ +30m Infrastructure   +30m Logistics │
-├──────────────────────────────────────┤
+│ 00:24                                │
 │ [↻] [ Change reason ]        [chain] │
+├──────────────────────────────────────┤
+│ Review due in 00:06                  │
 └──────────────────────────────────────┘
 ```
 
@@ -219,6 +220,18 @@ Card controls:
 - Change reason: show a clear secondary text button labelled `Change reason`.
 - Reason chain drawer: show a light ghost icon button, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`.
 - Side table focus action: use a ghost button with an arrow or target-style icon. Tooltip: `Show aircraft card`.
+
+Reason actions should sit inside the current-reason block, aligned with the current reason and chain icon. They should not sit as a dominant global footer that makes the whole aircraft card feel like it exists only to collect a reason. The card hierarchy is aircraft state first, current reason second, actions third.
+
+The drawer-closed aircraft card state, when an APU is on, shows only the current active reason and its elapsed timer in `HH:MM` format. Previous reasons are not shown on the card. The reason chain is available only from the drawer.
+
+The closest-tail row is always visible when spatial data is available. Nearby APU-running aircraft within 100 metres appear in a hover/focus tooltip from the closest-tail row or proximity icon. Tooltip content should list tail, bay, and distance from the selected aircraft:
+
+```text
+Nearby APU-running aircraft
+VH-YIO · Bay 44 · 78m
+VH-8IC · Bay 45 · 95m
+```
 
 Card movement animation should be subtle and fast:
 
@@ -287,16 +300,13 @@ If review is due and the user keeps the current reason, the current segment exte
 Cards show a collapsed reason-chain summary:
 
 - Current reason and elapsed time
-- Compact history pills for prior segments
 - A light icon button to open the full reason-chain drawer
 
-Example collapsed pattern:
+Example collapsed pattern, drawer closed:
 
 ```text
 Current reason
-Cleaning in progress · cleaner onboard        24m
-
-+30m Infrastructure unavailable   +30m Logistics / agent on the way
+Cleaning in progress · cleaner onboard        00:24
 ```
 
 The drawer allows users to:
@@ -315,21 +325,24 @@ The collapsed card reason block should always show the current reason when an AP
 ```text
 Current reason
 Cleaning in progress · cleaner aboard
-24m
+00:24
 ```
 
-Previous visible segments appear as compact pills:
-
-```text
-+30m Infrastructure unavailable
-+30m Logistics / agent on the way
-```
-
-History pills should be muted grey or soft purple, not red/amber unless a past segment is itself being corrected. The current reason block carries the current urgency state.
+The collapsed card does not show prior reason segments, history pills, or timeline fragments. Keeping prior reasons out of the card prevents the reason-chain feature from dominating the whole aircraft card. The full chain appears only in the drawer.
 
 The drawer opens from the right side of the screen. It should be around 420-520px wide on desktop. On smaller screens it can become a full-height sheet. Opening the drawer should not navigate away from the board.
 
-Drawer structure:
+Drawer closed state:
+
+```text
+Aircraft card
+- Aircraft state facts
+- Current reason only
+- Reason actions embedded in current-reason block
+- Ghost icon: View reason chain
+```
+
+Drawer open state:
 
 ```text
 Header
@@ -594,7 +607,7 @@ This data should support product management and process analysis, not individual
 
 ## Temperature Benchmarking
 
-Temperature is a key benchmarking slicer. Similar-temperature comparison uses 3 degree Celsius temperature bands.
+Temperature is a key benchmarking slicer. Temperature comes from METAR or a future weather/airport observation source. It is a port-level condition, not an aircraft-level value. Similar-temperature comparison uses 3 degree Celsius temperature bands.
 
 The comparison should be time/event-weighted across the day as temperature changes. Long runtime events in a temperature band should affect the benchmark more than short events.
 
@@ -642,6 +655,15 @@ The prototype should use dummy data with realistic boundaries:
 - Longitude
 - Optional apron/zone metadata
 
+### METAR / Weather Observation
+
+- Port
+- Observation timestamp
+- Temperature in Celsius
+- Source, such as METAR
+- Optional raw observation text
+- Derived 3 degree Celsius temperature band
+
 ### Fuel Price Assumption
 
 - Effective date
@@ -674,5 +696,7 @@ The current cost-oriented cards and reports should split frontline and HQ units 
 
 - Senior Engineer: time and estimated kg fuel
 - HQ: kg fuel plus configurable dollar conversion
+
+The current aircraft card temperature display should move out of the aircraft card. Temperature should be shown once in the command bar as the current BNE METAR temperature and used in benchmark calculations.
 
 The current port selector should become role/port scope aware, with BNE as the primary Senior Engineer prototype port.
