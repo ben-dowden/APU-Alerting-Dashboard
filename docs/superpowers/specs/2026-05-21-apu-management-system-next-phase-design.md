@@ -1043,6 +1043,38 @@ Not required for MVP:
 
 These may be future-state capabilities, but v1 feasibility is satisfied when the system can create a credible reason-tagged burn dataset and export or publish it through at least one practical path.
 
+## Prototype Scenarios For Lag Management
+
+The prototype should include dummy scenarios that demonstrate how the product handles ACMS/APU lag and manual APU-off observations.
+
+Required scenarios:
+
+1. Manual off, then confirmed
+   - Aircraft card starts as APU-running.
+   - User marks APU off manually.
+   - Card moves to neutral `APU off pending confirmation`.
+   - A delayed trusted APU-off event arrives.
+   - Card becomes confirmed APU-off / calm green.
+   - Reason-tagged burn reporting uses the trusted source off timestamp, not the manual observation timestamp.
+
+2. Manual off, then contradicted
+   - Aircraft card starts as APU-running.
+   - User marks APU off manually.
+   - Card moves to neutral pending state.
+   - A later trusted source event indicates APU is still running.
+   - Card reopens as APU-running.
+   - Reason review logic resumes.
+   - The manual observation remains in telemetry.
+
+3. APU-off missing, inferred closure
+   - Aircraft card starts as APU-running.
+   - No explicit APU-off event arrives.
+   - A strong operational signal, such as aircraft departure or leaving BNE ground scope, triggers inferred closure.
+   - Card leaves the active board or becomes closed according to the derived state.
+   - Reporting marks the off timestamp source as inferred/low-confidence.
+
+These scenarios should be accessible through prototype controls or scenario packs. They should use dummy timestamps and source freshness charms so reviewers can see the operational effect of delayed and imperfect data.
+
 ## Prototype Boundaries
 
 This phase does not include:
