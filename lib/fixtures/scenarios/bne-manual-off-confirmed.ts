@@ -1,0 +1,73 @@
+import type { ScenarioFixture } from "./builders";
+import {
+  apuStateEvent,
+  flightStateEvent,
+  manualApuOffObservedEvent,
+  reasonSelectedEvent,
+  standAssignmentEvent,
+} from "./builders";
+
+export const bneManualOffConfirmedScenario: ScenarioFixture = {
+  id: "bne-manual-off-confirmed",
+  name: "BNE manual off confirmed",
+  description: "A Senior Engineer marks APU off as pending, then trusted ACMS later confirms the official APU-off transition.",
+  events: [
+    flightStateEvent({
+      tail: "VH-8NJ",
+      aircraftType: "B38M",
+      flightNumber: "VA812",
+      gateState: "on_ground",
+      onGroundAt: "2026-05-22T10:00:00.000Z",
+      occurredAt: "2026-05-22T10:00:00.000Z",
+      receivedAt: "2026-05-22T10:00:08.000Z",
+      sourceEventId: "AIMS-VH8NJ-1000",
+    }),
+    standAssignmentEvent({
+      tail: "VH-8NJ",
+      bay: "Bay 18",
+      stand: "18",
+      assignmentState: "current",
+      validFrom: "2026-05-22T10:00:00.000Z",
+      occurredAt: "2026-05-22T10:01:00.000Z",
+      receivedAt: "2026-05-22T10:01:05.000Z",
+      sourceEventId: "BNE-STAND-VH8NJ-1001",
+    }),
+    apuStateEvent({
+      tail: "VH-8NJ",
+      state: "on",
+      occurredAt: "2026-05-22T10:03:00.000Z",
+      receivedAt: "2026-05-22T10:03:45.000Z",
+      sourceEventId: "ACMS-VH8NJ-APUON-1003",
+    }),
+    reasonSelectedEvent({
+      tail: "VH-8NJ",
+      apuEventId: "apu:VH-8NJ:2026-05-22T10:03:00.000Z",
+      reasonSegmentId: "reason:VH-8NJ:001",
+      categoryId: "logistics-agent-on-the-way",
+      categoryLabel: "Logistics / agent on the way",
+      detailId: "equipment-on-the-way",
+      detailLabel: "Equipment on the way",
+      selectedBy: "senior-engineer-bne",
+      occurredAt: "2026-05-22T10:12:00.000Z",
+      receivedAt: "2026-05-22T10:12:05.000Z",
+      sourceEventId: "APP-VH8NJ-REASON-1012",
+    }),
+    manualApuOffObservedEvent({
+      tail: "VH-8NJ",
+      apuEventId: "apu:VH-8NJ:2026-05-22T10:03:00.000Z",
+      observedBy: "senior-engineer-bne",
+      observationNote: "Ramp confirmed external air connected.",
+      occurredAt: "2026-05-22T10:35:00.000Z",
+      receivedAt: "2026-05-22T10:35:02.000Z",
+      sourceEventId: "APP-VH8NJ-MANUALOFF-1035",
+    }),
+    apuStateEvent({
+      tail: "VH-8NJ",
+      state: "off",
+      occurredAt: "2026-05-22T10:37:00.000Z",
+      receivedAt: "2026-05-22T10:55:00.000Z",
+      sourceEventId: "ACMS-VH8NJ-APUOFF-1037",
+      sourceLatencyMinutes: 18,
+    }),
+  ],
+};

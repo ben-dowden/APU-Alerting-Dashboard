@@ -1,0 +1,68 @@
+import type { ScenarioFixture } from "./builders";
+import {
+  apuStateEvent,
+  dataQualityFlagCreatedEvent,
+  flightStateEvent,
+  reasonSelectedEvent,
+  standAssignmentEvent,
+} from "./builders";
+
+export const bneMissingBurnAssumptionScenario: ScenarioFixture = {
+  id: "bne-missing-burn-assumption",
+  name: "BNE missing burn assumption",
+  description: "An unmatched equipment type remains usable through configured fallback fuel-burn assumptions and diagnostics metadata.",
+  events: [
+    flightStateEvent({
+      tail: "VH-ZHA",
+      aircraftType: "E190",
+      flightNumber: "VA161",
+      gateState: "on_ground",
+      onGroundAt: "2026-05-22T12:30:00.000Z",
+      occurredAt: "2026-05-22T12:30:00.000Z",
+      receivedAt: "2026-05-22T12:30:08.000Z",
+      sourceEventId: "AIMS-VHZHA-1230",
+    }),
+    standAssignmentEvent({
+      tail: "VH-ZHA",
+      bay: "Bay 24",
+      stand: "24",
+      assignmentState: "current",
+      validFrom: "2026-05-22T12:30:00.000Z",
+      occurredAt: "2026-05-22T12:31:00.000Z",
+      receivedAt: "2026-05-22T12:31:05.000Z",
+      sourceEventId: "BNE-STAND-VHZHA-1231",
+    }),
+    apuStateEvent({
+      tail: "VH-ZHA",
+      state: "on",
+      occurredAt: "2026-05-22T12:33:00.000Z",
+      receivedAt: "2026-05-22T12:33:30.000Z",
+      sourceEventId: "ACMS-VHZHA-APUON-1233",
+    }),
+    reasonSelectedEvent({
+      tail: "VH-ZHA",
+      apuEventId: "apu:VH-ZHA:2026-05-22T12:33:00.000Z",
+      reasonSegmentId: "reason:VH-ZHA:001",
+      categoryId: "engineering-requirement",
+      categoryLabel: "Engineering requirement",
+      detailId: "defect-investigation",
+      detailLabel: "Defect investigation",
+      selectedBy: "senior-engineer-bne",
+      occurredAt: "2026-05-22T12:40:00.000Z",
+      receivedAt: "2026-05-22T12:40:05.000Z",
+      sourceEventId: "APP-VHZHA-REASON-1240",
+    }),
+    dataQualityFlagCreatedEvent({
+      tail: "VH-ZHA",
+      flagId: "dq:VH-ZHA:missing-burn-assumption",
+      category: "missing_reference_data",
+      severity: "info",
+      summary: "Equipment type E190 is not configured in BNE fuel-burn assumptions; fallback rate applies.",
+      createdBy: "system",
+      relatedEventIds: ["AIMS-VHZHA-1230"],
+      occurredAt: "2026-05-22T12:41:00.000Z",
+      receivedAt: "2026-05-22T12:41:02.000Z",
+      sourceEventId: "APP-DQ-VHZHA-1241",
+    }),
+  ],
+};
