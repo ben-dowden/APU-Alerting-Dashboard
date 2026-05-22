@@ -785,6 +785,29 @@ The UI should distinguish between:
 
 Detailed data-quality diagnostics belong in tooltips, drawers, or admin/HQ diagnostics. The main Senior Engineer board should stay compact and calm.
 
+## Source Freshness And Latency Expectations
+
+The board should not use one global freshness standard. Different source fields have different realistic latency expectations. The UX is deliberately designed to make ACMS/APU lag operationally tolerable while still being honest about freshness.
+
+Freshness should be evaluated per source and field:
+
+- APU state / ACMS: may lag around 25 minutes depending on source behaviour. The UI should show the last known APU state, elapsed runtime based on the latest event model, and a compact stale/source charm when the last APU event is older than the configured threshold.
+- Flight-state / OOOI / FSE / A-CDM: expected to be fresher than ACMS where available, but the actual SLA is a discovery item.
+- Stand assignment / iFIDS / Aerobahn: may represent planned or assigned stand rather than live position. Freshness and meaning must both be shown through compact source/confidence metadata.
+- Weather / temperature: should use the latest available BNE observation and show compact freshness where stale.
+- Reason-chain state: should update immediately within the APU app because it is authored by the app.
+
+The event orchestration layer is important to the user experience. The system should combine streams so the board feels coherent even when APU data arrives later than flight-state or stand data.
+
+Example behaviour:
+
+- If the APU-on event is known but the APU-off event has not arrived, the card remains APU-on and may show `APU off not confirmed` in a tooltip.
+- If flight-state says the aircraft has departed but ACMS has not sent an APU-off event, the derived state should follow a documented precedence rule and show compact conflict/freshness metadata.
+- If stand assignment changes but tow state is unknown, the card should use assigned-stand wording and avoid live-position claims.
+- If reason-chain actions are current but ACMS is stale, the card can still show the latest reason-chain state while marking APU source freshness separately.
+
+The prototype should model these differences using dummy source timestamps and freshness charms, so stakeholders understand how the real board will behave under imperfect data.
+
 ## Event-Sourced Integration Direction
 
 The future real-data architecture should be event-sourced. Operational source systems should publish events onto Kafka topics or equivalent enterprise streaming infrastructure. The APU Management System should consume those topics and derive its current read models from the event history.
