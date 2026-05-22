@@ -440,7 +440,15 @@ Recent timeline preview
 - Previous two segments, if they exist
 ```
 
-The timeline preview should render as a horizontal left-to-right reason strip inside the drawer viewport. Each segment appears as a compact pill/card with reason category/detail, duration, and a tiny time range. The current segment should be visually emphasized using purple or indigo treatment, while previous segments use neutral styling.
+The timeline preview should render as a horizontal left-to-right reason strip inside the drawer viewport. Each segment appears as a compact pill/card. The first line is the time range in small muted text. The main label is the reason detail in compact black semi-bold text. Category can appear as a small muted context label or badge when needed, but it should not dominate the segment. Duration can sit as a small secondary value. The current segment should be visually emphasized using purple or indigo treatment, while previous segments use neutral styling.
+
+Example segment hierarchy:
+
+```text
+09:40-10:10
+Cleaner onboard
+Cleaning in progress · 30m
+```
 
 Default timeline strip:
 
@@ -1734,7 +1742,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, `Show all reasons` enabling internal scrolling without resizing the drawer, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, `Show all reasons` enabling internal scrolling without resizing the drawer, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
