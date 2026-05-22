@@ -659,7 +659,9 @@ The prototype should use dummy data with realistic boundaries:
 ### Aircraft Ground State
 
 - Tail
-- Aircraft type / equipment type code
+- Resolved aircraft type / equipment type code
+- Source event aircraft type / equipment type code when supplied
+- Reference aircraft type / equipment type code when available
 - Equipment type source, such as flight-state event, tail/equipment reference, or derived enrichment
 - Equipment type mismatch flag when source and reference disagree
 - Bay or stand
@@ -677,7 +679,7 @@ The prototype should use dummy data with realistic boundaries:
 - Source system or reference owner
 - Last updated timestamp
 
-For the prototype, this should be dummy reference data. For future integration, the app should use the equipment type supplied by the flight or ground-state event when present, then enrich and validate it against the tail/equipment reference table. The resolved equipment type used for fuel-burn calculation should preserve both the source value and the reference value when they differ.
+For the prototype, this should be dummy reference data. For future integration, the app should use the equipment type supplied by the flight or ground-state event when present, then enrich and validate it against the tail/equipment reference table. If the live flight/ground-state event and the reference table disagree, the prototype should resolve to the live flight/ground-state value, preserve both values, and flag the mismatch. IT may define a stronger enterprise precedence rule later.
 
 ### APU Event
 
@@ -753,7 +755,7 @@ The implementation should keep the following concepts separate:
 
 The likely source of truth for `aircraft currently on ground` is unresolved. It may come from an OOOI or flight-state engine, FSE, A-CDM, Aerobahn, FIDs/iFIDS, or another operational system. The prototype should assume this is feasible but not settled.
 
-Aircraft equipment type should use the flight or ground-state event value when that value is supplied. The system should enrich and validate that value against a tail/equipment reference table. This gives the command board and burn estimates a real-time operational value while still catching cases where source data is missing, stale, or inconsistent with known tail configuration.
+Aircraft equipment type should use the flight or ground-state event value when that value is supplied. The system should enrich and validate that value against a tail/equipment reference table. If the event value and reference value disagree, the prototype should trust the live flight/ground-state event for operational display and burn-rate selection, while flagging the mismatch for diagnostics. This gives the command board and burn estimates a real-time operational value while still catching cases where source data is missing, stale, or inconsistent with known tail configuration.
 
 The prototype should use dummy tail/equipment reference data. Future IT discovery should identify the proper enterprise source for tail-to-equipment mapping, whether that comes from fleet planning, engineering systems, FSE, iFIDS, Sabre/GDW, or another reference-data owner.
 
@@ -1138,7 +1140,9 @@ The minimum reason-tagged burn dataset should include:
 - Reason-chain event ids used to derive the row
 - Tail
 - Flight number when available
-- Aircraft type / equipment type code
+- Resolved aircraft type / equipment type code
+- Source event aircraft type / equipment type code
+- Reference aircraft type / equipment type code
 - Aircraft type / equipment type source
 - Aircraft type / equipment type mismatch flag
 - Port
