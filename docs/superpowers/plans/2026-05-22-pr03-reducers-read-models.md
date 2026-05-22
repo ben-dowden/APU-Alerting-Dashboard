@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Create: `lib/domain/ids.ts`, `apu-reducer.ts`, `reason-chain-reducer.ts`, `manual-observation-reducer.ts`, `fuel.ts`, `proximity.ts`.
+- Create: `lib/domain/ids.ts`, `time.ts`, `apu-reducer.ts`, `reason-chain-reducer.ts`, `manual-observation-reducer.ts`, `fuel.ts`, `proximity.ts`.
 - Create: `lib/read-models/current-board.ts`, `aircraft-card.ts`, `daily-scorecard.ts`, `benchmark-panel.ts`, `reason-tagged-burn.ts`, `data-quality.ts`, `index.ts`.
 - Create tests beside each domain/read-model file.
 
@@ -39,6 +39,8 @@ createApuEventId("BNE", "VH-8IA", "2026-05-22T08:37:00.000Z")
 - [ ] **Step 2: Implement helpers**
 
 Export `createAircraftGroundEventId`, `createApuEventId`, and `normalizeTail`.
+
+Post-implementation helper surface also includes `createLegacyFixtureApuEventId` and `matchesApuEventId` so legacy PR 02 fixture event references are handled in one place instead of scattered through reducers or UI code.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -246,6 +248,12 @@ git commit -m feat-add-scorecard-benchmark-burn-read-models
 ```
 
 ---
+
+## Post-Implementation Clean-Code Handoff
+
+- Pass 1, `refactor-clean-read-model-domain-helpers`: centralized canonical/legacy APU id matching in `lib/domain/ids.ts`, split current-board event collection context from per-aircraft projection, moved aircraft-card labels to table-driven mappings, and made reason review-resolution mapping declarative.
+- Pass 2, `refactor-centralize-time-event-ordering`: added `lib/domain/time.ts` and `lib/domain/time.test.ts`, then replaced duplicated elapsed-minute math, ISO minute addition, and event replay ordering across domain reducers and read models.
+- Carry-forward framework: keep domain and read-model functions small and named by intent; centralize deterministic replay/time/id helpers; prefer table-driven mappings over nested conditional label or telemetry logic; preserve the boundary where UI imports `lib/read-models/index.ts` instead of replaying source events locally.
 
 ## Self-Review
 

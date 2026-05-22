@@ -10,6 +10,14 @@
 
 ---
 
+## PR 03 Clean-Code Carry-Forward
+
+- Extend existing helpers in `lib/domain/proximity.ts`, `lib/domain/time.ts`, `lib/domain/ids.ts`, `lib/read-models/current-board.ts`, and `lib/read-models/aircraft-card.ts` before adding parallel ranking, proximity, source-quality, or pending-state logic.
+- Ranking, proximity, source quality, and manual-off pending status remain derived facts. Components should receive fields such as urgency bucket, closest tail, source freshness, and pending confirmation state rather than inferring them from raw events.
+- Prefer table-driven bucket, label, charm, and telemetry mappings plus named helper functions. Avoid nested conditionals that mix business rules, source-quality semantics, and visual styling in one component.
+
+---
+
 ## File Structure
 
 - Modify: `lib/read-models/aircraft-card.ts`, `current-board.ts`.

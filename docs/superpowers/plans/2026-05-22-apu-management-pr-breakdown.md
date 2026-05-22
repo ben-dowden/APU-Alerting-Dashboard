@@ -29,6 +29,8 @@
    - Gate: read models are deterministic and UI-free.
    - Carry-forward from PR 03: UI PRs should import read-model surfaces from `lib/read-models/index.ts`; the main entry points are `deriveCurrentBoard`, `deriveAircraftCards`, `deriveDailyScorecard`, `deriveBenchmarkPanel`, `deriveReasonTaggedBurnRows`, and `deriveDataQualityTelemetry`.
    - PR 03 implementation notes for later PRs: current-board derivation replays BNE source/domain fixture events up to `nowIso`; APU events use source `occurredAt` transition order, with trusted ACMS off taking precedence and departed flight state only creating low-confidence inferred closure when no explicit off exists.
+   - Clean-code carry-forward from PR 03: shared time/replay helpers live in `lib/domain/time.ts`; canonical and legacy fixture APU id matching lives in `lib/domain/ids.ts`; UI and prototype workflow code should not reimplement elapsed-minute math, event replay ordering, or APU id compatibility checks.
+   - Clean-code framework used in PR 03: keep domain/read-model functions small and named by intent, split event-collection context from per-aircraft projection, centralize deterministic ordering helpers, and prefer table-driven mappings over nested conditional label/telemetry logic.
    - PR 03 fixture semantics to preserve: manual APU-off remains pending while the trusted source event is absent; reason-tagged burn rows keep unattributed runtime as its own bucket; fallback fuel assumptions retain assumption version/source metadata for HQ/export reconciliation; proximity is derived from stand coordinates only and must not be presented as live aircraft tracking.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` needed elevated execution permissions because esbuild/Next could fail with `spawn EPERM` under the sandbox.
 
@@ -82,5 +84,8 @@
 - Each PR starts with failing tests for the behavior it introduces.
 - Each PR ends with `npm run test` and `npm run build`.
 - Domain-heavy PRs keep logic in `lib/domain` and `lib/read-models`; React components consume read-model fields.
+- Clean-code pass rule: before finishing a PR, scan key complex modules for duplicated time/event ordering, duplicated id matching, long mixed-abstraction functions, and nested conditional mappings that can become named helpers or table-driven mappings without changing behavior.
+- Shared helper rule: use `lib/domain/time.ts` for elapsed minutes, ISO additions, and event replay ordering; use `lib/domain/ids.ts` for tail normalization, canonical ids, and PR 02 legacy fixture APU id compatibility.
+- Read-model boundary rule: UI PRs should consume `lib/read-models/index.ts` outputs and extend read models when new derived facts are needed; React components should not replay source/domain events, sort operational events, or infer APU/reason state locally.
 - UI PRs use shadcn-style primitives under `components/ui`, Tailwind tokens, and lucide icons.
 - No plan should add placeholder dashboards that compete with the Senior Engineer workflow before PR 07 is complete.
