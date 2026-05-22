@@ -900,6 +900,14 @@ HQ dashboard should include a data-quality flags section. This section shows fla
 
 The HQ section is for source-data diagnostics and IT/product follow-up. It should not become an individual performance scoreboard.
 
+Equipment-type mismatches between live flight/ground-state events and the tail/equipment reference table should automatically create data-quality telemetry for HQ diagnostics. This should be aggregated and non-noisy:
+
+- Do not create a prominent Senior Engineer card alert only because of an equipment-type mismatch.
+- Preserve the resolved value, source event value, and reference value.
+- Count mismatch occurrences by source system, tail, equipment type, and scenario.
+- Include mismatch examples in the HQ data-quality section.
+- Allow manual data-quality flags to add context, but do not require a user to flag these mismatches manually.
+
 ## Source Freshness And Latency Expectations
 
 The board should not use one global freshness standard. Different source fields have different realistic latency expectations. The UX is deliberately designed to make ACMS/APU lag operationally tolerable while still being honest about freshness.
@@ -1234,17 +1242,260 @@ This phase does not include:
 
 The prototype should remain mock-driven while making future API replacement straightforward.
 
-## Open Implementation Notes
+## Technical Architecture Direction
 
-The existing app already has Live Ops, History, Reports, mock data clients, local reason capture, and reporting exports. The next implementation should evolve those surfaces rather than rebuild from scratch.
+The current application is a Vite React prototype with custom CSS, a single tabbed app shell, mock data clients, local reason capture, and reporting/domain helpers. It has useful product learning and some reusable domain ideas, but the UI shape no longer matches the target Senior Engineer workflow.
 
-The current reason model is a single reason per aircraft/day. It will need to become an event-linked reason-chain model.
+Current-state gaps against this spec:
 
-The current cost-oriented cards and reports should split frontline and HQ units more clearly:
+- The app uses custom CSS rather than Tailwind/shadcn primitives.
+- The live surface is still tabbed around `Live ops`, `History`, and `Reports` rather than role-based surfaces.
+- Aircraft cards still show frontline dollar impact and per-card temperature.
+- Reason capture is still a single select/input rather than a reason-chain workflow with a cascading popover and drawer.
+- Mock data is mostly UI-ready records rather than event-shaped fixtures and replayable scenario packs.
+- The data model still treats reason capture as one reason per aircraft/day rather than an event-linked reason chain.
 
-- Senior Engineer: time and estimated kg fuel
-- HQ: kg fuel plus configurable dollar conversion
+### Framework Options Considered
 
-The current aircraft card temperature display should move out of the aircraft card. Temperature should be shown once in the command bar as the current BNE METAR temperature and used in benchmark calculations.
+Option 1: Keep Vite and progressively add Tailwind/shadcn-style components.
 
-The current port selector should become role/port scope aware, with BNE as the primary Senior Engineer prototype port.
+- Lowest short-term disruption.
+- Keeps the existing prototype running.
+- Still leaves routing, persona surfaces, server/client boundaries, and future API replacement less aligned with the desired enterprise app shape.
+
+Option 2: Migrate the current Vite app into Next.js gradually.
+
+- Preserves more existing code during transition.
+- Reduces perceived restart risk.
+- Creates a temporary mixed architecture where old UI assumptions and new workflow assumptions compete.
+
+Option 3: Start a clean Next.js App Router rebuild and port only useful domain/reporting logic.
+
+- Best fit for the new role-based product surface.
+- Allows shadcn/Tailwind design primitives to shape the app from the beginning.
+- Makes event-shaped fixtures, read models, route structure, and future Entra/API integration cleaner.
+- Requires rebuilding the UI rather than migrating existing components one-for-one.
+
+Recommended approach: Option 3. The next implementation should treat the existing app as a reference prototype, not as the final component architecture. Preserve useful calculations, tests, report export ideas, and mock scenario learnings, but rebuild the application shell and components in Next.js with Tailwind and shadcn/ui.
+
+### Next.js App Structure
+
+Use the Next.js App Router with route groups for the product surfaces:
+
+```text
+app/
+  layout.tsx
+  globals.css
+  (app)/
+    layout.tsx
+    page.tsx
+    senior/
+      bne/page.tsx
+    hq/
+      page.tsx
+      reports/page.tsx
+      data-quality/page.tsx
+    admin/
+      page.tsx
+      reasons/page.tsx
+      fuel/page.tsx
+      reference-data/page.tsx
+    future/
+      apron-engineer/page.tsx
+  api/
+    exports/reason-burn/route.ts
+components/
+  ui/
+  app-shell/
+  senior/
+  hq/
+  admin/
+  reason-chain/
+  data-quality/
+lib/
+  events/
+  fixtures/
+  read-models/
+  domain/
+  settings/
+  reporting/
+  auth/
+```
+
+Primary routes:
+
+- `/senior/bne`: Brisbane Senior Engineer command board. This is the default POC landing surface for the Senior Engineer persona.
+- `/hq`: HQ monitoring overview.
+- `/hq/reports`: lightweight reporting and reason-tagged burn export surface.
+- `/hq/data-quality`: source/freshness/mismatch/data-quality telemetry.
+- `/admin/reasons`: governed reason taxonomy and review intervals.
+- `/admin/fuel`: fuel price and equipment-type burn assumptions.
+- `/admin/reference-data`: tail/equipment reference data and stand-coordinate reference data.
+- `/future/apron-engineer`: non-primary preview surface only if useful for stakeholder storytelling.
+
+### Server And Client Component Boundaries
+
+Use Server Components for surfaces that can be derived from fixtures, settings, or report queries without live browser interaction:
+
+- HQ reports
+- Admin settings screens
+- Initial board data load
+- Export preparation
+- Static reference-data views
+
+Use Client Components for the operational interaction layer:
+
+- Wallboard timer and benchmark rotation
+- Urgency-sorted aircraft board with subtle movement animation
+- Reason picker popover
+- Reason-chain drawer
+- Manual APU-off pending confirmation action
+- Scenario replay controls
+- Persona switcher for the POC
+- Tooltip/charm interactions
+
+Pure domain functions should not depend on React or Next.js. They should live under `lib/domain`, `lib/events`, or `lib/read-models` and be directly testable.
+
+### Event-First Data Layer
+
+The rebuild should move from UI-ready mock records to event-shaped fixtures:
+
+```text
+lib/fixtures/scenarios/
+  bne-baseline.ts
+  bne-acms-lag.ts
+  bne-manual-off-confirmed.ts
+  bne-manual-off-contradicted.ts
+  bne-equipment-mismatch.ts
+  bne-missing-burn-assumption.ts
+```
+
+Fixture event families:
+
+- `flightStateEvents`
+- `standAssignmentEvents`
+- `apuStateEvents`
+- `weatherEvents`
+- `reasonChainEvents`
+- `reviewWorkflowEvents`
+- `manualObservationEvents`
+- `dataQualityEvents`
+- `tailEquipmentReference`
+- `standCoordinateReference`
+- `reasonTaxonomyReference`
+- `fuelAssumptionReference`
+
+Read-model functions:
+
+- `deriveCurrentBoard(events, settings)`
+- `deriveAircraftCards(boardState)`
+- `deriveGroundAircraftTable(boardState)`
+- `deriveReasonChain(apuEventId, events)`
+- `deriveDailyScorecard(events, settings)`
+- `deriveBenchmarkPanel(events, historicalBaseline, activeBenchmark)`
+- `deriveReasonTaggedBurnRows(events, settings)`
+- `deriveDataQualityTelemetry(events)`
+
+The UI should consume read models, not raw fixture arrays. That creates a credible path to replacing fixtures with Kafka consumers, route handlers, or backend APIs later.
+
+### State Management
+
+Keep state deliberately boring for the prototype:
+
+- Server-side fixture/read-model loading for initial data.
+- Small client context or hooks for scenario replay, persona selection, selected aircraft, drawer open state, and benchmark rotation.
+- URL search params for shareable prototype scenario/role state where useful.
+- Local storage only for POC persona/scenario preferences and mock reason-chain persistence if needed.
+
+Do not introduce a heavy global state library unless the implementation becomes hard to reason about without it.
+
+### shadcn/Tailwind Component Strategy
+
+Use shadcn/ui primitives as the base interaction kit and compose app-specific components around them. Keep `components/ui` close to standard shadcn output, and put product components under feature folders.
+
+Core app shell:
+
+- `Sidebar` or custom rail using shadcn `Sidebar` for HQ/Admin navigation on desktop.
+- `DropdownMenu` for persona switcher and port scope preview.
+- `Button` for explicit actions.
+- `Tooltip` for icon-only controls and data-quality charms.
+- `Badge` for compact operational states.
+- `Separator` for dense section boundaries.
+
+Senior Engineer command board:
+
+- `CommandBar`: custom Tailwind layout with shadcn `DropdownMenu`, `Button`, `Badge`, and `Tooltip`.
+- `ScorecardStrip`: repeated shadcn `Card` or custom metric panels; use cards only for individual KPI panels.
+- `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection plus a client timer for 5-second auto-rotation.
+- `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
+- `AircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, and small custom status strips.
+- `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
+
+Reason-chain workflow:
+
+- `ReasonPicker`: shadcn `Popover` anchored to the card action button.
+- Category/detail selection: custom two-pane popover using `Button`, `Command` or simple list rows, `Separator`, and Tailwind grid. Do not use a modal for the fast path.
+- `ReasonChainDrawer`: shadcn `Sheet` from the right side, with `ScrollArea`, `Separator`, `Badge`, `Textarea`, and action `Button`s.
+- Optional note field: `Textarea` in the drawer only.
+- Current-reason quick action: icon `Button` with `Tooltip`.
+
+Data-quality charms:
+
+- Tiny `Badge` or icon-only `Button` plus `Tooltip`.
+- Use `HoverCard` only for richer diagnostics that need more than one or two lines.
+- Keep source/freshness/fallback/equipment-mismatch markers out of the collapsed card unless the spec explicitly says they belong there.
+
+HQ views:
+
+- KPI row: shadcn `Card`.
+- Trends and reason breakdown: chart component if added, otherwise custom SVG or table-first views.
+- Data-quality flags: shadcn `Table`, `Badge`, `Tooltip`, `Select`, and `Tabs`.
+- Filters: `Select`, `Popover` plus `Calendar` for date range if date selection is needed.
+
+Admin settings:
+
+- Reason taxonomy: shadcn `Table` or `Data Table` pattern for categories, with a side editor using `Input`, `Switch`, `Select`, `Button`, and `Alert` for validation.
+- Fuel assumptions: shadcn `Table` for equipment-type burn assumptions; `Input` for kg/min and fuel price; `Switch` for active state; `Badge` for fallback/default rows.
+- Reference data: shadcn `Table` for tail/equipment and stand coordinates; keep it simple for prototype.
+- Forms should use a validation approach such as React Hook Form plus schema validation when the implementation needs robust admin validation.
+
+### Styling And Tokens
+
+Tailwind should own layout, spacing, density, and responsive behavior. shadcn theme variables should be configured to match the operational Virgin-style palette already described in this spec:
+
+- Deep purple for navigation and primary action.
+- Red/amber/green for operational states.
+- White and soft-grey surfaces.
+- 6-8px radius for panels, cards, popovers, tables, and controls.
+- No decorative hero sections, floating page-section cards, gradient orbs, or marketing composition.
+
+Aircraft cards, side tables, and command-board panels should use stable dimensions with Tailwind grid/flex constraints so timers, badges, and reason labels do not shift layout on the wallboard.
+
+### Migration Plan At Design Level
+
+The implementation plan may replace the Vite shell with a Next.js app rather than migrate component-by-component. Until implementation starts, keep the current Vite app as a working reference.
+
+Migration sequence:
+
+1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme.
+2. Create event-shaped fixture contracts and read-model functions.
+3. Build the Senior Engineer BNE route first.
+4. Build the aircraft card, reason picker, and reason-chain drawer.
+5. Add scorecard strip, benchmark rotator, and ground-aircraft side table.
+6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
+7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
+8. Port or rewrite export/reporting logic against the new reason-tagged burn rows.
+
+The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
+
+### Testing Strategy
+
+Testing should focus on the event/read-model layer and the high-risk UI workflows:
+
+- Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
+- Unit tests for benchmark calculations, especially temperature-banded comparisons.
+- Component tests or Playwright checks for reason picker two-click flow, drawer open/closed states, manual APU-off pending flow, and benchmark auto-rotation.
+- Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports.
+- Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
+
+The implementation should keep the prototype mock-driven while making the mock layer look like the future integration layer.
