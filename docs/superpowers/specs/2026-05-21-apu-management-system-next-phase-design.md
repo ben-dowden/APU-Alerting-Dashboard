@@ -504,7 +504,18 @@ Fuel price screen:
 - Source/note
 - Last updated by/persona in POC
 
-HQ reports should show the active fuel price assumption used for dollar conversion.
+Fuel-burn calculation screen:
+
+- APU fuel-burn rate assumption used for estimated kg calculations
+- Aircraft type applicability where needed
+- Effective date
+- Calculation version label
+- Source/note
+- Last updated by/persona in POC
+
+HQ reports should show the active fuel price assumption used for dollar conversion and the active fuel-burn calculation version used for estimated kg.
+
+The MVP should not include a full calculation model-management UI. Admin configuration only needs to store and expose the active assumptions well enough for reporting transparency and reconciliation.
 
 ## Roles And Permissions
 
@@ -514,7 +525,7 @@ Prototype roles:
 
 - Senior Engineer - BNE: primary operational command board, BNE aircraft cards, reason-chain capture, daily scorecard, proximity signals.
 - HQ Viewer: secondary reporting surface for cross-location scorecards, trends, annual and daily performance, dollar reporting, and monitoring. No write-back.
-- HQ Admin: HQ reporting plus admin settings for reason taxonomy, port-specific configuration, review intervals, and fuel price assumptions.
+- HQ Admin: HQ reporting plus admin settings for reason taxonomy, port-specific configuration, review intervals, fuel price assumptions, and fuel-burn calculation assumptions.
 - Apron Engineer: future role for iPad/mobile prompts, targeted aircraft actions, and reason entry from the line.
 
 Future enterprise mapping should allow Entra groups to map to app roles and port scopes.
@@ -554,6 +565,8 @@ HQ reporting is a secondary view and has no operational write-back except for HQ
 - Product/process telemetry such as reason review response time
 
 Dollar conversion uses a configurable fuel price from HQ/Admin settings. It must not be hard-coded. Reports should show which fuel price assumption was used.
+
+Estimated kg fuel uses a configurable fuel-burn calculation assumption and calculation version from HQ/Admin settings. It must not be hard-coded into reporting outputs. Reports should show the active calculation version so HQ totals, exports, and future EDP datasets can reconcile against the same assumptions.
 
 Frontline surfaces should not show dollar impact as a primary metric.
 
@@ -670,6 +683,15 @@ The prototype should use dummy data with realistic boundaries:
 - Effective date
 - Unit price
 - Currency
+- Source or note
+
+### Fuel Burn Calculation Assumption
+
+- Calculation version label
+- Effective date
+- APU fuel-burn rate assumption
+- Unit, such as kg per minute
+- Aircraft type applicability where needed
 - Source or note
 
 ## Real API Feasibility Discovery
@@ -1004,6 +1026,7 @@ Minimum backend capabilities:
 - Persist APU app-owned reason-chain events.
 - Publish reason-chain and review-workflow events for enterprise consumption.
 - Persist or derive enough APU event state to allocate burn time and estimated fuel kg to reason segments.
+- Apply the active configured fuel-burn calculation assumption when deriving estimated kg.
 - Preserve source timestamp, ingestion timestamp, source system, and data-quality metadata needed by the UI.
 
 Reason-tagged burn allocation:
@@ -1016,6 +1039,7 @@ Reason-tagged burn allocation:
 - If no reason has been captured, burn time is tagged as unattributed.
 - When the APU-off event arrives, the current segment closes and the APU event is finalized.
 - Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
+- Estimated fuel kg should use the active configured fuel-burn calculation assumption and store the calculation version used.
 
 Unattributed burn is a first-class reporting bucket. Reporting should not hide unattributed APU burn or exclude it from totals. The system should also show attribution coverage as a headline quality metric:
 
@@ -1051,6 +1075,8 @@ The minimum reason-tagged burn dataset should include:
 - Segment end timestamp
 - Segment duration minutes
 - Estimated fuel kg for the segment
+- Fuel-burn calculation version
+- Fuel-burn rate assumption used
 - Reason category id and label
 - Reason detail id and label
 - Attributed/unattributed flag
