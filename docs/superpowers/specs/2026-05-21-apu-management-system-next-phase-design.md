@@ -785,6 +785,46 @@ The UI should distinguish between:
 
 Detailed data-quality diagnostics belong in tooltips, drawers, or admin/HQ diagnostics. The main Senior Engineer board should stay compact and calm.
 
+Senior Engineers should be able to flag a data issue from an aircraft card or drawer. This does not change source-derived state and does not manually close or alter APU events. It creates a data-quality flag for review.
+
+Data issue flag examples:
+
+- APU state looks wrong
+- Stand or bay looks wrong
+- Aircraft should not be on board
+- Aircraft missing from board
+- Duplicate or conflicting aircraft
+- Timing looks wrong
+
+The flag action should be compact, such as a small `Flag data issue` ghost action in the drawer or a charm action in the card source tooltip. It should not be a dominant card control.
+
+Each data issue flag should capture:
+
+- Tail
+- Flight number when available
+- Port
+- Bay or stand
+- Current derived aircraft/APU state
+- Source freshness and confidence metadata visible at the time
+- User/persona id
+- Role
+- Timestamp
+- Selected issue type
+- Optional note
+- Related source event ids or derived read-model version when available
+
+HQ dashboard should include a data-quality flags section. This section shows flagged issues with telemetry explaining the situation that triggered or surrounded the flag:
+
+- Flag count by issue type
+- Flag count by source system
+- Recent flags table
+- Source freshness at time of flag
+- Conflicting/stale/unknown markers present at time of flag
+- Tail, bay, flight, and APU event context
+- Optional user note
+
+The HQ section is for source-data diagnostics and IT/product follow-up. It should not become an individual performance scoreboard.
+
 ## Source Freshness And Latency Expectations
 
 The board should not use one global freshness standard. Different source fields have different realistic latency expectations. The UX is deliberately designed to make ACMS/APU lag operationally tolerable while still being honest about freshness.
