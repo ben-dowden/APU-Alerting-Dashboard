@@ -1409,6 +1409,33 @@ Keep state deliberately boring for the prototype:
 
 Do not introduce a heavy global state library unless the implementation becomes hard to reason about without it.
 
+### Prototype Mutation Strategy
+
+Use a hybrid mutation model for the prototype.
+
+Initial board data, settings, reference data, and reports should be derived server-side from event-shaped fixtures and read models. Operational workflow mutations should stay client-side while the app is still mock-driven:
+
+- Select reason
+- Change current reason
+- Keep current reason
+- Add note in the reason-chain drawer
+- Correct previous reason category/detail
+- Mark APU off pending source confirmation
+- Flag data issue
+- Change scenario/persona prototype controls
+
+These client-side actions should still create event-shaped records, such as `apu.reason-chain.events`, `apu.review-workflow.events`, `apu.manual-observation.events`, and `apu.data-quality-flag.events`. The prototype can store those events in memory or local storage so the workflow feels real without requiring a backend.
+
+Do not build server actions or route-handler persistence just for mock workflow state unless it materially improves the prototype. The important design constraint is that the client-side event shape should match the future server/API event contract.
+
+When formal integration begins, move these mutations behind server/API contracts:
+
+- Next.js Server Actions or Route Handlers for app-owned workflow events if the app remains the backend-for-frontend.
+- Dedicated backend APIs if enterprise architecture requires a separate service.
+- Kafka publishing or equivalent event emission from the server-side mutation boundary.
+
+The UI components should call narrow action functions, not write directly to storage. That keeps the later move from local prototype events to server/API mutations mostly behind an adapter.
+
 ### shadcn/Tailwind Component Strategy
 
 Use shadcn/ui primitives as the base interaction kit and compose app-specific components around them. Keep `components/ui` close to standard shadcn output, and put product components under feature folders.
