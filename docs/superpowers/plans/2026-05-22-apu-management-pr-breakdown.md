@@ -15,10 +15,14 @@
    - Gate: `/senior/bne` exists as the default route target, but remains a stub.
    - Follow-up: the large PR 01 left-hand sidebar is foundation-only and is not the desired product navigation. PR 04 must remove it from the Senior Engineer surface and replace page navigation with a far more discreet pattern.
 
-2. **PR 02: Event Contracts And Scenario Fixtures**
+2. **PR 02: Event Contracts And Scenario Fixtures** - **Complete 2026-05-22 on branch `pr02-event-contracts-fixtures`; pending integration**
    - Creates source/domain event contracts and BNE event-shaped scenario packs.
    - Gate: fixtures validate independently of React.
    - Carry-forward from PR 01: run commands from the resolved repo path if Vitest path resolution behaves strangely through the workspace junction, keep the Next-generated TypeScript support intact, and avoid spending PR 02 effort on the foundation sidebar because the navigation correction is explicitly planned for PR 04.
+   - Carry-forward from PR 02: event imports for PR 03 should come from `lib/events/index.ts` and scenario imports from `lib/fixtures/scenarios/index.ts`; `bneScenarios` is the intended replay pack array.
+   - PR 02 implementation notes for later PRs: scenario fixtures use a shared local builder to enforce populated envelopes, `correlation.port`, and idempotency metadata; scenario event arrays are ordered by `receivedAt` while preserving `occurredAt` for replay/reporting calculations; reducers should sort primarily by `occurredAt` and use `receivedAt` for latency/staleness diagnostics.
+   - PR 02 fixture semantics to preserve: manual APU-off is only `manual_apu_off_observed` domain telemetry until trusted ACMS off confirmation arrives; stale stand context is represented with low confidence plus `quality.isStale`/`quality.isPlanned` and must not be presented as live tracking; unmatched burn assumptions use the configured `UNKNOWN` fallback; equipment mismatch scenarios preserve both source/reference values through source events plus a data-quality flag.
+   - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` may need elevated execution permissions because esbuild can fail with `spawn EPERM` under the sandbox.
 
 3. **PR 03: Reducers And Read-Model Foundation**
    - Converts event-shaped fixtures into current board state, cards, scorecards, benchmarks, burn rows, and diagnostics.
