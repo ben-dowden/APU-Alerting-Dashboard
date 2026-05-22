@@ -10,6 +10,8 @@
 
 **Tech Stack:** TypeScript, Vitest, Next.js project layout from PR 01.
 
+**Status:** Merged 2026-05-22 via `51dd984`.
+
 ---
 
 ## File Structure

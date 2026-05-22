@@ -8,6 +8,14 @@
 
 **Tech Stack:** Next.js, React client components for carousel/rotators, Tailwind, Vitest, Testing Library, Playwright or screenshot-capable route checks.
 
+**Status:** Pending after PR 04, PR 05, and PR 06 integration.
+
+## PR 04 Command-Board Carry-Forward
+
+- Use the same event-derived BNE board/read-model adapter shape proven in PR 04, with any PR 06 urgency/proximity fields added before wallboard sorting.
+- Reuse `AircraftCardContent` where practical, but keep wallboard wrappers passive and exclude desktop workflow controls, side-table focus buttons, admin navigation, QR links, prompts, and drawer triggers.
+- Maintain the PR 04 constraint that Senior Engineer and wallboard surfaces show runtime and estimated kg fuel, never dollar impact.
+
 ---
 
 ## File Structure

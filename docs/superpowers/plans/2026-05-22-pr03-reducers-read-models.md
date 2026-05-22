@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript, Vitest, event contracts and fixtures from PR 02.
 
+**Status:** Merged 2026-05-22 via `8559a66`.
+
 ---
 
 ## File Structure

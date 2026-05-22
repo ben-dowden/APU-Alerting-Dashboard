@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js, TypeScript, Vitest, Testing Library.
 
+**Status:** Final hardening remains sequenced after PR 09; revalidate this checklist against the then-current app state before executing PR 10.
+
 ---
 
 ## File Structure
