@@ -1291,6 +1291,7 @@ app/
     page.tsx
     senior/
       bne/page.tsx
+      bne/wallboard/page.tsx
     hq/
       page.tsx
       reports/page.tsx
@@ -1324,7 +1325,8 @@ lib/
 
 Primary routes:
 
-- `/senior/bne`: Brisbane Senior Engineer command board. This is the default POC landing surface for the Senior Engineer persona.
+- `/senior/bne`: Brisbane Senior Engineer desktop/laptop command board. This is the default POC landing surface for the Senior Engineer persona.
+- `/senior/bne/wallboard`: Brisbane Senior Engineer wallboard display route for the 70-inch TV / 16:9 break-room use case.
 - `/hq`: HQ monitoring overview.
 - `/hq/reports`: lightweight reporting and reason-tagged burn export surface.
 - `/hq/data-quality`: source/freshness/mismatch/data-quality telemetry.
@@ -1398,6 +1400,11 @@ Read-model functions:
 
 The UI should consume read models, not raw fixture arrays. That creates a credible path to replacing fixtures with Kafka consumers, route handlers, or backend APIs later.
 
+The `/senior/bne` and `/senior/bne/wallboard` routes should consume the same BNE command-board read model. They should share core product components where practical, such as aircraft card content, scorecard metrics, benchmark state, reason picker, and reason-chain drawer. Route-specific layout wrappers should handle the ergonomic differences:
+
+- `/senior/bne`: optimized for active desktop/laptop use, pointer interaction, drawer work, reason updates, and scenario controls.
+- `/senior/bne/wallboard`: optimized for passive shared display, 16:9 composition, stable density, larger scan targets, auto-rotating benchmark emphasis, and reduced chrome.
+
 ### State Management
 
 Keep state deliberately boring for the prototype:
@@ -1457,6 +1464,8 @@ Senior Engineer command board:
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
 - `AircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, and small custom status strips.
 - `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
+- `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
+- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display and reduced chrome.
 
 Reason-chain workflow:
 
@@ -1528,7 +1537,8 @@ The first implementation slice should optimize for the value-driving Senior Engi
 First slice acceptance target:
 
 - Next.js app boots from the in-place repo.
-- `/senior/bne` is the default working surface for the Senior Engineer persona.
+- `/senior/bne` is the default desktop/laptop working surface for the Senior Engineer persona.
+- `/senior/bne/wallboard` is available as the TV-focused route using the same BNE read model.
 - HQ/Admin routes exist as stubs reachable from navigation/persona switching.
 - The Senior Engineer board is designed and verified for both 16:9 wallboard display and desktop/laptop interaction from the first slice.
 - Event-shaped BNE fixtures derive the command board read model.
@@ -1543,10 +1553,10 @@ First slice acceptance target:
 
 First-slice layout checks:
 
-- 16:9 wallboard viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
-- Desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
-- The wallboard layout can prioritize density and scanability; the desktop layout can allow scrolling, but key scorecard and active queue context must remain immediately visible.
-- Both modes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
+- `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
+- `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
+- The wallboard route can prioritize density and scanability with reduced chrome; the desktop route can allow scrolling, but key scorecard and active queue context must remain immediately visible.
+- Both routes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
 
