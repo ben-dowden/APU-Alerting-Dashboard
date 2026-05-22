@@ -226,6 +226,8 @@ Reason actions should sit inside the current-reason block, aligned with the curr
 
 The drawer-closed aircraft card state, when an APU is on, shows only the current active reason and its elapsed timer in `HH:MM` format. Previous reasons are not shown on the card. The reason chain is available only from the drawer.
 
+Fallback-derived fuel-estimate markers should not appear on the collapsed aircraft card. The card can still show the kg estimate, but the assumption-quality detail belongs in the drawer so the main board stays clean.
+
 The closest-tail row is always visible when spatial data is available. Nearby APU-running aircraft within 100 metres appear in a hover/focus tooltip from the closest-tail row or proximity icon. Tooltip content should list tail, bay, and distance from the selected aircraft:
 
 ```text
@@ -357,6 +359,12 @@ Current reason section
 - Change reason action
 - Optional note field
 
+Fuel estimate section
+- Estimated kg fuel burned
+- Equipment type
+- Burn assumption version
+- Tiny fallback charm only when the estimate uses the configured fallback rate
+
 Timeline section
 - Segment 1: category/detail, start-end, duration
 - Segment 2: category/detail, start-end, duration
@@ -368,6 +376,8 @@ Telemetry section, admin/HQ only if shown
 ```
 
 Normal Senior Engineer users can see the chain and add a note to the current segment. They can correct the category/detail on a previous segment only through a restrained `Correct reason` action. They cannot edit start/end times.
+
+If the fuel estimate uses a fallback rate because the equipment type did not match an active burn assumption, show a tiny charm beside the drawer's kg estimate. The charm should be visually quiet, support hover/focus, and use a tooltip such as `Fuel estimate uses fallback burn rate because no active equipment-type assumption matched this aircraft`. Do not show this charm on the collapsed card.
 
 Closed APU events show the drawer in read-only mode for normal users. The reason chain is locked when the APU-off message arrives.
 
@@ -526,7 +536,7 @@ Validation rules:
 
 - Each active equipment type should have one active burn-rate assumption for the relevant effective period.
 - The table should warn when an equipment type used by current aircraft has no active burn-rate assumption.
-- If the app uses the configured fallback rate for an unknown equipment type, the UI and export should mark that estimate as fallback-derived.
+- If the app uses the configured fallback rate for an unknown equipment type, the aircraft drawer, HQ reporting, and export data should mark that estimate as fallback-derived.
 
 HQ reports should show the active fuel price assumption used for dollar conversion and the active fuel-burn calculation version or assumption set used for estimated kg.
 
@@ -1078,7 +1088,7 @@ Reason-tagged burn allocation:
 - When the APU-off event arrives, the current segment closes and the APU event is finalized.
 - Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
 - Estimated fuel kg should use the active configured equipment-type fuel-burn calculation assumption and store the calculation version or assumption set used.
-- If an APU event's aircraft equipment type cannot be matched to an active burn-rate assumption, the system should use the configured fallback rate and mark the estimate as fallback-derived in the UI, HQ reporting, and export data.
+- If an APU event's aircraft equipment type cannot be matched to an active burn-rate assumption, the system should use the configured fallback rate and mark the estimate as fallback-derived in the aircraft drawer, HQ reporting, and export data.
 
 Unattributed burn is a first-class reporting bucket. Reporting should not hide unattributed APU burn or exclude it from totals. The system should also show attribution coverage as a headline quality metric:
 
