@@ -208,9 +208,9 @@ Desktop and wallboard cards should use shared aircraft-card content and a shared
 
 - `AircraftCardContent`: shared presentational subparts and field formatting for tail, equipment, bay, APU state, current reason, timers, fuel estimate, proximity summary, and source charms.
 - `DesktopAircraftCard`: active workflow wrapper for `/senior/bne`; includes reason actions, drawer trigger, manual APU-off, data issue flagging, and pointer-focused density.
-- `WallboardAircraftCard`: passive display wrapper for `/senior/bne/wallboard`; uses the same content/read model but increases card size, spacing, and typography for a 70-inch display.
+- `WallboardAircraftCard`: passive display wrapper for `/senior/bne/wallboard`; uses the same content/read model and near-parity visible facts, but increases card size, spacing, and typography for a 70-inch display.
 
-The wallboard card is allowed to drop secondary detail to protect readability. It should keep the high-signal operating facts: tail, equipment type, bay, APU on/off state, current reason and `HH:MM` timer, APU elapsed time, estimated kg fuel, and closest-tail/proximity summary. It may suppress long stand descriptions, detailed source/freshness labels, fallback-fuel assumption markers, action areas, and other drawer-only detail. Source/freshness can remain as compact charms only when they do not compete with the operational state.
+The wallboard card should keep nearly all desktop aircraft facts visible, but render them larger and non-interactive. It should include tail, equipment type, bay/stand context, APU state, APU runtime, total ground time, estimated kg fuel, ground service availability when known, closest tail and distance, current reason and `HH:MM` timer, review due state, and compact source/freshness charms where useful. The main difference from the desktop card is interaction, not information: remove reason action buttons, drawer triggers, manual APU-off action, data issue action, editable notes, QR/deep links, and other workflow affordances. Drawer-only detail, such as the full reason timeline and fallback fuel-assumption explanation, remains out of the wallboard card.
 
 Wallboard typography should be visibly larger than the desktop card without using viewport-width font scaling. Use fixed responsive Tailwind sizes so the tail, status, and current-reason timer can be read at TV distance, while preserving stable card dimensions and preventing timer/reason text from shifting the board.
 
@@ -1488,7 +1488,7 @@ Senior Engineer command board:
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
 - `AircraftCardContent`: shared aircraft-card content and formatting helpers consumed by both desktop and wallboard cards.
 - `DesktopAircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, reason actions, drawer trigger, and small custom status strips.
-- `WallboardAircraftCard`: shadcn `Card` composed from shared card content, using larger typography, reduced secondary detail, passive state display, and no action controls.
+- `WallboardAircraftCard`: shadcn `Card` composed from shared card content, using larger typography, near-parity visible facts, passive state display, and no action controls.
 - `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
 - `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
 - `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only large-format passive card status display with no drawer or overlay.
@@ -1574,7 +1574,7 @@ First slice acceptance target:
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
 - Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
-- Wallboard aircraft cards use larger typography and may drop secondary details to remain readable on a 70-inch display.
+- Wallboard aircraft cards use larger typography and retain nearly all desktop-visible aircraft facts while removing action controls and drawer-only detail.
 - Reason capture uses the shadcn popover two-click category/detail flow.
 - On `/senior/bne`, the reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
 - On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
@@ -1586,7 +1586,7 @@ First-slice layout checks:
 - `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
 - `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
 - The wallboard route can prioritize density and scanability with reduced chrome; the desktop route can allow scrolling, but key scorecard and active queue context must remain immediately visible.
-- Wallboard aircraft card typography, spacing, and suppressed-detail choices must be verified visually so the cards read as deliberate TV cards, not enlarged desktop cards.
+- Wallboard aircraft card typography, spacing, and content parity must be verified visually so the cards read as deliberate TV cards, not cramped or merely enlarged desktop cards.
 - Both routes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
@@ -1598,7 +1598,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
-- Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and suppressed-detail checks.
+- Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
 The implementation should keep the prototype mock-driven while making the mock layer look like the future integration layer.
