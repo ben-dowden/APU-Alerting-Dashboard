@@ -6,6 +6,8 @@
 
 **Architecture:** Keep all event contracts and fixtures independent of React. Use `lib/events` for event types and guards, `lib/fixtures` for scenario data, and tests that validate every fixture can be replayed by later reducers.
 
+**Carry-Forward From PR 01:** PR 01 introduced the active Next.js runtime, `next-env.d.ts`, Vitest alias/runtime config, and a foundation-only `AppShell` sidebar. If Vitest cannot resolve setup files through the `New project/APU Alerting Dashboard` junction, run commands from the resolved repo path at `C:\Users\DOWDENR\OneDrive - Virgin Australia Airlines Pty Ltd\Documents\APU Alerting Dashboard`. Do not revert the Next-generated TypeScript support. Do not spend PR 02 scope on replacing the large sidebar; that UX correction is explicitly scheduled for PR 04 when the Senior Engineer command board replaces the stub.
+
 **Tech Stack:** TypeScript, Vitest, Next.js project layout from PR 01.
 
 ---

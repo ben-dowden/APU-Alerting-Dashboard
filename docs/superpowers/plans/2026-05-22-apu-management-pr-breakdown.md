@@ -10,13 +10,15 @@
 
 ## PR Sequence And Gates
 
-1. **PR 01: Next.js Foundation And Design System**
+1. **PR 01: Next.js Foundation And Design System** - **Merged 2026-05-22 via `df54f4e`**
    - Creates the active Next.js shell, Tailwind tokens, shadcn-style primitives, route stubs, and persona-visible app shell.
    - Gate: `/senior/bne` exists as the default route target, but remains a stub.
+   - Follow-up: the large PR 01 left-hand sidebar is foundation-only and is not the desired product navigation. PR 04 must remove it from the Senior Engineer surface and replace page navigation with a far more discreet pattern.
 
 2. **PR 02: Event Contracts And Scenario Fixtures**
    - Creates source/domain event contracts and BNE event-shaped scenario packs.
    - Gate: fixtures validate independently of React.
+   - Carry-forward from PR 01: run commands from the resolved repo path if Vitest path resolution behaves strangely through the workspace junction, keep the Next-generated TypeScript support intact, and avoid spending PR 02 effort on the foundation sidebar because the navigation correction is explicitly planned for PR 04.
 
 3. **PR 03: Reducers And Read-Model Foundation**
    - Converts event-shaped fixtures into current board state, cards, scorecards, benchmarks, burn rows, and diagnostics.
