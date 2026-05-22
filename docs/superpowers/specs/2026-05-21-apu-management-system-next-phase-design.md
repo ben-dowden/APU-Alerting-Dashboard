@@ -730,6 +730,61 @@ The system should carry source and confidence metadata for location-like fields:
 
 If real integration cannot prove live position, the UI should continue to use stand assignment language and should not introduce a map or digital twin view.
 
+## Data Quality And Staleness UX
+
+When source events are missing, late, stale, or low-confidence, the app should continue to show useful operational cards where possible. It should not suppress aircraft simply because one field is uncertain. Instead, uncertainty should be represented at the field level using compact charms and tooltips.
+
+Data-quality behaviour should be governed by rules per source:
+
+- ACMS/APU state freshness rules
+- Flight-state/OOOI freshness rules
+- Stand assignment freshness rules
+- Weather observation freshness rules
+- Reason-chain workflow freshness rules
+
+The Senior Engineer UI should use compact charms, icons, and hover/focus tooltips rather than large warning banners. Examples:
+
+```text
+Stand: Bay 43  [?]
+APU: On 1h24m  [stale]
+Closest tail: VH-YIB · 42m  [?]
+BNE 31°C  [updated 12m ago]
+```
+
+Charm examples:
+
+- `?`: source meaning or confidence is limited
+- Clock/stale icon: source event is older than the freshness threshold
+- Link/broken-link icon: correlation is incomplete
+- Dot status: fresh, stale, or unknown state
+
+Tooltip examples:
+
+```text
+Stand assignment from iFIDS. This is assigned stand, not live aircraft position.
+```
+
+```text
+Last ACMS APU event received 28 minutes ago. APU off has not been confirmed.
+```
+
+```text
+Closest-tail distance is calculated from stand coordinates, not live aircraft movement.
+```
+
+```text
+Temperature from latest BNE observation, updated 12 minutes ago.
+```
+
+The UI should distinguish between:
+
+- Unknown: no source value is available.
+- Stale: a previous value exists but is outside the freshness threshold.
+- Low confidence: a value exists, but the source meaning is limited.
+- Conflicting: sources disagree and the derived state uses a precedence rule.
+
+Detailed data-quality diagnostics belong in tooltips, drawers, or admin/HQ diagnostics. The main Senior Engineer board should stay compact and calm.
+
 ## Event-Sourced Integration Direction
 
 The future real-data architecture should be event-sourced. Operational source systems should publish events onto Kafka topics or equivalent enterprise streaming infrastructure. The APU Management System should consume those topics and derive its current read models from the event history.
