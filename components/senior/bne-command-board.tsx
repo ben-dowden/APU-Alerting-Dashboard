@@ -10,6 +10,7 @@ import {
 } from "@/lib/read-models";
 
 import { CommandBar } from "./command-bar";
+import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -70,26 +71,7 @@ export function BneCommandBoard() {
       />
 
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Board adapter preview">
-          <div className="rounded-product border border-neutral-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">APU on now</p>
-            <p className="mt-2 text-2xl font-semibold">{scorecard.activeApuCount}</p>
-          </div>
-          <div className="rounded-product border border-neutral-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Runtime today</p>
-            <p className="mt-2 text-2xl font-semibold">{scorecard.runtimeMinutesToday} min</p>
-          </div>
-          <div className="rounded-product border border-neutral-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Fuel burned today</p>
-            <p className="mt-2 text-2xl font-semibold">{scorecard.estimatedFuelKgToday} kg</p>
-          </div>
-          <div className="rounded-product border border-neutral-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Active benchmark</p>
-            <p className="mt-2 text-2xl font-semibold">
-              {benchmarkPanel.activeComparison.temperatureBandLabel}
-            </p>
-          </div>
-        </section>
+        <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
       </main>
     </div>
   );

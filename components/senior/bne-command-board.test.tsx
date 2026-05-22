@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { BneCommandBoard } from "./bne-command-board";
@@ -18,5 +19,29 @@ describe("BneCommandBoard", () => {
       "href",
       "/senior/bne/wallboard",
     );
+  });
+
+  it("renders the scorecard and default similar-temperature benchmark without dollars", () => {
+    render(<BneCommandBoard />);
+
+    const scorecard = screen.getByRole("region", { name: "Daily scorecard" });
+    expect(within(scorecard).getAllByTestId("scorecard-label").map((label) => label.textContent)).toEqual([
+      "APU on now",
+      "Runtime today",
+      "Fuel burned today",
+      "Attributed runtime",
+    ]);
+
+    const benchmark = screen.getByRole("region", { name: "Benchmark comparison" });
+    expect(within(benchmark).getByText("Similar-temperature days")).toBeVisible();
+    expect(within(benchmark).getByText("23-25°C")).toBeVisible();
+    expect(within(benchmark).queryByText("Weekly average")).not.toBeInTheDocument();
+    expect(within(benchmark).queryByText("Monthly average")).not.toBeInTheDocument();
+    expect(within(benchmark).queryByText("Annual average")).not.toBeInTheDocument();
+
+    const benchmarkText = benchmark.textContent ?? "";
+    expect(benchmarkText.indexOf("+15.9 kg")).toBeLessThan(benchmarkText.indexOf("+8 min"));
+    expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/AUD/i)).not.toBeInTheDocument();
   });
 });
