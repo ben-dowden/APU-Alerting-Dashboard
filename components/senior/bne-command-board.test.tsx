@@ -64,4 +64,25 @@ describe("BneCommandBoard", () => {
     expect(within(card).getByText("Closest tail pending")).toBeVisible();
     expect(within(board).queryByRole("button", { name: /reason|manual|drawer/i })).not.toBeInTheDocument();
   });
+
+  it("renders the ground aircraft side table", () => {
+    render(<BneCommandBoard />);
+
+    const table = screen.getByRole("table", { name: "Ground aircraft side table" });
+
+    expect(within(table).getByText("VH-8IA")).toBeVisible();
+    expect(within(table).getByText("Bay 20")).toBeVisible();
+    expect(within(table).getByText("On")).toBeVisible();
+    expect(within(table).getByText("46 min")).toBeVisible();
+    expect(within(table).getByText("55 min")).toBeVisible();
+    expect(within(table).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(table).getByRole("button", { name: "Focus VH-8IA" })).toHaveAttribute(
+      "data-focus-tail",
+      "VH-8IA",
+    );
+
+    expect(within(table).getByText("VH-YFX")).toBeVisible();
+    expect(within(table).getByText("Off")).toBeVisible();
+    expect(within(table).getByText("APU off")).toBeVisible();
+  });
 });
