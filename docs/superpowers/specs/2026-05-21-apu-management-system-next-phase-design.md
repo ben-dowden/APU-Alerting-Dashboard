@@ -966,6 +966,33 @@ The future integration posture is:
 
 The app should not depend on write-back into an external operational system for v1 feasibility. Write-back may be useful later, but it is not required to prove the Senior Engineer workflow.
 
+## Event And Reporting Consumers
+
+The first consumers of APU Management System data should be both internal and enterprise-facing:
+
+1. HQ views inside the APU app consume the app's own derived read models.
+2. EDP/data platform receives published events or reason-tagged burn datasets for broader reporting and analysis.
+
+This means the app does not need to wait for EDP to build every report before HQ users can see useful monitoring views. It also means the app should not become a reporting silo. Events and datasets should be clean enough for EDP, SQL, or other enterprise consumers to reuse.
+
+Internal app consumers:
+
+- HQ Viewer dashboard
+- HQ Admin settings and diagnostics
+- Data-quality flags section
+- Lightweight reason/burn reports
+- Prototype XLSX exports
+
+Enterprise consumers:
+
+- EDP/data platform
+- SQL/reporting tables or views
+- Enterprise dashboards
+- Product/process analytics
+- Future operational consumers that may use reason-chain events
+
+The app read model and the published dataset do not need to be identical, but they must reconcile. A reason-tagged burn total shown in the HQ app should match the exported or published reason-tagged burn dataset for the same filters, source assumptions, and fuel-burn calculation version.
+
 ## MVP Real-Integrated Backend Requirements
 
 The first real-integrated version does not need a full enterprise reporting backend, but it must do more than show a live board. It must persist the APU app-owned workflow events and produce a reason-tagged APU burn dataset.
