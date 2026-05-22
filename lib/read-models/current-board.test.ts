@@ -81,6 +81,51 @@ describe("deriveCurrentBoard", () => {
     expect(board.groundAircraft.map((aircraft) => aircraft.tail)).not.toContain("VH-FUT");
   });
 
+  it("uses the latest flight state by event time instead of input order", () => {
+    const laterFlight = flightStateEvent({
+      tail: "VH-ORD",
+      flightNumber: "VA102",
+      aircraftType: "B737-800",
+      arrivalFlightNumber: "VA101",
+      departureFlightNumber: "VA102",
+      origin: "SYD",
+      destination: "BNE",
+      gateState: "turnaround",
+      onGroundAt: "2026-05-22T08:20:00.000Z",
+      occurredAt: "2026-05-22T08:50:00.000Z",
+      receivedAt: "2026-05-22T08:50:30.000Z",
+      sourceEventId: "BNE-FLIGHT-VHORD-0850",
+    });
+    const earlierFlight = flightStateEvent({
+      tail: "VH-ORD",
+      flightNumber: "VA101",
+      aircraftType: "B737-800",
+      arrivalFlightNumber: "VA101",
+      departureFlightNumber: "VA102",
+      origin: "SYD",
+      destination: "BNE",
+      gateState: "arrived",
+      onGroundAt: "2026-05-22T08:20:00.000Z",
+      occurredAt: "2026-05-22T08:20:00.000Z",
+      receivedAt: "2026-05-22T08:20:30.000Z",
+      sourceEventId: "BNE-FLIGHT-VHORD-0820",
+    });
+
+    const board = deriveCurrentBoard(
+      [laterFlight, earlierFlight],
+      settings,
+      "2026-05-22T08:55:00.000Z",
+    );
+
+    expect(board.groundAircraft).toEqual([
+      expect.objectContaining({
+        tail: "VH-ORD",
+        flightNumber: "VA102",
+        gateState: "turnaround",
+      }),
+    ]);
+  });
+
   it("keeps APU-off aircraft calm and visible", () => {
     const board = deriveCurrentBoard(
       bneBaselineScenario.events,
