@@ -613,7 +613,41 @@ The Senior Engineer workflow consumes this configuration. The taxonomy should no
 
 HQ Admin should have a simple settings area, not a complex enterprise configuration suite.
 
-Settings navigation should include:
+The HQ/Admin surface should be an Admin Workbench: a desktop-first back-office area for governed configuration, lightweight reporting previews, and source-data diagnostics. It does not need TV optimisation, gamification, or rich storytelling. It should feel functional, dense, and predictable.
+
+Admin Workbench layout:
+
+- Left navigation rail for admin/reporting sections.
+- Top page header with title, short description, active scope such as `Global default` or `BNE override`, and last updated metadata where relevant.
+- Main content area with one primary table or form per page.
+- Optional right-side or lower preview panel only when a setting affects operational output.
+- Sticky footer or header action row with `Save changes`, `Discard`, and `Reset default` where relevant.
+
+The admin navigation should include:
+
+- Overview
+- Reports
+- Data quality
+- Reasons
+- Fuel
+- Urgency ranking
+- Reference data
+- Persona/role preview for the POC
+
+The workbench overview should be a compact status page, not a dashboard competing with HQ reporting. It should show the active reason-set version, review interval default, fuel price assumption, fuel-burn assumption version, ranking settings version, recent data-quality flag count, and last mock data refresh. Each status row links to the relevant admin page.
+
+Admin screens should use explicit save behaviour. Field edits are staged in the form/table until the user saves. Saving performs validation, updates the active mock/settings state, and shows a compact success or validation alert. Discard returns the screen to the last saved state. Destructive actions such as deactivating a category or resetting defaults can use a confirmation dialog; ordinary edits should not.
+
+Where settings affect outputs, show a small preview using the current BNE mock/read model:
+
+- Reason changes preview the two-click reason picker shape.
+- Review interval changes preview which current aircraft would become review due.
+- Fuel assumptions preview estimated kg changes and fallback markers.
+- Urgency weights preview the current BNE board order.
+
+These previews are guardrails only. They should not become scenario comparison suites, forecast tools, or full reporting dashboards.
+
+Settings pages inside the workbench should include:
 
 - Reason taxonomy
 - Port overrides
@@ -1511,6 +1545,7 @@ Primary routes:
 - `/hq`: HQ monitoring overview.
 - `/hq/reports`: lightweight reporting and reason-tagged burn export surface.
 - `/hq/data-quality`: source/freshness/mismatch/data-quality telemetry.
+- `/admin`: Admin Workbench overview.
 - `/admin/reasons`: governed reason taxonomy and review intervals.
 - `/admin/fuel`: fuel price and equipment-type burn assumptions.
 - `/admin/urgency`: urgency-ranking tiebreaker weights and ranking preview.
@@ -1713,9 +1748,17 @@ HQ views:
 - Trends and reason breakdown: chart component if added, otherwise custom SVG or table-first views.
 - Data-quality flags: shadcn `Table`, `Badge`, `Tooltip`, `Select`, and `Tabs`.
 - Filters: `Select`, `Popover` plus `Calendar` for date range if date selection is needed.
+- `HQReportsOverview`: compact reporting page with KPI cards, assumption metadata, reason breakdown, and export action. Keep it table-first unless a simple chart adds clear value.
+- `DataQualityFlagsTable`: shadcn `Table` with filters for port, source, issue type, status, and recency. Use `Badge` for stale/conflicting/fallback states and `Tooltip` for source context.
+- `DataQualityFlagDetailPanel`: inline right-side detail region or below-table disclosure showing tail, bay, source metadata, user note, and related event ids. Avoid a heavy modal for normal review.
 
 Admin settings:
 
+- `AdminWorkbenchLayout`: desktop-first back-office layout with left navigation rail, page header, dense content region, and save/discard action area.
+- `AdminOverviewStatusList`: compact list of active configuration versions, recent data-quality count, fuel price, burn assumption version, and ranking version.
+- `AdminPageHeader`: title, short description, scope badge, last-updated metadata, and optional help tooltip.
+- `AdminActionBar`: sticky save/discard/reset actions with validation state. Purple primary `Save changes`; ghost/outline for secondary actions.
+- `AdminPreviewPanel`: small read-only preview for current BNE mock impact, used only where settings affect operational output.
 - Reason taxonomy: shadcn `Table` or `Data Table` pattern for categories, with a side editor using `Input`, `Switch`, `Select`, `Button`, and `Alert` for validation.
 - Fuel assumptions: shadcn `Table` for equipment-type burn assumptions; `Input` for kg/min and fuel price; `Switch` for active state; `Badge` for fallback/default rows.
 - Urgency ranking: shadcn `Table` for editable tiebreaker weights; `Input` or `Slider` for weight values; `Alert` for validation; `Button` for reset defaults; preview table using only the current BNE board/current mock board order.
@@ -1791,6 +1834,19 @@ First slice acceptance target:
 - On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card and uses red/green APU state chips plus compact reason signals.
 - On `/senior/bne/wallboard`, the ground-aircraft side index is passive, enlarged for TV readability, and preserves the same APU chip/reason-signal meaning.
 
+Secondary HQ/Admin acceptance target:
+
+- `/hq` provides a functional reporting overview for HQ Viewer and HQ Admin personas, with filters, KPI cards, location table, reason breakdown, assumption metadata, and export action.
+- HQ reports show both kg fuel and dollar conversion where relevant, and always expose the fuel price and fuel-burn assumption version used.
+- `/hq/data-quality` provides a data-quality flags table with filters, source/status badges, compact telemetry, and a detail panel for source context, user note, and related event ids.
+- `/admin` provides the Admin Workbench overview with active configuration versions, current defaults, recent data-quality flag count, and links to settings pages.
+- `/admin/reasons` supports reason category/detail maintenance, four-active-detail validation, review interval defaults/overrides, active state, ordering, and a fast-capture preview.
+- `/admin/fuel` supports fuel price and equipment-type burn assumptions, including fallback rate, active version metadata, validation, and preview of estimated kg impact on the current BNE mock board.
+- `/admin/urgency` supports editable global tiebreaker weights inside the fixed bucket order, validation, reset defaults, and preview of current BNE board ranking.
+- `/admin/reference-data` supports simple tail/equipment and stand-coordinate tables sufficient for prototype diagnostics and proximity calculations.
+- Admin edits use staged form/table changes with explicit save, discard, validation, and compact success/error feedback.
+- HQ/Admin screens are desktop-first, table-first, and functionally plain. They do not need TV mode, card gamification, animated work queues, or rich BI exploration in the prototype.
+
 First-slice layout checks:
 
 - `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, enlarged scorecard/benchmark band, two-card carousel stage, carousel page marker, and enlarged side index visible without awkward crowding.
@@ -1809,6 +1865,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
 - Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, scorecard metric order, scorecard one-helper-line limit, benchmark fuel-kg hero delta with runtime secondary delta, ground-aircraft red `On` and green `Off` APU chips, reason signal category plus review marker behaviour, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, fixed-frame wallboard behaviour where only the aircraft carousel stage changes pages, wallboard carousel rotation, `[X of Y]` carousel page marker visibility and scheduled updates, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for Admin Workbench navigation, page headers, staged save/discard behaviour, validation alerts, reason taxonomy four-detail maximum, review-interval preview, fuel assumption fallback warnings, fuel kg preview, urgency ranking preview, HQ report assumption metadata, data-quality flag filtering, and data-quality detail panel rendering.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
