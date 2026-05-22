@@ -75,25 +75,30 @@ Benchmark deltas show exact absolute and percentage values. The Senior Engineer 
 
 ### Command Board Layout Details
 
-Target the primary wallboard layout at 16:9 widescreen. The board should fill the available viewport without requiring vertical scrolling for the first page of active aircraft on a 70-inch display. Desktop and laptop users may scroll, but the top scorecard and active queue should remain immediately visible.
+Target the primary wallboard layout at 16:9 widescreen. The board should fill the available viewport without vertical scrolling. Desktop and laptop users may scroll, but the wallboard route should behave like a staged information screen rather than a scrollable dashboard.
 
 Use this hierarchy:
 
 ```text
 Header: 60-72px
-Scorecard row: 96-116px
-Benchmark panel: 64-82px
+Scorecard and benchmark band: 180-240px
 Main content: remaining height
 ```
 
-Main content uses two regions:
+The wallboard scorecard/benchmark band should be visually larger than the desktop version. Topline metric numbers should be readable at TV distance and can take more vertical space than a laptop dashboard would normally allow. The benchmark rotator remains directly connected to the scorecard band so the screen still feels like one command board, not a pile of separate widgets.
+
+Wallboard main content uses two regions:
 
 ```text
-Aircraft board: flexible width
-Ground aircraft table: 300-360px fixed rail
+Aircraft carousel stage: flexible width, one row, two large cards per page
+Ground aircraft index rail: 380-460px fixed rail
 ```
 
-At large widescreen widths, the aircraft board can use three card columns if each card can remain at least 340px wide. At normal desktop widths, use two columns. At narrow widths, collapse to one column and move the side table below the card board.
+The wallboard aircraft stage should show one row with two large aircraft cards. If more active cards exist, the stage rotates through carousel pages in urgency order. The carousel should use calm motion, such as a quick fade or short horizontal slide around 180-220ms, and should avoid attention-grabbing animation. A prototype default of about 10 seconds per page is appropriate unless testing shows the room needs a slower cadence.
+
+The wallboard side index should stay visible at all times and should be large enough to function as the full aircraft inventory. It should list all BNE ground aircraft, including APU-off aircraft, with enlarged row height and text compared with the desktop side table. This prevents the carousel from hiding the existence of other aircraft while still letting the main cards breathe.
+
+Desktop layout can keep the denser board behaviour: at large widescreen widths, the aircraft board can use three card columns if each card can remain at least 340px wide. At normal desktop widths, use two columns. At narrow widths, collapse to one column and move the side table below the card board.
 
 The header contains:
 
@@ -129,6 +134,8 @@ Metric helper text examples:
 - `Estimated from runtime`
 - `Current reason-chain coverage`
 
+On the wallboard route, these four scorecard metrics should be visually amplified: larger numbers, stronger status icons, and enough spacing that each metric can be read from across the room. The wallboard should not shrink the metrics to make room for more aircraft cards; the side index and carousel carry the aircraft density.
+
 The benchmark panel is a single horizontal band below the scorecard. It shows:
 
 ```text
@@ -137,7 +144,7 @@ Similar-temp benchmark
 [Similar temp] [Week] [Month] [Year]
 ```
 
-On wallboard mode, the active benchmark segment changes every five seconds. The active segment should be indicated by the purple selected state and a subtle progress bar along the bottom edge of the selected chip. Manual selection pauses the loop; after 20 seconds of no benchmark interaction, cycling resumes.
+On wallboard mode, the active benchmark segment changes every five seconds. The active segment should be indicated by the purple selected state and a subtle progress bar along the bottom edge of the selected chip. Manual benchmark selection and pause/resume behaviour belong to the desktop route only.
 
 Use colour semantics for deltas:
 
@@ -1357,7 +1364,7 @@ Use Server Components for surfaces that can be derived from fixtures, settings, 
 
 Use Client Components for the operational interaction layer:
 
-- Wallboard timer and benchmark rotation
+- Wallboard timer, benchmark rotation, and aircraft carousel rotation
 - Urgency-sorted aircraft board with subtle movement animation
 - Reason picker popover
 - Reason-chain drawer
@@ -1434,7 +1441,7 @@ The wallboard route may show current reason state, review due state, manual-off 
 Keep state deliberately boring for the prototype:
 
 - Server-side fixture/read-model loading for initial data.
-- Small client context or hooks for scenario replay, persona selection, route-scoped selected-aircraft focus, desktop-only drawer open state, and benchmark rotation.
+- Small client context or hooks for scenario replay, persona selection, route-scoped selected-aircraft focus, desktop-only drawer open state, benchmark rotation, and wallboard carousel rotation.
 - URL search params for shareable prototype scenario/role state where useful.
 - Local storage only for POC persona/scenario preferences and mock reason-chain persistence if needed.
 
@@ -1486,6 +1493,7 @@ Senior Engineer command board:
 - `ScorecardStrip`: repeated shadcn `Card` or custom metric panels; use cards only for individual KPI panels.
 - `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection plus a client timer for 5-second auto-rotation.
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
+- `WallboardAircraftCarousel`: large-format carousel stage for `/senior/bne/wallboard`; one row, two aircraft cards per page, rotating through urgency-sorted aircraft while the side index remains visible.
 - `AircraftCardContent`: shared aircraft-card content and formatting helpers consumed by both desktop and wallboard cards.
 - `DesktopAircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, reason actions, drawer trigger, and small custom status strips.
 - `WallboardAircraftCard`: shadcn `Card` composed from shared card content, using larger typography, near-parity visible facts, passive state display, and no action controls.
@@ -1575,17 +1583,21 @@ First slice acceptance target:
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
 - Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
 - Wallboard aircraft cards use larger typography and retain nearly all desktop-visible aircraft facts while removing action controls and drawer-only detail.
+- `/senior/bne/wallboard` uses a two-card carousel stage for large aircraft cards when the active set exceeds two visible cards.
+- `/senior/bne/wallboard` uses an enlarged side index that keeps all BNE ground aircraft visible while the card carousel rotates.
+- `/senior/bne/wallboard` amplifies the topline scorecard metrics and benchmark band rather than shrinking them to fit more aircraft cards.
 - Reason capture uses the shadcn popover two-click category/detail flow.
 - On `/senior/bne`, the reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
 - On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
 - Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
-- Ground-aircraft side table can focus the selected aircraft card.
+- On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card.
+- On `/senior/bne/wallboard`, the ground-aircraft side index is passive and enlarged for TV readability.
 
 First-slice layout checks:
 
-- `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
+- `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, enlarged scorecard/benchmark band, two-card carousel stage, and enlarged side index visible without awkward crowding.
 - `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
-- The wallboard route can prioritize density and scanability with reduced chrome; the desktop route can allow scrolling, but key scorecard and active queue context must remain immediately visible.
+- The wallboard route can prioritize scanability with reduced chrome; the side index preserves full aircraft context while the carousel stages two large cards at a time.
 - Wallboard aircraft card typography, spacing, and content parity must be verified visually so the cards read as deliberate TV cards, not cramped or merely enlarged desktop cards.
 - Both routes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
 
@@ -1597,7 +1609,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
-- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, wallboard carousel rotation, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
