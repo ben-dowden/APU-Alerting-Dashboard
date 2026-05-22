@@ -506,7 +506,7 @@ Fuel price screen:
 
 Fuel-burn calculation screen:
 
-- Editable fuel-burn assumptions table by aircraft equipment type
+- Lightweight fuel-burn assumptions table or listing by aircraft equipment type
 - Equipment type code, such as `B738`, `B737`, or `B38M`
 - Equipment type label, such as `737-800`
 - APU fuel-burn rate assumption used for estimated kg calculations
@@ -514,16 +514,19 @@ Fuel-burn calculation screen:
 - Effective from date
 - Calculation version label or assumption set version
 - Active/inactive state
+- Configured fallback rate for unmatched equipment types
 - Source/note
 - Last updated by/persona in POC
 
-The fuel-burn assumptions table should be simple and spreadsheet-like. HQ/Admin users should be able to add, edit, deactivate, and reorder or filter rows, but the MVP does not need advanced model governance.
+The prototype should include enough equipment-type specificity to distinguish likely material differences, especially 737 MAX 8 / MAX 10 aircraft versus 737-800 NG aircraft. The current expectation is that the difference may be around +/- 20kg per hour, which is meaningful enough for reporting and operational insight.
+
+The prototype table should be simple and low-burden. It can be seeded/config-backed if a fully editable admin table would slow the prototype down. A richer HQ/Admin maintenance table for equipment-type assumptions is a roadmap item unless it can be delivered cheaply.
 
 Validation rules:
 
 - Each active equipment type should have one active burn-rate assumption for the relevant effective period.
 - The table should warn when an equipment type used by current aircraft has no active burn-rate assumption.
-- If the app uses a configured fallback rate for an unknown equipment type, the UI and export should mark that estimate as fallback-derived.
+- If the app uses the configured fallback rate for an unknown equipment type, the UI and export should mark that estimate as fallback-derived.
 
 HQ reports should show the active fuel price assumption used for dollar conversion and the active fuel-burn calculation version or assumption set used for estimated kg.
 
@@ -708,6 +711,7 @@ The prototype should use dummy data with realistic boundaries:
 - APU fuel-burn rate assumption
 - Unit, such as kg per minute
 - Fallback flag, if used for unknown equipment types
+- Fallback reason, such as unmatched equipment type
 - Source or note
 
 ## Real API Feasibility Discovery
@@ -1074,7 +1078,7 @@ Reason-tagged burn allocation:
 - When the APU-off event arrives, the current segment closes and the APU event is finalized.
 - Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
 - Estimated fuel kg should use the active configured equipment-type fuel-burn calculation assumption and store the calculation version or assumption set used.
-- If an APU event's aircraft equipment type cannot be matched to an active burn-rate assumption, the estimate should be marked as missing or fallback-derived rather than silently using a hidden global value.
+- If an APU event's aircraft equipment type cannot be matched to an active burn-rate assumption, the system should use the configured fallback rate and mark the estimate as fallback-derived in the UI, HQ reporting, and export data.
 
 Unattributed burn is a first-class reporting bucket. Reporting should not hide unattributed APU burn or exclude it from totals. The system should also show attribution coverage as a headline quality metric:
 
@@ -1115,6 +1119,7 @@ The minimum reason-tagged burn dataset should include:
 - Fuel-burn rate assumption used
 - Fuel-burn assumption id
 - Fuel-burn assumption fallback flag
+- Fuel-burn assumption fallback reason
 - Reason category id and label
 - Reason detail id and label
 - Attributed/unattributed flag
@@ -1140,6 +1145,7 @@ Not required for MVP:
 - Historical rebuild UI
 - Advanced report scheduling
 - Enterprise admin analytics dashboards
+- Full equipment fuel-burn model governance or advanced assumption maintenance workflow
 
 These may be future-state capabilities, but v1 feasibility is satisfied when the system can create a credible reason-tagged burn dataset and export or publish it through at least one practical path.
 
