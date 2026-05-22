@@ -6,7 +6,7 @@
 
 **Architecture:** Keep this PR focused on platform foundation only. The new active app lives under `app/`, shared UI primitives live under `components/ui/`, and old `src/` Vite code remains in the repo as reference but is no longer reached by package scripts.
 
-**Tech Stack:** Next.js App Router, React 19, TypeScript, Tailwind CSS, Vitest, Testing Library, lucide-react.
+**Tech Stack:** Next.js App Router, React 19, TypeScript, Tailwind CSS, Vitest, Testing Library, lucide-react, class-variance-authority, clsx, tailwind-merge.
 
 ---
 
@@ -18,6 +18,7 @@
 - Create: `next.config.mjs`.
 - Create: `postcss.config.mjs`.
 - Create: `tailwind.config.ts`.
+- Create: `components.json`.
 - Create: `app/layout.tsx`, `app/page.tsx`, `app/globals.css`.
 - Create: `app/senior/bne/page.tsx`, `app/senior/bne/wallboard/page.tsx`.
 - Create: `app/hq/page.tsx`, `app/hq/reports/page.tsx`, `app/hq/data-quality/page.tsx`.
@@ -40,11 +41,11 @@
 Run:
 
 ```bash
-npm install next tailwindcss postcss autoprefixer
+npm install next tailwindcss postcss autoprefixer class-variance-authority clsx tailwind-merge
 npm install -D @testing-library/react @testing-library/jest-dom jsdom
 ```
 
-Expected: `next`, `tailwindcss`, `postcss`, and `autoprefixer` appear in dependencies or devDependencies, and Testing Library packages appear in devDependencies.
+Expected: `next`, `tailwindcss`, `postcss`, `autoprefixer`, `class-variance-authority`, `clsx`, and `tailwind-merge` appear in dependencies or devDependencies, and Testing Library packages appear in devDependencies.
 
 - [ ] **Step 2: Replace package scripts**
 
@@ -79,6 +80,7 @@ git commit -m chore-add-nextjs-foundation-dependencies
 - Create: `next.config.mjs`
 - Create: `postcss.config.mjs`
 - Create: `tailwind.config.ts`
+- Create: `components.json`
 - Create: `vitest.config.ts`
 - Create: `test/setup.ts`
 
@@ -170,6 +172,29 @@ const config: Config = {
 export default config;
 ```
 
+Create `components.json` so future shadcn additions use the same aliases and tokens:
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib"
+  }
+}
+```
+
 - [ ] **Step 3: Create Vitest config**
 
 Create `vitest.config.ts`:
@@ -197,7 +222,7 @@ import "@testing-library/jest-dom/vitest";
 Run:
 
 ```bash
-git add tsconfig.json next.config.mjs postcss.config.mjs tailwind.config.ts vitest.config.ts test/setup.ts
+git add tsconfig.json next.config.mjs postcss.config.mjs tailwind.config.ts components.json vitest.config.ts test/setup.ts
 git commit -m chore-configure-next-tailwind-tests
 ```
 
@@ -213,12 +238,15 @@ git commit -m chore-configure-next-tailwind-tests
 Create `lib/utils/cn.ts`:
 
 ```ts
-export function cn(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(" ");
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
 ```
 
-Create `components/ui/button.tsx`, `components/ui/badge.tsx`, and `components/ui/card.tsx` as minimal typed wrappers using `cn`, Virgin purple/red/neutral variants, and 6-8px radius. Export `Button`, `Badge`, `Card`, `CardHeader`, `CardContent`, and `CardTitle`.
+Create `components/ui/button.tsx`, `components/ui/badge.tsx`, and `components/ui/card.tsx` as shadcn-style typed wrappers using `cn`, `class-variance-authority`, Virgin purple/red/neutral variants, and 6-8px radius. Export `Button`, `Badge`, `Card`, `CardHeader`, `CardContent`, and `CardTitle`. Keep these primitives composable; product-specific intent belongs in variants or consuming components, not one-off inline class strings.
 
 - [ ] **Step 2: Create layout and global styles**
 
@@ -255,16 +283,16 @@ Create `components/app/app-shell.tsx` with a left nav linking to `/senior/bne`, 
 Each route page should render `AppShell` plus `RouteStub`. Use these titles:
 
 ```text
-/ senior/bne: BNE APU Command Board
-/ senior/bne/wallboard: BNE Wallboard
-/ hq: HQ Monitoring
-/ hq/reports: HQ Reports
-/ hq/data-quality: Data Quality
-/ admin: Admin Workbench
-/ admin/reasons: Reason Settings
-/ admin/fuel: Fuel Settings
-/ admin/urgency: Urgency Ranking
-/ admin/reference-data: Reference Data
+/senior/bne: BNE APU Command Board
+/senior/bne/wallboard: BNE Wallboard
+/hq: HQ Monitoring
+/hq/reports: HQ Reports
+/hq/data-quality: Data Quality
+/admin: Admin Workbench
+/admin/reasons: Reason Settings
+/admin/fuel: Fuel Settings
+/admin/urgency: Urgency Ranking
+/admin/reference-data: Reference Data
 ```
 
 Create `app/page.tsx` that redirects to `/senior/bne` using `redirect` from `next/navigation`.

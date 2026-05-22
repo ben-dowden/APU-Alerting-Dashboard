@@ -14,7 +14,7 @@
 
 - Create: `lib/events/envelope.ts`, `lib/events/source-events.ts`, `lib/events/domain-events.ts`, `lib/events/settings-events.ts`, `lib/events/guards.ts`, `lib/events/index.ts`.
 - Create: `lib/fixtures/reference/reason-taxonomy.ts`, `fuel-assumptions.ts`, `urgency-ranking.ts`, `tail-equipment.ts`, `stand-coordinates.ts`.
-- Create: `lib/fixtures/scenarios/bne-baseline.ts`, `bne-acms-lag.ts`, `bne-manual-off-confirmed.ts`, `bne-manual-off-contradicted.ts`, `bne-equipment-mismatch.ts`, `bne-missing-burn-assumption.ts`, `index.ts`.
+- Create: `lib/fixtures/scenarios/bne-baseline.ts`, `bne-acms-lag.ts`, `bne-manual-off-confirmed.ts`, `bne-manual-off-contradicted.ts`, `bne-equipment-mismatch.ts`, `bne-missing-burn-assumption.ts`, `bne-stale-stand-assignment.ts`, `index.ts`.
 - Create: `lib/fixtures/scenarios.test.ts`.
 
 ---
@@ -204,9 +204,10 @@ bne-manual-off-confirmed
 bne-manual-off-contradicted
 bne-equipment-mismatch
 bne-missing-burn-assumption
+bne-stale-stand-assignment
 ```
 
-Every event must include a populated envelope, `correlation.port`, `occurredAt`, `receivedAt`, and an idempotency key in quality or correlation metadata.
+Every event must include a populated envelope, `correlation.port`, `occurredAt`, `receivedAt`, and an idempotency key in quality or correlation metadata. `bne-stale-stand-assignment` must represent the product constraint that stand/bay context may be stale or planned, and the UI must not imply live aircraft tracking.
 
 - [ ] **Step 2: Add fixture tests**
 

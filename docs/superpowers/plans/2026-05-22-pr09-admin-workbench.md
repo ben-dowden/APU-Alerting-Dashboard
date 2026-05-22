@@ -13,7 +13,7 @@
 ## File Structure
 
 - Create: `lib/prototype/settings-event-store.ts`, `lib/prototype/admin-settings-actions.ts`.
-- Create: `components/admin/admin-workbench-layout.tsx`, `admin-overview-status-list.tsx`, `admin-action-bar.tsx`, `admin-preview-panel.tsx`.
+- Create: `components/admin/admin-workbench-layout.tsx`, `admin-overview-status-list.tsx`, `admin-action-bar.tsx`, `admin-preview-panel.tsx`, `persona-role-preview.tsx`.
 - Create: `components/admin/reason-settings-page.tsx`, `fuel-settings-page.tsx`, `urgency-settings-page.tsx`, `reference-data-page.tsx`.
 - Create: `components/hq/data-quality-flags-table.tsx`, `data-quality-flag-detail-panel.tsx`.
 - Modify: `app/admin/*/page.tsx`, `app/hq/data-quality/page.tsx`.
@@ -55,15 +55,16 @@ git commit -m feat-add-admin-settings-snapshot-store
 - Create: `components/admin/admin-overview-status-list.tsx`
 - Create: `components/admin/admin-action-bar.tsx`
 - Create: `components/admin/admin-preview-panel.tsx`
+- Create: `components/admin/persona-role-preview.tsx`
 - Modify: `app/admin/page.tsx`
 
 - [ ] **Step 1: Write tests**
 
-Assert left nav, page header, scope badge, last updated metadata, status list, and links to reasons/fuel/urgency/reference data.
+Assert left nav, page header, scope badge, last updated metadata, status list, persona/role preview, and links to reasons/fuel/urgency/reference data.
 
 - [ ] **Step 2: Implement layout**
 
-Keep the UI dense, desktop-first, and plain. Use purple primary save actions and ghost/outline secondary actions.
+Keep the UI dense, desktop-first, and plain. Use purple primary save actions and ghost/outline secondary actions. Include a small persona/role preview so the POC can demonstrate HQ Admin, HQ reporting, Senior Engineer, and future apron engineer viewpoints without building a real auth system in this PR.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -86,11 +87,11 @@ git commit -m feat-add-admin-workbench-layout
 
 - [ ] **Step 1: Write tests**
 
-Assert category table, detail editor, max four active details warning, review interval fields, active switches, ordering controls, staged save/discard, and fast-capture preview.
+Assert category table, detail editor, max four active details warning, review interval fields, active switches, ordering controls, staged save/discard, fast-capture preview, and a settings model that can hold global defaults plus a BNE override shape even though this PR edits global defaults only.
 
 - [ ] **Step 2: Implement page**
 
-Use current reason taxonomy settings. Enforce four active details per category before save.
+Use current reason taxonomy settings. Enforce four active details per category before save. Store settings with a global scope and optional per-port override structure so future BNE/port edits do not require redesigning the event contract.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -114,11 +115,11 @@ git commit -m feat-add-admin-reason-settings
 
 - [ ] **Step 1: Write tests**
 
-Fuel tests cover fuel price, equipment burn rates, fallback rate warning, version metadata, and estimated kg preview. Urgency tests cover fixed bucket display, editable weights, validation, reset defaults, and BNE board order preview.
+Fuel tests cover fuel price, equipment burn rates, fallback rate warning, version metadata, and estimated kg preview. Urgency tests cover fixed bucket display, editable global weights, global-only urgency editing for MVP, validation, reset defaults, and BNE board order preview.
 
 - [ ] **Step 2: Implement pages**
 
-Use staged edits and preview panels. Bucket order is read-only. Weights must be non-negative and at least one weight must be greater than zero.
+Use staged edits and preview panels. Bucket order is read-only. Weights must be non-negative and at least one weight must be greater than zero. The data shape must include room for future port-specific overrides, but the first editor should present global defaults only to avoid overbuilding.
 
 - [ ] **Step 3: Verify and commit**
 

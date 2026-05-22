@@ -88,11 +88,12 @@ Category click reveals detail pane
 Detail click calls onSelect once
 Escape closes without selection
 No category renders more than four active details
+Category/detail selection is visible without scrolling in the popover
 ```
 
 - [ ] **Step 2: Implement picker**
 
-Use a client component with a button trigger and absolute positioned two-pane popover. Use the reason taxonomy settings from fixtures. No free-text input in this component.
+Use a client component with a button trigger and absolute positioned two-pane popover anchored to the reason action on the card. The first pane lists categories; the second pane opens to the right for up to four details. Use the reason taxonomy settings from fixtures. No free-text input or scroll-dependent selection in this component.
 
 - [ ] **Step 3: Verify and commit**
 

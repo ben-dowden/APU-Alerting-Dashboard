@@ -27,7 +27,7 @@
 
 - [ ] **Step 1: Write tests**
 
-Cover filters by date range and port, totals for runtime, kg fuel, dollar conversion using active fuel price, attribution percentage, location rows, reason breakdown, and assumption metadata.
+Cover filters by date range and port, totals for runtime, kg fuel, dollar conversion using active fuel price, attribution percentage, location rows, reason breakdown, unattributed burn as its own bucket, manual-off observations excluded from official closure unless ACMS/off or inferred closure exists, and assumption metadata.
 
 - [ ] **Step 2: Implement read model**
 
@@ -42,6 +42,7 @@ totalDollarImpact
 attributedRuntimePercent
 locationRows
 reasonRows
+unattributedRows
 assumptionMetadata
 exportRows
 ```
@@ -75,11 +76,11 @@ Assumptions
 Data Quality
 ```
 
-Assert totals reconcile with HQ report rows and include fuel price version plus burn assumption version.
+Assert totals reconcile with HQ report rows and include fuel price version, burn assumption version, reason taxonomy version, settings version, source event ids, `aircraftGroundEventId`, `apuEventId`, manual-off pending/confirmed markers, and fallback-rate flags.
 
 - [ ] **Step 2: Implement export builder**
 
-Use `xlsx` to create a workbook and `downloadReasonTaggedBurnWorkbook(report)` for browser downloads.
+Use `xlsx` to create a workbook and `downloadReasonTaggedBurnWorkbook(report)` for browser downloads. Export rows must be suitable for EDP/SQL/XLSX ingestion and reconciliation, not merely a screen scrape of the HQ table.
 
 - [ ] **Step 3: Verify and commit**
 

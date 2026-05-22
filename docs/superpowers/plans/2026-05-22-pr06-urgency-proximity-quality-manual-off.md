@@ -4,7 +4,7 @@
 
 **Goal:** Add operational prioritisation, spatial context, source-quality markers, data-quality flagging, and manual APU-off pending confirmation.
 
-**Architecture:** Ranking and proximity remain in the read-model/domain layer. UI components receive already-derived urgency, proximity, and quality fields and render compact charms/tooltips.
+**Architecture:** Ranking and proximity remain in the read-model/domain layer. UI components receive already-derived urgency, proximity, and quality fields and render compact charms/tooltips. Fallback fuel-assumption detail must stay out of collapsed aircraft cards; it belongs in the card drawer, HQ reporting, and export lineage.
 
 **Tech Stack:** TypeScript, React, Tailwind, lucide-react, Vitest, Testing Library.
 
@@ -92,11 +92,11 @@ git commit -m feat-add-aircraft-proximity-context
 
 - [ ] **Step 1: Write tests**
 
-Assert stale, unknown, conflicting, fallback, and low-confidence markers render as compact charms with accessible tooltip text.
+Assert stale, unknown, conflicting, and low-confidence source markers render as compact charms with accessible tooltip text. Assert fallback fuel-assumption markers are not rendered on the collapsed aircraft card and are available only in drawer/detail or reporting/export contexts.
 
 - [ ] **Step 2: Implement charms**
 
-Use tiny badges or icon buttons. Keep visible text compact and put source timestamp/meaning in tooltip content.
+Use tiny badges or icon buttons. Keep visible text compact and put source timestamp/meaning in tooltip content. Do not create a collapsed-card charm for fallback burn-rate assumptions; the collapsed card should avoid noisy data-lineage markers unless they affect immediate operational confidence.
 
 - [ ] **Step 3: Verify and commit**
 
@@ -177,6 +177,6 @@ git commit -m feat-add-manual-apu-off-and-quality-signals
 
 ## Self-Review
 
-- Spec coverage: urgency ranking, proximity, data quality, fallback/source charms, data issue flags, and manual-off pending state are covered.
+- Spec coverage: urgency ranking, proximity, data quality, compact source charms, drawer/reporting-only fallback markers, data issue flags, and manual-off pending state are covered.
 - Public interfaces: UI consumes derived urgency/proximity/quality fields from read models.
 - Handoff checks: full tests and build pass before wallboard PR.

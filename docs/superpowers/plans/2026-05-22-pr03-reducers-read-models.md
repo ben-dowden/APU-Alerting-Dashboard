@@ -13,7 +13,7 @@
 ## File Structure
 
 - Create: `lib/domain/ids.ts`, `apu-reducer.ts`, `reason-chain-reducer.ts`, `manual-observation-reducer.ts`, `fuel.ts`, `proximity.ts`.
-- Create: `lib/read-models/current-board.ts`, `aircraft-card.ts`, `daily-scorecard.ts`, `reason-tagged-burn.ts`, `data-quality.ts`, `index.ts`.
+- Create: `lib/read-models/current-board.ts`, `aircraft-card.ts`, `daily-scorecard.ts`, `benchmark-panel.ts`, `reason-tagged-burn.ts`, `data-quality.ts`, `index.ts`.
 - Create tests beside each domain/read-model file.
 
 ---
@@ -207,10 +207,10 @@ git commit -m feat-add-current-board-read-model
 
 ---
 
-### Task 6: Scorecard, Burn Rows, And Diagnostics
+### Task 6: Scorecard, Benchmark, Burn Rows, And Diagnostics
 
 **Files:**
-- Create: `lib/read-models/daily-scorecard.ts`, `reason-tagged-burn.ts`, `data-quality.ts`, `index.ts`
+- Create: `lib/read-models/daily-scorecard.ts`, `benchmark-panel.ts`, `reason-tagged-burn.ts`, `data-quality.ts`, `index.ts`
 - Create tests.
 
 - [ ] **Step 1: Write tests**
@@ -219,6 +219,8 @@ Cover:
 
 ```text
 daily scorecard active APU count, runtime, fuel kg, attributed runtime
+benchmark panel modes for similar-temperature, weekly average, monthly average, and annual average
+similar-temperature benchmark uses 3°C bands and exact absolute and percentage deltas
 reason-tagged burn rows reconcile to APU event duration
 fallback burn assumptions are flagged
 equipment mismatches appear in data-quality telemetry
@@ -226,7 +228,11 @@ equipment mismatches appear in data-quality telemetry
 
 - [ ] **Step 2: Implement read models**
 
-Export `deriveDailyScorecard`, `deriveReasonTaggedBurnRows`, and `deriveDataQualityTelemetry`.
+Export `deriveDailyScorecard`, `deriveBenchmarkPanel`, `deriveReasonTaggedBurnRows`, and `deriveDataQualityTelemetry`.
+
+`deriveBenchmarkPanel` must return exactly one active comparison at a time plus the selectable modes. It must provide runtime and estimated kg fuel deltas in absolute and percentage terms, and must not calculate dollar impact for Senior Engineer consumers. Similar-temperature comparison should expose the active 3°C band label used by the UI.
+
+`deriveReasonTaggedBurnRows` must allocate kg burn by reason segment using equipment-specific or fallback burn rates and preserve assumption version fields for export/HQ reconciliation. Unattributed runtime must remain a first-class bucket rather than disappearing into totals.
 
 - [ ] **Step 3: Run all checks and commit**
 
@@ -236,13 +242,13 @@ Run:
 npm run test
 npm run build
 git add lib/read-models
-git commit -m feat-add-scorecard-burn-diagnostics-read-models
+git commit -m feat-add-scorecard-benchmark-burn-read-models
 ```
 
 ---
 
 ## Self-Review
 
-- Spec coverage: replay, APU state, inferred closure, manual pending state, reason chain, review derivation, fuel assumptions, proximity, scorecards, and diagnostics are covered.
+- Spec coverage: replay, APU state, inferred closure, manual pending state, reason chain, review derivation, fuel assumptions, proximity, scorecards, benchmarks, burn attribution, and diagnostics are covered.
 - Public interfaces: later UI PRs should import only from `lib/read-models`.
 - Handoff checks: all domain/read-model tests plus build pass before PR 04.

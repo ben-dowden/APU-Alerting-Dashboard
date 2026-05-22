@@ -12,7 +12,7 @@
 
 ## File Structure
 
-- Delete: Vite-only active files `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, old `src/components/*` only after confirming no imports from `app/`, `components/`, or `lib/`.
+- Delete: Vite-only active files `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, and exact old UI files only after confirming no imports from `app/`, `components/`, or `lib/`.
 - Keep: reusable domain code only if imported by new code.
 - Modify: `.gitignore`, `README.md`, `package.json`, `tsconfig.json` if needed.
 - Create: `docs/superpowers/plans/2026-05-22-implementation-summary.md` only if the execution team wants a final checklist.
@@ -49,7 +49,7 @@ This is an inspection task only.
 
 - [ ] **Step 1: Delete obsolete entrypoints**
 
-Remove Vite entry files only after Task 1 confirms no new app imports them.
+Remove Vite entry files only after Task 1 confirms no new app imports them. Use exact tracked filenames, not a broad directory delete.
 
 - [ ] **Step 2: Run build**
 
@@ -75,7 +75,7 @@ git commit -m chore-remove-obsolete-vite-entrypoints
 ### Task 3: Remove Old UI Modules Not Used By Next App
 
 **Files:**
-- Delete old `src/components`, `src/hooks`, and `src/data` files only when `rg` confirms they are unused by new imports.
+- Delete exact old `src/components`, `src/hooks`, and `src/data` files only when `rg` confirms they are unused by new imports.
 - Keep old domain/reporting files only if they are still imported; otherwise migrate or delete them.
 
 - [ ] **Step 1: Inspect imports**
@@ -90,7 +90,7 @@ Expected: No active imports from old UI directories unless explicitly preserved.
 
 - [ ] **Step 2: Delete unused old UI directories**
 
-Remove unused files with native shell deletion only after confirming targets are under the repo root.
+Create an explicit deletion list from `git ls-files src` and remove only those files after confirming each path is obsolete. Do not delete files that contain reusable domain logic until either migrated into `lib/` or intentionally kept. On Windows, do not use a recursive directory delete for this task; if a file must be removed, remove exact tracked files after confirming their resolved paths remain inside the workspace.
 
 - [ ] **Step 3: Run tests and build**
 

@@ -4,7 +4,7 @@
 
 **Goal:** Build the `/senior/bne` desktop command board shell using the event-derived BNE read model.
 
-**Architecture:** Use read models from PR 03 as the only data source. Keep cards display-first in this PR; workflow mutations belong to PR 05 and PR 06.
+**Architecture:** Use read models from PR 03 as the only data source. Keep cards display-first in this PR; workflow mutations belong to PR 05 and PR 06. This PR is an interim shell and does not satisfy the first usable Senior Engineer slice until PR 05 adds the reason workflow and PR 06 adds urgency/proximity/manual-off behavior.
 
 **Tech Stack:** Next.js App Router, React, Tailwind, lucide-react, Testing Library, Vitest.
 
@@ -98,11 +98,11 @@ Fuel burned today
 Attributed runtime
 ```
 
-Assert only one benchmark mode is visible by default and fuel kg delta is visually/textually primary before runtime delta.
+Assert only one benchmark mode is visible by default, fuel kg delta is visually/textually primary before runtime delta, similar-temperature mode shows the active 3°C temperature-band label, and no dollar impact appears anywhere on the Senior Engineer surface.
 
 - [ ] **Step 2: Implement band**
 
-Use four metric panels and one benchmark panel. Desktop can expose benchmark toggle buttons; use similar-temperature as default.
+Use four metric panels and one benchmark panel. Consume `deriveBenchmarkPanel` from PR 03 rather than calculating benchmark values in React. Desktop can expose benchmark toggle buttons; use similar-temperature as default and show the active 3°C temperature band label. Do not display dollar impact anywhere on the Senior Engineer surface.
 
 - [ ] **Step 3: Verify and commit**
 
