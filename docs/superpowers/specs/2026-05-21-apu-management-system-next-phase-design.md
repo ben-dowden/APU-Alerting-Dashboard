@@ -162,12 +162,26 @@ Do not use dollars in this panel.
 
 The aircraft board shows all aircraft currently on ground at Brisbane based on OOOI or a future flight-state source. APU-off aircraft remain visible in a calm green state. Aircraft leave the board when they are no longer on ground or otherwise out of operational scope.
 
-Cards are not grouped. They are sorted as a work queue:
+Cards are not visually grouped. They are sorted as a work queue using fixed operational buckets first, then weighted tiebreakers inside each bucket:
 
 1. Missing reason
 2. Overdue reason review
-3. Longest APU runtime
-4. APU-off or OK aircraft
+3. Active APU with current/valid reason
+4. Manual APU-off pending source confirmation
+5. APU-off or OK aircraft
+
+Bucket order is the first-order priority. A long-running aircraft with a valid current reason should not outrank an aircraft with no reason captured. Within each bucket, use a weighted tiebreaker score so the ordering still feels operationally intelligent.
+
+Initial weighted tiebreaker factors:
+
+- Minutes overdue for reason review
+- APU runtime minutes
+- Estimated kg fuel burned
+- Proximity cluster signal, such as nearby APU-running aircraft within 100 metres
+- Total ground time, as a low-weight context signal
+- Stable deterministic fallback, such as tail or APU event id, to avoid jitter when scores are tied
+
+For the prototype, these weights can live in a small read-model settings object with clear names and comments. They do not need an admin UI in the first slice. For real integration, the ranking should move into the backend or integration read model so every consuming surface receives the same rank, bucket, and explanation.
 
 Urgency ranking should be calculated by the domain/read-model layer, not ad hoc in React components. Each aircraft card/table row should receive ranking fields such as:
 
@@ -175,7 +189,10 @@ Urgency ranking should be calculated by the domain/read-model layer, not ad hoc 
 - `urgencyBucket`
 - `urgencyScore`
 - `urgencyReason`
+- `urgencyTiebreakerBreakdown`
 - `previousUrgencyRank` when useful for animation
+
+The `urgencyReason` should be human-readable enough for debugging and future telemetry, such as `Missing reason`, `Review overdue by 18m`, or `Valid reason, high runtime and nearby APU cluster`. The UI does not need to show this prominently, but tooltips, tests, and HQ product telemetry should be able to inspect it.
 
 For the prototype, this ranking can be derived from event-shaped fixtures. For real integration, the same ranking should come from the backend or integration read model so the desktop board, wallboard carousel, side index, and exports all agree on why an aircraft is being prioritized.
 
@@ -1600,7 +1617,7 @@ First slice acceptance target:
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
 - Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
-- Aircraft urgency ranking is derived in the read-model/domain layer and exposed to both desktop and wallboard components.
+- Aircraft urgency ranking is derived in the read-model/domain layer using fixed buckets with weighted tiebreakers, and exposed to both desktop and wallboard components.
 - Wallboard aircraft cards use larger typography and retain nearly all desktop-visible aircraft facts while removing action controls and drawer-only detail.
 - `/senior/bne/wallboard` uses a two-card carousel stage for large aircraft cards when the active set exceeds two visible cards.
 - `/senior/bne/wallboard` uses an enlarged urgency-sorted side index that keeps all BNE ground aircraft visible while the card carousel rotates.
@@ -1630,7 +1647,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
-- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
