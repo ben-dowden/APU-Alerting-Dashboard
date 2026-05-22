@@ -27,7 +27,7 @@ const baseInput = {
   port: "BNE",
   tail: "VH-8IA",
   apuEventId: "BNE:VH-8IA:apu:2026-05-22T08:37:00.000Z",
-};
+} as const;
 
 describe("workflow actions", () => {
   beforeEach(() => {
