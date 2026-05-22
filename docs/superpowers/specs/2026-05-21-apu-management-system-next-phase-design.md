@@ -806,6 +806,14 @@ Example behaviour:
 - If stand assignment changes but tow state is unknown, the card should use assigned-stand wording and avoid live-position claims.
 - If reason-chain actions are current but ACMS is stale, the card can still show the latest reason-chain state while marking APU source freshness separately.
 
+Missing APU-off behaviour:
+
+- Explicit APU-off event is the preferred close signal.
+- If explicit APU-off never arrives, other strong operational signals may infer closure, such as flight-state departure, off-ground state, aircraft leaving the BNE ground board, or another IT-confirmed source.
+- Inferred closure must be marked as inferred/low-confidence in the derived event data.
+- The UI should not show noisy warnings for inferred closure, but tooltips/admin diagnostics should preserve the source and confidence trail.
+- The full list of acceptable inference sources and precedence rules is an IT discovery item.
+
 The prototype should model these differences using dummy source timestamps and freshness charms, so stakeholders understand how the real board will behave under imperfect data.
 
 ## Event-Sourced Integration Direction
