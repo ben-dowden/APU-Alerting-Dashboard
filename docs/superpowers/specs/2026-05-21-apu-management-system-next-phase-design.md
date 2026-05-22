@@ -860,7 +860,7 @@ The UI should distinguish between:
 
 Detailed data-quality diagnostics belong in tooltips, drawers, or admin/HQ diagnostics. The main Senior Engineer board should stay compact and calm.
 
-Senior Engineers should be able to flag a data issue from an aircraft card or drawer. This does not change source-derived state and does not manually close or alter APU events. It creates a data-quality flag for review.
+On the desktop Senior Engineer surface, users should be able to flag a data issue from an aircraft card or drawer. This does not change source-derived state and does not manually close or alter APU events. It creates a data-quality flag for review.
 
 Data issue flag examples:
 
@@ -871,7 +871,7 @@ Data issue flag examples:
 - Duplicate or conflicting aircraft
 - Timing looks wrong
 
-The flag action should be compact, such as a small `Flag data issue` ghost action in the drawer or a charm action in the card source tooltip. It should not be a dominant card control.
+On the desktop surface, the flag action should be compact, such as a small `Flag data issue` ghost action in the drawer or a charm action in the card source tooltip. It should not be a dominant card control.
 
 Each data issue flag should capture:
 
@@ -939,7 +939,7 @@ Missing APU-off behaviour:
 
 Manual APU-off observation behaviour:
 
-- A Senior Engineer may mark an APU as turned off from the card or drawer when they believe the APU has been shut down.
+- On `/senior/bne`, a Senior Engineer may mark an APU as turned off from the card or drawer when they believe the APU has been shut down.
 - This action does not create an authoritative APU-off event and does not overwrite ACMS/source state.
 - It creates a user-authored observation event, such as `manual_apu_off_observed`.
 - The card moves into a neutral pending state, such as `APU off pending confirmation`.
@@ -1413,15 +1413,18 @@ For the first slice, `/senior/bne/wallboard` is read-only:
 - No manual APU-off action.
 - No data issue flagging.
 - No editable notes.
+- No reason-chain drawer.
+- No detail overlay or card expansion.
+- No drawer/open-state client state.
 
-The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms, but it should direct users to the desktop workflow surface for action.
+The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms on compact aircraft cards only. It should direct users to the desktop workflow surface for action.
 
 ### State Management
 
 Keep state deliberately boring for the prototype:
 
 - Server-side fixture/read-model loading for initial data.
-- Small client context or hooks for scenario replay, persona selection, selected aircraft, drawer open state, and benchmark rotation.
+- Small client context or hooks for scenario replay, persona selection, route-scoped selected-aircraft focus, desktop-only drawer open state, and benchmark rotation.
 - URL search params for shareable prototype scenario/role state where useful.
 - Local storage only for POC persona/scenario preferences and mock reason-chain persistence if needed.
 
@@ -1476,7 +1479,7 @@ Senior Engineer command board:
 - `AircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, and small custom status strips.
 - `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
 - `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
-- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only status display.
+- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only compact card status display with no drawer or overlay.
 
 Reason-chain workflow:
 
@@ -1536,7 +1539,7 @@ Migration sequence:
 1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme in the existing app repo.
 2. Create event-shaped fixture contracts and read-model functions.
 3. Build the new Senior Engineer BNE command board as the first usable screen.
-4. Build the aircraft card, reason picker, and reason-chain drawer as part of that first usable screen.
+4. Build the desktop aircraft-card workflow, reason picker, and reason-chain drawer as part of that first usable screen; keep the wallboard card variant compact and passive.
 5. Add scorecard strip, benchmark rotator, and ground-aircraft side table to complete the first Senior Engineer slice.
 6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
 7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
@@ -1559,8 +1562,9 @@ First slice acceptance target:
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
 - Reason capture uses the shadcn popover two-click category/detail flow.
-- Reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
-- Manual APU-off pending confirmation state is represented in the card/drawer workflow.
+- On `/senior/bne`, the reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
+- On `/senior/bne/wallboard`, compact aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
+- Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
 - Ground-aircraft side table can focus the selected aircraft card.
 
 First-slice layout checks:
@@ -1578,7 +1582,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
-- Component tests or Playwright checks for reason picker two-click flow, drawer open/closed states, manual APU-off pending flow, and benchmark auto-rotation.
+- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
