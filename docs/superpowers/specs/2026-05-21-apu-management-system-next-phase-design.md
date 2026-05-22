@@ -1515,13 +1515,29 @@ Migration sequence:
 
 1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme in the existing app repo.
 2. Create event-shaped fixture contracts and read-model functions.
-3. Build the Senior Engineer BNE route first.
-4. Build the aircraft card, reason picker, and reason-chain drawer.
-5. Add scorecard strip, benchmark rotator, and ground-aircraft side table.
+3. Build the new Senior Engineer BNE command board as the first usable screen.
+4. Build the aircraft card, reason picker, and reason-chain drawer as part of that first usable screen.
+5. Add scorecard strip, benchmark rotator, and ground-aircraft side table to complete the first Senior Engineer slice.
 6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
 7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
 8. Port or rewrite export/reporting logic against the new reason-tagged burn rows.
 9. Remove obsolete Vite files and any old UI modules that no longer map to the Next.js component architecture.
+
+The first implementation slice should optimize for the value-driving Senior Engineer workflow rather than old Vite behavior parity. HQ/Admin routes can exist as simple navigation stubs or thin read-only shells during the first slice, but the first screen that should feel genuinely usable is `/senior/bne`.
+
+First slice acceptance target:
+
+- Next.js app boots from the in-place repo.
+- `/senior/bne` is the default working surface for the Senior Engineer persona.
+- Event-shaped BNE fixtures derive the command board read model.
+- Top command bar shows BNE context, current temperature, persona switcher, and scenario controls.
+- Daily scorecard strip shows the agreed Senior Engineer metrics.
+- Benchmark panel auto-rotates comparison mode every 5 seconds.
+- Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
+- Reason capture uses the shadcn popover two-click category/detail flow.
+- Reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
+- Manual APU-off pending confirmation state is represented in the card/drawer workflow.
+- Ground-aircraft side table can focus the selected aircraft card.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
 
