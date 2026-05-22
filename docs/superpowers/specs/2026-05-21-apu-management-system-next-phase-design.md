@@ -1400,10 +1400,21 @@ Read-model functions:
 
 The UI should consume read models, not raw fixture arrays. That creates a credible path to replacing fixtures with Kafka consumers, route handlers, or backend APIs later.
 
-The `/senior/bne` and `/senior/bne/wallboard` routes should consume the same BNE command-board read model. They should share core product components where practical, such as aircraft card content, scorecard metrics, benchmark state, reason picker, and reason-chain drawer. Route-specific layout wrappers should handle the ergonomic differences:
+The `/senior/bne` and `/senior/bne/wallboard` routes should consume the same BNE command-board read model. They should share display components where practical, such as aircraft card content, scorecard metrics, benchmark state, status badges, and proximity indicators. Mutation controls should belong to the desktop route unless a later design explicitly adds wallboard interaction. Route-specific layout wrappers should handle the ergonomic differences:
 
 - `/senior/bne`: optimized for active desktop/laptop use, pointer interaction, drawer work, reason updates, and scenario controls.
 - `/senior/bne/wallboard`: optimized for passive shared display, 16:9 composition, stable density, larger scan targets, auto-rotating benchmark emphasis, and reduced chrome.
+
+For the first slice, `/senior/bne/wallboard` is read-only:
+
+- No reason selection.
+- No keep-current-reason action.
+- No reason changing.
+- No manual APU-off action.
+- No data issue flagging.
+- No editable notes.
+
+The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms, but it should direct users to the desktop workflow surface for action.
 
 ### State Management
 
@@ -1465,7 +1476,7 @@ Senior Engineer command board:
 - `AircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, and small custom status strips.
 - `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
 - `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
-- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display and reduced chrome.
+- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only status display.
 
 Reason-chain workflow:
 
@@ -1539,6 +1550,7 @@ First slice acceptance target:
 - Next.js app boots from the in-place repo.
 - `/senior/bne` is the default desktop/laptop working surface for the Senior Engineer persona.
 - `/senior/bne/wallboard` is available as the TV-focused route using the same BNE read model.
+- `/senior/bne/wallboard` is read-only in the first slice; workflow actions stay on `/senior/bne`.
 - HQ/Admin routes exist as stubs reachable from navigation/persona switching.
 - The Senior Engineer board is designed and verified for both 16:9 wallboard display and desktop/laptop interaction from the first slice.
 - Event-shaped BNE fixtures derive the command board read model.
