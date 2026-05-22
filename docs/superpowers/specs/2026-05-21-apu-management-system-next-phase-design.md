@@ -660,10 +660,24 @@ The prototype should use dummy data with realistic boundaries:
 
 - Tail
 - Aircraft type / equipment type code
+- Equipment type source, such as flight-state event, tail/equipment reference, or derived enrichment
+- Equipment type mismatch flag when source and reference disagree
 - Bay or stand
 - On-ground state
 - Ground start timestamp
 - Ground end timestamp if known
+
+### Aircraft Equipment Reference
+
+- Tail
+- Equipment type code
+- Equipment type label
+- Effective from date
+- Effective to date if known
+- Source system or reference owner
+- Last updated timestamp
+
+For the prototype, this should be dummy reference data. For future integration, the app should use the equipment type supplied by the flight or ground-state event when present, then enrich and validate it against the tail/equipment reference table. The resolved equipment type used for fuel-burn calculation should preserve both the source value and the reference value when they differ.
 
 ### APU Event
 
@@ -739,9 +753,14 @@ The implementation should keep the following concepts separate:
 
 The likely source of truth for `aircraft currently on ground` is unresolved. It may come from an OOOI or flight-state engine, FSE, A-CDM, Aerobahn, FIDs/iFIDS, or another operational system. The prototype should assume this is feasible but not settled.
 
+Aircraft equipment type should use the flight or ground-state event value when that value is supplied. The system should enrich and validate that value against a tail/equipment reference table. This gives the command board and burn estimates a real-time operational value while still catching cases where source data is missing, stale, or inconsistent with known tail configuration.
+
+The prototype should use dummy tail/equipment reference data. Future IT discovery should identify the proper enterprise source for tail-to-equipment mapping, whether that comes from fleet planning, engineering systems, FSE, iFIDS, Sabre/GDW, or another reference-data owner.
+
 Discovery questions for FSE / A-CDM:
 
 - Does FSE expose current aircraft bay or stand, or only flight-state milestones?
+- Does FSE expose aircraft equipment type on the live flight or ground-state event?
 - Does Aerobahn expose current bay or stand in a way Virgin Australia can consume?
 - Are A-CDM return fields visible in iFIDS or iGO?
 - Which A-CDM fields are available, and are they available historically or only in the live operational view?
@@ -752,6 +771,7 @@ Discovery questions for FIDs / iFIDS / iGO:
 - Does iFIDS distinguish planned stand assignment from actual current aircraft position?
 - Are iFIDS/iGO fields sufficient to determine when an aircraft should enter and leave the BNE ground-aircraft board?
 - Can assigned stand data be linked reliably to tail registration and flight number?
+- Does iFIDS/iGO expose equipment type, and is it scheduled type or confirmed tail/equipment type?
 
 Discovery questions for Hermes / ACARS / OOOI:
 
@@ -942,6 +962,7 @@ Candidate Kafka topic families:
 - `aircraft.flight-state.events`: OOOI, arrival, departure, on-ground/off-ground, flight-state changes.
 - `aircraft.stand-assignment.events`: bay/stand assignment, reassignment, source and confidence.
 - `aircraft.apu-state.events`: APU on/off messages, decoded ACMS state changes, source timestamp, received timestamp.
+- `aircraft.reference-data.events`: tail-to-equipment mapping and aircraft reference metadata.
 - `airport.weather.events`: BNE temperature observations and derived 3 degree Celsius bands.
 - `apu.reason-chain.events`: reason selected, reason changed, current reason kept, note added, event closed.
 - `apu.review-workflow.events`: review due, review resolved, resolution type, response-time telemetry.
@@ -992,7 +1013,7 @@ This means dummy data should be structured as realistic source events, not only 
 
 Minimum MVP testability requirements:
 
-- Event-shaped fixture files for source inputs such as flight state, stand assignment, APU state, weather, reason-chain events, manual observations, and reference data.
+- Event-shaped fixture files for source inputs such as flight state, stand assignment, APU state, weather, reason-chain events, manual observations, tail/equipment reference data, and APU app reference data.
 - Scenario packs for key operational cases, including normal APU on/off, delayed ACMS off messages, manual APU-off pending confirmation, contradicted manual observations, missing APU-off inferred closure, stale stand assignment, and missing equipment-type burn assumptions.
 - A simple replay mechanism in the prototype data layer so the same scenario can be run repeatedly and inspected.
 - Clear separation between raw mock source events, derived read models, and UI components.
@@ -1071,6 +1092,7 @@ Minimum backend capabilities:
 
 - Consume operational source events from Kafka topics or integration adapters.
 - Derive the current BNE command board read model.
+- Enrich and validate aircraft equipment type using flight/ground-state events and tail/equipment reference data.
 - Persist APU app-owned reason-chain events.
 - Publish reason-chain and review-workflow events for enterprise consumption.
 - Persist or derive enough APU event state to allocate burn time and estimated fuel kg to reason segments.
@@ -1117,6 +1139,8 @@ The minimum reason-tagged burn dataset should include:
 - Tail
 - Flight number when available
 - Aircraft type / equipment type code
+- Aircraft type / equipment type source
+- Aircraft type / equipment type mismatch flag
 - Port
 - Bay or stand
 - APU-on timestamp
