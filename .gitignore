@@ -1,6 +1,7 @@
 .superpowers/
 node_modules/
 dist/
+.next/
 .vite-cache/
 .env
 .env.local
