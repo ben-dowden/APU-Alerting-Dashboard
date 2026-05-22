@@ -866,6 +866,7 @@ Manual APU-off observation behaviour:
 - If ACMS or another trusted source later confirms APU-off, the system finalizes the APU event using the trusted source timestamp as the official APU-off timestamp. The manual observation timestamp remains as workflow telemetry.
 - If ACMS or another trusted source later indicates the APU is still running, the card reopens as APU-running, preserves the manual observation in telemetry, and resumes reason review logic based on the active reason state.
 - Pending manual-off cards should include a compact charm/tooltip explaining that source confirmation is still outstanding.
+- Manual APU-off observations affect the operational UI only. They do not close reason-tagged burn reporting and do not change official segment durations until confirmed by a trusted source or governed inference rule.
 
 The prototype should model these differences using dummy source timestamps and freshness charms, so stakeholders understand how the real board will behave under imperfect data.
 
@@ -1029,6 +1030,8 @@ The minimum reason-tagged burn dataset should include:
 - Source-system freshness/confidence metadata
 - Manual APU-off observation timestamp when present
 - Official APU-off timestamp source, such as ACMS, inferred closure, or another trusted source
+
+Manual APU-off observations should be excluded from official reason-tagged burn closure until confirmed. They may appear in operational telemetry, but reporting should not treat them as official APU-off timestamps.
 
 Not required for MVP:
 
