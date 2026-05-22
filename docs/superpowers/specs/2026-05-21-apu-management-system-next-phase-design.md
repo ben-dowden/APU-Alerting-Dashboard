@@ -778,6 +778,40 @@ Replay should be possible for testing and operational correction. If a source ev
 
 For the prototype, Kafka does not need to be running. Dummy data should be shaped like events so that replacing mock arrays with topic consumers later is a natural step.
 
+## Reason-Chain Event Ownership
+
+The APU Management System should own reason-chain authoring initially. When a Senior Engineer selects a reason, keeps the current reason, changes a reason, adds a note, or when an APU-off event closes the chain, the APU app creates the corresponding reason-chain or review-workflow event.
+
+This is the right initial ownership model because reason-chain capture is a new product workflow rather than a field already owned by an existing operational system.
+
+The app should still publish reason-chain data in an enterprise-readable event contract so that other systems can consume it later. Publishing should not be a large incremental step beyond local app ownership if the prototype event model is shaped correctly.
+
+Reason-chain events should include:
+
+- APU event id
+- Tail
+- Flight number when available
+- Port
+- Bay or stand
+- Category id and label
+- Detail id and label
+- Segment start and end timestamps
+- User/persona id
+- Role
+- Source UI action, such as `select_reason`, `change_reason`, `keep_current_reason`, `add_note`, or `close_on_apu_off`
+- Source event timestamp
+- Ingestion timestamp
+- Idempotency key
+
+The future integration posture is:
+
+1. APU app owns and validates the reason-chain workflow.
+2. APU app emits governed events to Kafka or equivalent streaming infrastructure.
+3. Enterprise reporting, data warehouse, or operational analytics consumers subscribe to those events.
+4. If a broader operations platform later becomes the system of record for reason chains, the event contract should be stable enough to migrate ownership without redesigning the frontline UX.
+
+The app should not depend on write-back into an external operational system for v1 feasibility. Write-back may be useful later, but it is not required to prove the Senior Engineer workflow.
+
 ## Prototype Boundaries
 
 This phase does not include:
