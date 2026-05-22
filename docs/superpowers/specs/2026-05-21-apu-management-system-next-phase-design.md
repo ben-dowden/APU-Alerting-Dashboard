@@ -512,6 +512,18 @@ These labels are starting content for the prototype. HQ/Admin must be able to re
 
 The reason picker is a cascading popover anchored to the card action button. It should not use a modal for the fast path.
 
+Build this as a `ReasonPicker` product component composed from shadcn `Popover`, `Button`, `Tooltip`, `Separator`, and simple Tailwind list rows. Do not use shadcn `Command` for the MVP reason picker: the taxonomy is deliberately small, the fast path must not scroll, and search would make the interaction feel heavier than the operational job requires.
+
+The same component should support three modes without changing the visual model:
+
+- `select`: used when the aircraft has no current reason. The trigger is a filled purple `Button` labelled `Select reason`.
+- `change`: used when replacing the current active reason. The trigger is a quieter secondary or outline `Button` labelled `Change reason`.
+- `correct`: used from the reason-chain drawer for a past segment. The trigger is a tiny ghost icon button, visible on hover/focus, and opens the same picker in correction mode.
+
+The popover content should be one white surface with two panes: categories on the left, details on the right. Category rows are buttons. Clicking a category locks or changes the active category; hover can preview the detail pane, but only a detail click saves a reason event. Escape, outside click, or focus leaving the popover closes without writing an event.
+
+Use a purple active indicator for the selected category, such as a 3px left rail, icon tint, or subtle selected row treatment. Keep detail rows plain, high-contrast, and text-led. Red should appear in the surrounding card state for missing/urgent reasons, not as the normal popover selection colour.
+
 Interaction:
 
 1. User clicks `Select reason` or `Change reason`.
@@ -1634,8 +1646,8 @@ Senior Engineer command board:
 
 Reason-chain workflow:
 
-- `ReasonPicker`: shadcn `Popover` anchored to the card action button.
-- Category/detail selection: custom two-pane popover using `Button`, `Command` or simple list rows, `Separator`, and Tailwind grid. Do not use a modal for the fast path.
+- `ReasonPicker`: product component using shadcn `Popover`, `Button`, `Tooltip`, `Separator`, and simple Tailwind list rows, anchored to the card action button.
+- Category/detail selection: custom two-pane popover with category buttons on the left and detail buttons on the right. Do not use `Command`, a modal, or a drawer for the MVP fast path.
 - `CardReasonDrawer`: custom below-card drawer with `ScrollArea`, `Separator`, `Badge`, `Textarea`, and action `Button`s. It opens from the aircraft card, floats over board content beneath the card, and collapses on outside click, Escape, or focus leaving the drawer/trigger region.
 - Optional note field: `Textarea` in the drawer only.
 - Current-reason quick action: icon `Button` with `Tooltip`.
@@ -1746,7 +1758,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
