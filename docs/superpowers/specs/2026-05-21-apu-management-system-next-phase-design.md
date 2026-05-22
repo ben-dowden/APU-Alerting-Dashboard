@@ -101,14 +101,21 @@ When side-index order changes, use a basic, restrained reorder animation so the 
 
 Desktop layout can keep the denser board behaviour: at large widescreen widths, the aircraft board can use three card columns if each card can remain at least 340px wide. At normal desktop widths, use two columns. At narrow widths, collapse to one column and move the side table below the card board.
 
-The header contains:
+The command bar is the board's situational header. It should answer "what am I looking at, how fresh is it, and what mode is this surface in?" It should not become the scorecard, benchmark selector, card workflow, or a general filter shelf.
 
-- Product title: `BNE APU Command Board`
-- Persona/role control on the right, implemented as a compact persona switcher for the POC
-- Feed status chip: `Mock feed`, `Last event`, or `APU feed delay`
-- Temperature chip, such as `BNE 31°C`
-- Current time
-- Optional wallboard/desktop mode indicator
+Desktop command bar content:
+
+- Left context cluster: product title `BNE APU Command Board`, port badge `BNE`, and persona badge or persona `DropdownMenu` for the POC role switcher.
+- Middle status cluster: temperature chip such as `31°C`, current local time, feed status chip, and compact source/freshness charms with `Tooltip` detail.
+- Right control cluster: light controls only, such as a `Wallboard` route button, prototype scenario `DropdownMenu`, and manual refresh/mock-feed action if needed for demos.
+
+Wallboard command bar content:
+
+- Same port, persona, temperature, time, and source/freshness facts as desktop, rendered larger and calmer.
+- No scenario selector, manual refresh, benchmark controls, admin navigation, reason actions, filters, or other active workflow controls.
+- Optional read-only mode badge such as `Wallboard` if it helps viewers understand why the screen is passive.
+
+The benchmark selector/rotator belongs in the scorecard and benchmark band below the command bar, not inside the command bar itself.
 
 Temperature is a port-level condition from METAR, not an aircraft-level fact. It belongs in the command bar or benchmark area rather than on each aircraft card.
 
@@ -1631,7 +1638,10 @@ Core app shell:
 
 Senior Engineer command board:
 
-- `CommandBar`: custom Tailwind layout with shadcn `DropdownMenu`, `Button`, `Badge`, and `Tooltip`.
+- `CommandBar`: custom Tailwind layout with shadcn `DropdownMenu`, `Button`, `Badge`, `Tooltip`, and `Separator`. Desktop variant uses context plus light controls. Wallboard variant is context-only and read-only.
+- `CommandBarContextCluster`: title, port badge, persona badge/menu, and optional wallboard mode badge.
+- `CommandBarStatusCluster`: temperature chip, local time, feed status, and source/freshness charms. Use `Tooltip` for the underlying source timestamp/detail rather than visible explanatory text.
+- `CommandBarControlCluster`: desktop-only light controls for wallboard route, prototype scenario selection, and manual refresh/mock-feed actions. Keep benchmark controls in `BenchmarkRotator`, not here.
 - `ScorecardStrip`: repeated shadcn `Card` or custom metric panels; use cards only for individual KPI panels.
 - `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection plus a client timer for 5-second auto-rotation.
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
@@ -1722,7 +1732,7 @@ First slice acceptance target:
 - HQ/Admin routes exist as stubs reachable from navigation/persona switching.
 - The Senior Engineer board is designed and verified for both 16:9 wallboard display and desktop/laptop interaction from the first slice.
 - Event-shaped BNE fixtures derive the command board read model.
-- Top command bar shows BNE context, current temperature, persona switcher, and scenario controls.
+- Top command bar shows BNE context, current temperature, persona/view context, feed/source freshness, and current time. Desktop includes light scenario/view controls; wallboard omits active controls.
 - Daily scorecard strip shows the agreed Senior Engineer metrics.
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm neutral complete state.
@@ -1758,7 +1768,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
