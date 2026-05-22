@@ -14,22 +14,19 @@ The Senior Engineer surface is a widescreen command board designed to work on a 
 
 ## Visual System
 
-The UI should keep the existing operational Virgin-style language already present in the prototype: white and soft-grey surfaces, deep purple navigation, red/amber/green operational states, dense information, and restrained card styling. It should feel like a working engineering tool, not a marketing dashboard.
+The UI should use Virgin Australia colour cues as the visual source of truth: white/black operational surfaces, indigo structure, purple actions, and red for urgent or missing-reason states. It should feel like a working engineering tool, not a marketing dashboard.
 
-Use the current app palette as the starting point:
+Use this Virgin Australia palette:
 
-- Red / missing reason: `#e42a1c`
-- Dark red text: `#b71912`
-- Purple / primary action: `#4d0c9a`
-- Dark purple / structural headers: `#21104d`
-- Green / APU off or complete: `#42a463`
-- Amber / review due: `#d88b00`
-- Ink: `#171726`
-- Muted text: `#626a7a`
-- Border: `#dfe3eb`
-- Page background: `#eef1f5`
-- Panel background: `#ffffff`
-- Soft panel background: `#f7f8fb`
+- Indigo / structural navigation: `#1F1A4F`
+- Purple / primary action buttons: `#511C98`
+- Red / urgent or missing-reason states: `#E10A0A`
+- Black / primary text: `#000000`
+- White / main surfaces: `#FFFFFF`
+
+Purple (`#511C98`) is the default colour for primary action buttons, selected controls, and active interactive emphasis. Indigo (`#1F1A4F`) is for structural areas such as navigation, high-level headers, and deep background accents. Red (`#E10A0A`) is for operational urgency, missing-reason states, and critical alert cues.
+
+Use neutral black/white/grey treatments for calm states. Avoid adding a broad secondary palette unless a specific operational state cannot be communicated clearly with the Virgin palette. If a non-brand semantic colour is introduced later, it should be deliberate, minimal, and documented as a semantic exception rather than a brand colour.
 
 Cards, panels, popovers, tables, and controls should use 6-8px border radius. Avoid nested decorative cards. Use cards only for aircraft, repeated summary panels, popovers, drawers, and settings rows. Page sections should be unframed layout regions or full-width operational bands.
 
@@ -96,7 +93,7 @@ Ground aircraft index rail: 380-460px fixed rail
 
 The wallboard aircraft stage should show one row with two large aircraft cards. If more active cards exist, the stage rotates through carousel pages in urgency order. The carousel should use calm motion, such as a quick fade or short horizontal slide around 180-220ms, and should avoid attention-grabbing animation. A prototype default of about 10 seconds per page is appropriate unless testing shows the room needs a slower cadence.
 
-When a new urgent aircraft appears or an existing aircraft becomes more urgent, the wallboard carousel should keep its timing steady. It should not immediately jump to a new page. Instead, the enlarged side index should show a subtle urgency cue on the affected row, such as a short amber/red pulse, intensified left status strip, or brief glow. The new urgency order should affect the next scheduled carousel page calculation, while the current page finishes its normal interval.
+When a new urgent aircraft appears or an existing aircraft becomes more urgent, the wallboard carousel should keep its timing steady. It should not immediately jump to a new page. Instead, the enlarged side index should show a subtle urgency cue on the affected row, such as a short red pulse, intensified left status strip, or brief glow. The new urgency order should affect the next scheduled carousel page calculation, while the current page finishes its normal interval.
 
 The wallboard side index should stay visible at all times and should be large enough to function as the full aircraft inventory. It should list all BNE ground aircraft, including APU-off aircraft, with enlarged row height and text compared with the desktop side table. The side index is sorted by the same urgency ranking that drives the carousel, not by bay or stand. This prevents the carousel from hiding the existence of other aircraft while still letting the main cards breathe.
 
@@ -153,14 +150,14 @@ On wallboard mode, the active benchmark segment changes every five seconds. The 
 Use colour semantics for deltas:
 
 - Worse than baseline: red icon or delta marker
-- Better than baseline: green icon or delta marker
+- Better than baseline: indigo or black positive marker
 - Flat/near-neutral: grey marker
 
 Do not use dollars in this panel.
 
 ## Aircraft Board
 
-The aircraft board shows all aircraft currently on ground at Brisbane based on OOOI or a future flight-state source. APU-off aircraft remain visible in a calm green state. Aircraft leave the board when they are no longer on ground or otherwise out of operational scope.
+The aircraft board shows all aircraft currently on ground at Brisbane based on OOOI or a future flight-state source. APU-off aircraft remain visible in a calm neutral complete state. Aircraft leave the board when they are no longer on ground or otherwise out of operational scope.
 
 Cards are not visually grouped. They are sorted as a work queue using fixed operational buckets first, then weighted tiebreakers inside each bucket:
 
@@ -181,7 +178,7 @@ Initial weighted tiebreaker factors:
 - Total ground time, as a low-weight context signal
 - Stable deterministic fallback, such as tail or APU event id, to avoid jitter when scores are tied
 
-For the prototype, these weights should be editable by HQ Admin through a simple urgency-ranking settings screen. The bucket order remains fixed in the product logic for MVP; HQ Admin edits only the weighted tiebreakers inside each bucket. The ranking settings should still be represented as a small read-model settings object with clear names, default values, and validation. The first Senior Engineer implementation slice may seed these defaults without building the admin editor immediately, but the prototype target includes the editable admin screen. For real integration, the ranking should move into the backend or integration read model so every consuming surface receives the same rank, bucket, and explanation.
+The design supports a global default urgency-weight set with future port-specific overrides. The first implementation should edit only the global default weights, while keeping the settings model shaped so BNE or other port overrides can be added later without redesigning the ranking contract. The bucket order remains fixed in the product logic for MVP; HQ Admin edits only the weighted tiebreakers inside each bucket. The ranking settings should still be represented as a small read-model settings object with clear names, default values, and validation. The first Senior Engineer implementation slice may seed these defaults without building the admin editor immediately, but the prototype target includes the editable admin screen. For real integration, the ranking should move into the backend or integration read model so every consuming surface receives the same rank, bucket, and explanation.
 
 Urgency ranking should be calculated by the domain/read-model layer, not ad hoc in React components. Each aircraft card/table row should receive ranking fields such as:
 
@@ -257,9 +254,9 @@ Wallboard typography should be visibly larger than the desktop card without usin
 Card state styling:
 
 - Missing reason: red left border, light red top cue, primary purple `Select reason` button, red status label `Reason missing`.
-- Review due: amber left border, amber status label `Review due`, primary icon action to keep current reason, secondary `Change reason` button.
-- Current reason valid: neutral/purple cue, current reason block visible, no urgent red/amber pressure.
-- APU off: green left border or green status pill, calm `APU off` label, no reason actions.
+- Review due: indigo or purple left border, `Review due` status label, primary icon action to keep current reason, secondary `Change reason` button.
+- Current reason valid: neutral/purple cue, current reason block visible, no urgent red pressure.
+- APU off: calm neutral/white complete treatment, `APU off` label, no reason actions.
 
 The card should not display dollar impact. Replace existing frontline dollar fields with time and kg fuel. HQ views can still use dollar conversion.
 
@@ -307,8 +304,8 @@ VH-YIO  02    On    31        58       ↗
 
 Rows should use understated state cues:
 
-- APU on: small red or amber status dot depending on reason/review state
-- APU off: small green status dot
+- APU on: small red or purple status dot depending on reason/review state
+- APU off: small neutral complete-status dot or outline
 - Missing reason: red `Missing` micro-label if space allows
 
 The table should not show benchmark deltas, dollars, or long reason text. Its job is complete ground-aircraft awareness and quick navigation.
@@ -563,7 +560,8 @@ Port overrides should inherit the global category/detail set by default. BNE can
 Urgency ranking screen:
 
 - Show the fixed bucket order as read-only: missing reason, overdue reason review, active APU with valid reason, manual APU-off pending source confirmation, then APU-off or OK.
-- Allow HQ Admin to edit the weighted tiebreaker factors used inside each bucket.
+- Allow HQ Admin to edit the global default weighted tiebreaker factors used inside each bucket.
+- Keep the screen and settings contract compatible with future port-specific overrides, but do not implement port-specific urgency overrides in the first slice.
 - Editable factors should include overdue review minutes, APU runtime minutes, estimated kg fuel burned, proximity cluster signal, and total ground time.
 - Show a non-editable deterministic fallback tiebreaker, such as tail or APU event id, so users understand why tied rows remain stable.
 - Provide a small BNE preview table showing how the current BNE board would rank under the configured weights. In the mock-driven prototype, this means the currently loaded BNE mock board state, not a library of saved scenario examples.
@@ -695,7 +693,7 @@ Gamification is primarily card cleanliness:
 - Satisfying current/complete states
 - Visible attributed runtime percentage
 - Self-comparison against BNE baselines
-- Calm green APU-off cards
+- Calm neutral APU-off cards
 
 The app should help the team keep the board clean without making the Senior Engineer feel personally monitored.
 
@@ -817,7 +815,7 @@ For the prototype, this should be dummy reference data. For future integration, 
 - Ranking settings id
 - Version label
 - Effective from date
-- Port applicability or override, such as global default or BNE override
+- Port applicability or override, such as global default initially and BNE override later
 - Fixed bucket order identifier
 - Weight for overdue review minutes
 - Weight for APU runtime minutes
@@ -1032,7 +1030,7 @@ Manual APU-off observation behaviour:
 - This action does not create an authoritative APU-off event and does not overwrite ACMS/source state.
 - It creates a user-authored observation event, such as `manual_apu_off_observed`.
 - The card moves into a neutral pending state, such as `APU off pending confirmation`.
-- In pending state, the card should look calmer than an active APU-running alert but not as complete/green as a confirmed APU-off card.
+- In pending state, the card should look calmer than an active APU-running alert but not as complete/calm as a confirmed APU-off card.
 - Reason review prompts pause while pending confirmation, but the chain is not finalized until a trusted APU-off or closure source arrives.
 - If ACMS or another trusted source later confirms APU-off, the system finalizes the APU event using the trusted source timestamp as the official APU-off timestamp. The manual observation timestamp remains as workflow telemetry.
 - If ACMS or another trusted source later indicates the APU is still running, the card reopens as APU-running, preserves the manual observation in telemetry, and resumes reason review logic based on the active reason state.
@@ -1295,7 +1293,7 @@ Required scenarios:
    - User marks APU off manually.
    - Card moves to neutral `APU off pending confirmation`.
    - A delayed trusted APU-off event arrives.
-   - Card becomes confirmed APU-off / calm green.
+   - Card becomes confirmed APU-off / calm neutral complete.
    - Reason-tagged burn reporting uses the trusted source off timestamp, not the manual observation timestamp.
 
 2. Manual off, then contradicted
@@ -1554,6 +1552,19 @@ The UI components should call narrow action functions, not write directly to sto
 
 Use shadcn/ui primitives as the base interaction kit and compose app-specific components around them. Keep `components/ui` close to standard shadcn output, and put product components under feature folders.
 
+Primitive usage rules:
+
+- `Button` is the main action primitive. Primary action buttons use purple `#511C98`; destructive or critical actions use red `#E10A0A`; quiet navigation and utility actions use `ghost` or `outline` variants with indigo/black text. Icon-only buttons must have `Tooltip`.
+- `Card` is used for aircraft cards, repeated KPI panels, wallboard aircraft cards, and admin row groups only. Do not nest cards. State cues should come from Tailwind left borders, top strips, badges, and small icon charms rather than heavy card background colour.
+- `Badge` is for compact state labels, source/fallback charms, and metric qualifiers. Use restrained outline or soft treatments for normal states, red treatment for missing/urgent states, and purple treatment for active selected workflow states.
+- `Tooltip` is the default disclosure primitive for icon buttons, source/freshness charms, fallback burn-rate markers, and nearby-APU context. `HoverCard` is reserved for richer hover content such as the nearby APU-running aircraft list.
+- `Popover` is the fast workflow primitive. The reason picker should be a small anchored popover with category buttons in the first pane and detail buttons in the second pane. It should complete the common path in two clicks, without scrolling.
+- `Sheet` is the heavier inspection primitive. The reason-chain drawer uses `Sheet` so the card can remain visible behind the workflow and the user can inspect the chain without losing board context.
+- `Table` is for compact operational inventory and admin configuration. It should use dense row height, sticky headers where useful, and ghost buttons for row actions such as focusing an aircraft card.
+- `ToggleGroup` is for benchmark mode selection, with auto-rotation on wallboard. It should make the current benchmark obvious without looking like a segmented marketing control.
+- `Alert` is for validation, data-quality warnings, and admin save feedback. It should not be used as the normal Senior Engineer prompting pattern.
+- `Dialog` should be rare in the Senior Engineer workflow. Use it only for destructive confirmations or exceptional admin tasks, not for reason capture.
+
 Core app shell:
 
 - `Sidebar` or custom rail using shadcn `Sidebar` for HQ/Admin navigation on desktop.
@@ -1611,9 +1622,10 @@ Admin settings:
 
 Tailwind should own layout, spacing, density, and responsive behavior. shadcn theme variables should be configured to match the operational Virgin-style palette already described in this spec:
 
-- Deep purple for navigation and primary action.
-- Red/amber/green for operational states.
-- White and soft-grey surfaces.
+- Indigo `#1F1A4F` for navigation and structural surfaces.
+- Purple `#511C98` for primary action buttons, selected controls, and interactive emphasis.
+- Red `#E10A0A` for urgent and missing-reason states.
+- White surfaces with black text; neutral greys should be derived from black opacity for borders, dividers, muted labels, and disabled states.
 - 6-8px radius for panels, cards, popovers, tables, and controls.
 - No decorative hero sections, floating page-section cards, gradient orbs, or marketing composition.
 
@@ -1658,7 +1670,7 @@ First slice acceptance target:
 - Top command bar shows BNE context, current temperature, persona switcher, and scenario controls.
 - Daily scorecard strip shows the agreed Senior Engineer metrics.
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
-- Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
+- Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm neutral complete state.
 - Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
 - Aircraft urgency ranking is derived in the read-model/domain layer using fixed buckets with weighted tiebreakers, and exposed to both desktop and wallboard components.
 - Wallboard aircraft cards use larger typography and retain nearly all desktop-visible aircraft facts while removing action controls and drawer-only detail.
