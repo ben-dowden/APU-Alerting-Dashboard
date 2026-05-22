@@ -879,6 +879,70 @@ The future integration posture is:
 
 The app should not depend on write-back into an external operational system for v1 feasibility. Write-back may be useful later, but it is not required to prove the Senior Engineer workflow.
 
+## MVP Real-Integrated Backend Requirements
+
+The first real-integrated version does not need a full enterprise reporting backend, but it must do more than show a live board. It must persist the APU app-owned workflow events and produce a reason-tagged APU burn dataset.
+
+Minimum backend capabilities:
+
+- Consume operational source events from Kafka topics or integration adapters.
+- Derive the current BNE command board read model.
+- Persist APU app-owned reason-chain events.
+- Publish reason-chain and review-workflow events for enterprise consumption.
+- Persist or derive enough APU event state to allocate burn time and estimated fuel kg to reason segments.
+- Preserve source timestamp, ingestion timestamp, source system, and data-quality metadata needed by the UI.
+
+Reason-tagged burn allocation:
+
+- Each APU event has an APU-on timestamp and, once received, an APU-off timestamp.
+- Each APU event has zero or more reason segments.
+- Segment duration is calculated from segment start to segment end, capped within the APU event window.
+- If a user keeps the current reason, the current segment continues rather than creating a new visible segment.
+- If a user changes reason, the previous segment closes and a new segment starts.
+- If no reason has been captured, burn time is tagged as unattributed.
+- When the APU-off event arrives, the current segment closes and the APU event is finalized.
+- Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
+
+Minimum reporting output:
+
+The MVP must make reason-tagged burn data available for reporting, but the delivery mechanism is flexible. Acceptable early outputs include:
+
+- Direct XLSX export from the app.
+- SQL table or view.
+- EDP/data-platform write or publish path.
+- A simple file/export produced from the backend read model.
+
+The minimum reason-tagged burn dataset should include:
+
+- APU event id
+- Reason segment id
+- Tail
+- Flight number when available
+- Port
+- Bay or stand
+- APU-on timestamp
+- APU-off timestamp when known
+- Segment start timestamp
+- Segment end timestamp
+- Segment duration minutes
+- Estimated fuel kg for the segment
+- Reason category id and label
+- Reason detail id and label
+- Attributed/unattributed flag
+- Temperature band when available
+- Location source and meaning metadata
+- Source-system freshness/confidence metadata
+
+Not required for MVP:
+
+- Full report builder
+- Rich audit UI
+- Historical rebuild UI
+- Advanced report scheduling
+- Enterprise admin analytics dashboards
+
+These may be future-state capabilities, but v1 feasibility is satisfied when the system can create a credible reason-tagged burn dataset and export or publish it through at least one practical path.
+
 ## Prototype Boundaries
 
 This phase does not include:
