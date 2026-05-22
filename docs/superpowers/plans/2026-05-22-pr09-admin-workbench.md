@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js, React client components, TypeScript, Tailwind, Vitest, Testing Library.
 
+**Status:** Pending after PR 08 integration.
+
 ---
 
 ## File Structure

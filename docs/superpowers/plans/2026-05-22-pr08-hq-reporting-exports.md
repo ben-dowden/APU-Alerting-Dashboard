@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js, TypeScript, React, xlsx, Vitest, Testing Library.
 
+**Status:** Pending after PR 07 integration.
+
 ---
 
 ## File Structure

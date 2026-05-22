@@ -10,6 +10,8 @@
 
 **Tech Stack:** Next.js App Router, React, Tailwind, lucide-react, Testing Library, Vitest.
 
+**Status:** Complete 2026-05-22 on branch `pr04-senior-command-board`; pending PR integration.
+
 ---
 
 ## PR 03 Clean-Code Carry-Forward
@@ -35,19 +37,19 @@
 - Create: `components/senior/bne-command-board.tsx`
 - Modify: `app/senior/bne/page.tsx`
 
-- [ ] **Step 1: Create the board component skeleton**
+- [x] **Step 1: Create the board component skeleton**
 
 Create a server component that loads `bne-baseline`, active settings/reference fixtures, derives the current BNE board, and passes it to child components.
 
-- [ ] **Step 2: Route to the board**
+- [x] **Step 2: Route to the board**
 
 Update `app/senior/bne/page.tsx` to render `BneCommandBoard` instead of `RouteStub`.
 
-- [ ] **Step 3: Remove foundation sidebar from the Senior Engineer surface**
+- [x] **Step 3: Remove foundation sidebar from the Senior Engineer surface**
 
 Do not wrap the command board in the PR 01 large left-hand `AppShell` sidebar. Use a discreet navigation treatment that keeps the command board dominant in the viewport.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Run:
 
@@ -65,7 +67,7 @@ git commit -m feat-add-bne-command-board-shell
 - Create: `components/senior/command-bar.tsx`
 - Create or update: `components/senior/bne-command-board.test.tsx`
 
-- [ ] **Step 1: Write render test**
+- [x] **Step 1: Write render test**
 
 Assert the command bar shows:
 
@@ -79,11 +81,11 @@ current local time
 Wallboard link
 ```
 
-- [ ] **Step 2: Implement command bar**
+- [x] **Step 2: Implement command bar**
 
 Use Tailwind layout, `Badge`, `Button`, and lucide icons. Keep it compact and do not include benchmark controls.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -101,7 +103,7 @@ git commit -m feat-add-senior-command-bar
 - Create: `components/senior/scorecard-benchmark-band.tsx`
 - Update tests.
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 Assert the four metric labels render in order:
 
@@ -114,11 +116,11 @@ Attributed runtime
 
 Assert only one benchmark mode is visible by default, fuel kg delta is visually/textually primary before runtime delta, similar-temperature mode shows the active 3°C temperature-band label, and no dollar impact appears anywhere on the Senior Engineer surface.
 
-- [ ] **Step 2: Implement band**
+- [x] **Step 2: Implement band**
 
 Use four metric panels and one benchmark panel. Consume `deriveBenchmarkPanel` from PR 03 rather than calculating benchmark values in React. Desktop can expose benchmark toggle buttons; use similar-temperature as default and show the active 3°C temperature band label. Do not display dollar impact anywhere on the Senior Engineer surface.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -137,15 +139,15 @@ git commit -m feat-add-scorecard-benchmark-band
 - Create: `components/senior/aircraft-board.tsx`
 - Update tests.
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 Assert aircraft cards show tail, equipment, bay, APU state, APU runtime, ground time, estimated kg fuel, current reason, review due state, and closest tail placeholder text if proximity has not been enabled yet.
 
-- [ ] **Step 2: Implement display cards**
+- [x] **Step 2: Implement display cards**
 
 Use `Card`, `Badge`, and stable Tailwind grid constraints. No reason buttons, drawer triggers, manual-off, data-quality flag action, or popovers in this PR.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -164,15 +166,15 @@ git commit -m feat-add-display-aircraft-card-board
 - Update: `components/senior/bne-command-board.tsx`
 - Update tests.
 
-- [ ] **Step 1: Add tests**
+- [x] **Step 1: Add tests**
 
 Assert the side table shows tail, bay, red `On` chip, green `Off` chip, APU elapsed minutes, ground minutes, reason signal, and a ghost focus button.
 
-- [ ] **Step 2: Implement table**
+- [x] **Step 2: Implement table**
 
 The focus button can set an anchor hash or data attribute in this PR; smooth scrolling behavior can be refined later.
 
-- [ ] **Step 3: Full verification and commit**
+- [x] **Step 3: Full verification and commit**
 
 Run:
 
@@ -189,4 +191,10 @@ git commit -m feat-complete-senior-command-board-shell
 
 - Spec coverage: command bar, scorecard, benchmark band, display cards, and side table are covered.
 - Public interfaces: `AircraftCardContent` is shared with future desktop workflow and wallboard wrappers.
-- Handoff checks: `/senior/bne` renders from event read models and passes tests/build before PR 05.
+- Handoff checks: `/senior/bne` renders from event read models and passes tests/build before PR 05. Latest verification: `npm run test` passed with 103 tests and `npm run build` passed after clearing ignored `.next` artifacts and running with elevated file-write permission.
+
+## PR 05/06/07 Carry-Forward
+
+- PR 05 should wrap the display-only `AircraftCardContent` in `DesktopAircraftCard` for reason picker, drawer, keep-current, and note workflows instead of moving event replay or reason interpretation into the component layer.
+- PR 06 should replace the PR 04 `Closest tail pending` placeholder with derived proximity fields and compact source-quality/manual-off pending affordances from read-model outputs.
+- PR 07 should reuse the same BNE board/read-model adapter pattern and keep wallboard aircraft cards passive, without importing desktop reason, manual-off, drawer, QR, or data-quality actions.
