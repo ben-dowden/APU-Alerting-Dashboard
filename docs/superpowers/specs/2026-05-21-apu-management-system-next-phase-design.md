@@ -437,10 +437,20 @@ Current reason section
 
 Recent timeline preview
 - Current segment highlighted
-- Previous two or three segments, if they exist
+- Previous two segments, if they exist
 ```
 
-The full timeline should remain available lower in the tray through internal scroll or a restrained `Show full chain` disclosure. Fuel-estimate detail, equipment type, burn assumption version, fallback explanation, and admin/HQ telemetry should stay below the compact workflow content or inside quiet collapsed sections. The first visible drawer view should not feel like a report.
+The timeline preview should render as a horizontal left-to-right reason strip inside the drawer viewport. Each segment appears as a compact pill/card with reason category/detail, duration, and a tiny time range. The current segment should be visually emphasized using purple or indigo treatment, while previous segments use neutral styling.
+
+Default timeline strip:
+
+- Show the current segment plus the previous two segments.
+- Keep all visible segments inside the same drawer viewport without requiring scrolling for the default state.
+- Use a restrained `Show all reasons` control when more segments exist.
+
+When the user selects `Show all reasons`, the drawer viewport stays the same size and position. The reason strip becomes horizontally scrollable, or otherwise internally scrollable within the same tray, so the user can inspect the full reason chain without expanding the drawer or reflowing the board.
+
+Fuel-estimate detail, equipment type, burn assumption version, fallback explanation, and admin/HQ telemetry should stay below the compact workflow content or inside quiet collapsed sections. The first visible drawer view should not feel like a report.
 
 Normal Senior Engineer users can see the chain and add a note to the current segment. They can correct the category/detail on a previous segment only through a restrained `Correct reason` action on a visible timeline row. They cannot edit start/end times.
 
@@ -1724,7 +1734,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, `Show all reasons` enabling internal scrolling without resizing the drawer, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
