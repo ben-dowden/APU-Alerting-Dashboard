@@ -24,9 +24,13 @@
    - PR 02 fixture semantics to preserve: manual APU-off is only `manual_apu_off_observed` domain telemetry until trusted ACMS off confirmation arrives; stale stand context is represented with low confidence plus `quality.isStale`/`quality.isPlanned` and must not be presented as live tracking; unmatched burn assumptions use the configured `UNKNOWN` fallback; equipment mismatch scenarios preserve both source/reference values through source events plus a data-quality flag.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` may need elevated execution permissions because esbuild can fail with `spawn EPERM` under the sandbox.
 
-3. **PR 03: Reducers And Read-Model Foundation**
+3. **PR 03: Reducers And Read-Model Foundation** - **Complete 2026-05-22 on branch `pr03-reducers-read-models`; pending integration**
    - Converts event-shaped fixtures into current board state, cards, scorecards, benchmarks, burn rows, and diagnostics.
    - Gate: read models are deterministic and UI-free.
+   - Carry-forward from PR 03: UI PRs should import read-model surfaces from `lib/read-models/index.ts`; the main entry points are `deriveCurrentBoard`, `deriveAircraftCards`, `deriveDailyScorecard`, `deriveBenchmarkPanel`, `deriveReasonTaggedBurnRows`, and `deriveDataQualityTelemetry`.
+   - PR 03 implementation notes for later PRs: current-board derivation replays BNE source/domain fixture events up to `nowIso`; APU events use source `occurredAt` transition order, with trusted ACMS off taking precedence and departed flight state only creating low-confidence inferred closure when no explicit off exists.
+   - PR 03 fixture semantics to preserve: manual APU-off remains pending while the trusted source event is absent; reason-tagged burn rows keep unattributed runtime as its own bucket; fallback fuel assumptions retain assumption version/source metadata for HQ/export reconciliation; proximity is derived from stand coordinates only and must not be presented as live aircraft tracking.
+   - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` needed elevated execution permissions because esbuild/Next could fail with `spawn EPERM` under the sandbox.
 
 4. **PR 04: Senior BNE Command Board Shell**
    - Builds the display shell for the Senior Engineer surface.
