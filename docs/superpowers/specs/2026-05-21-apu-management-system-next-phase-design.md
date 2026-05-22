@@ -35,7 +35,7 @@ Cards, panels, popovers, tables, and controls should use 6-8px border radius. Av
 
 Use icons from `lucide-react` for actions. Avoid verbose action labels where a standard icon plus tooltip is clearer, but the first missing-reason action must be a clear text button.
 
-Typography should stay compact:
+Default desktop typography should stay compact; the wallboard aircraft-card wrapper has its own larger scan-distance typography rules:
 
 - Header title: 22-26px
 - Metric values: 24-30px
@@ -203,6 +203,16 @@ Each aircraft card should have a stable, scannable structure:
 │ Review due in 00:06                  │
 └──────────────────────────────────────┘
 ```
+
+Desktop and wallboard cards should use shared aircraft-card content and a shared card read model, but separate wrappers:
+
+- `AircraftCardContent`: shared presentational subparts and field formatting for tail, equipment, bay, APU state, current reason, timers, fuel estimate, proximity summary, and source charms.
+- `DesktopAircraftCard`: active workflow wrapper for `/senior/bne`; includes reason actions, drawer trigger, manual APU-off, data issue flagging, and pointer-focused density.
+- `WallboardAircraftCard`: passive display wrapper for `/senior/bne/wallboard`; uses the same content/read model but increases card size, spacing, and typography for a 70-inch display.
+
+The wallboard card is allowed to drop secondary detail to protect readability. It should keep the high-signal operating facts: tail, equipment type, bay, APU on/off state, current reason and `HH:MM` timer, APU elapsed time, estimated kg fuel, and closest-tail/proximity summary. It may suppress long stand descriptions, detailed source/freshness labels, fallback-fuel assumption markers, action areas, and other drawer-only detail. Source/freshness can remain as compact charms only when they do not compete with the operational state.
+
+Wallboard typography should be visibly larger than the desktop card without using viewport-width font scaling. Use fixed responsive Tailwind sizes so the tail, status, and current-reason timer can be read at TV distance, while preserving stable card dimensions and preventing timer/reason text from shifting the board.
 
 Card state styling:
 
@@ -432,7 +442,7 @@ Interaction:
 5. User clicks a detail.
 6. The popover closes, the card reason updates, and the card returns to its valid/current state.
 
-The category panel should be about 220-260px wide. The detail panel should be about 240-300px wide. Each row should be large enough to hit comfortably on desktop and a wallboard-connected mouse: roughly 36-42px high.
+The category panel should be about 220-260px wide. The detail panel should be about 240-300px wide. Each row should be large enough to hit comfortably on the desktop workflow surface: roughly 36-42px high.
 
 Use icons sparingly in the category list:
 
@@ -1417,7 +1427,7 @@ For the first slice, `/senior/bne/wallboard` is read-only:
 - No detail overlay or card expansion.
 - No drawer/open-state client state.
 
-The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms on compact aircraft cards only. It should not include prompts, links, QR codes, or deep links back to the desktop workflow surface. The wallboard is a passive information surface; users know to use the desktop workflow through operational practice, not in-app prompting.
+The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms on passive aircraft cards only. It should not include prompts, links, QR codes, or deep links back to the desktop workflow surface. The wallboard is a passive information surface; users know to use the desktop workflow through operational practice, not in-app prompting.
 
 ### State Management
 
@@ -1476,10 +1486,12 @@ Senior Engineer command board:
 - `ScorecardStrip`: repeated shadcn `Card` or custom metric panels; use cards only for individual KPI panels.
 - `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection plus a client timer for 5-second auto-rotation.
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
-- `AircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, and small custom status strips.
+- `AircraftCardContent`: shared aircraft-card content and formatting helpers consumed by both desktop and wallboard cards.
+- `DesktopAircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, reason actions, drawer trigger, and small custom status strips.
+- `WallboardAircraftCard`: shadcn `Card` composed from shared card content, using larger typography, reduced secondary detail, passive state display, and no action controls.
 - `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
 - `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
-- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only compact card status display with no drawer or overlay.
+- `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only large-format passive card status display with no drawer or overlay.
 
 Reason-chain workflow:
 
@@ -1539,7 +1551,7 @@ Migration sequence:
 1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme in the existing app repo.
 2. Create event-shaped fixture contracts and read-model functions.
 3. Build the new Senior Engineer BNE command board as the first usable screen.
-4. Build the desktop aircraft-card workflow, reason picker, and reason-chain drawer as part of that first usable screen; keep the wallboard card variant compact and passive.
+4. Build the desktop aircraft-card workflow, reason picker, and reason-chain drawer as part of that first usable screen; keep the wallboard card variant large-format, passive, and scan-first.
 5. Add scorecard strip, benchmark rotator, and ground-aircraft side table to complete the first Senior Engineer slice.
 6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
 7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
@@ -1561,9 +1573,11 @@ First slice acceptance target:
 - Daily scorecard strip shows the agreed Senior Engineer metrics.
 - Benchmark panel auto-rotates comparison mode every 5 seconds.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm green state.
+- Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
+- Wallboard aircraft cards use larger typography and may drop secondary details to remain readable on a 70-inch display.
 - Reason capture uses the shadcn popover two-click category/detail flow.
 - On `/senior/bne`, the reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
-- On `/senior/bne/wallboard`, compact aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
+- On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
 - Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
 - Ground-aircraft side table can focus the selected aircraft card.
 
@@ -1572,6 +1586,7 @@ First-slice layout checks:
 - `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
 - `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
 - The wallboard route can prioritize density and scanability with reduced chrome; the desktop route can allow scrolling, but key scorecard and active queue context must remain immediately visible.
+- Wallboard aircraft card typography, spacing, and suppressed-detail choices must be verified visually so the cards read as deliberate TV cards, not enlarged desktop cards.
 - Both routes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
@@ -1583,7 +1598,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
-- Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports.
+- Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and suppressed-detail checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
 The implementation should keep the prototype mock-driven while making the mock layer look like the future integration layer.
