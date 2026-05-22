@@ -1,16 +1,6 @@
 import type { EventEnvelope } from "./envelope";
 import type { SettingsChangedEvent, SettingsChangedPayload } from "./settings-events";
 
-export type DomainEventType =
-  | "reason_selected"
-  | "reason_changed"
-  | "reason_kept"
-  | "reason_note_added"
-  | "manual_apu_off_observed"
-  | "data_quality_flag_created"
-  | "review_resolved"
-  | "settings_changed";
-
 export type ReasonSelection = {
   apuEventId: string;
   reasonSegmentId: string;
@@ -89,42 +79,55 @@ export type ReviewResolvedPayload = {
   resolvedBy: string;
 };
 
-export type ReasonSelectedEvent = EventEnvelope<ReasonSelectedPayload> & {
-  eventType: "reason_selected";
+export type DomainEventPayloadByType = {
+  reason_selected: ReasonSelectedPayload;
+  reason_changed: ReasonChangedPayload;
+  reason_kept: ReasonKeptPayload;
+  reason_note_added: ReasonNoteAddedPayload;
+  manual_apu_off_observed: ManualApuOffObservedPayload;
+  data_quality_flag_created: DataQualityFlagCreatedPayload;
+  review_resolved: ReviewResolvedPayload;
+  settings_changed: SettingsChangedPayload;
 };
 
-export type ReasonChangedEvent = EventEnvelope<ReasonChangedPayload> & {
-  eventType: "reason_changed";
-};
+export type DomainEventType = keyof DomainEventPayloadByType;
 
-export type ReasonKeptEvent = EventEnvelope<ReasonKeptPayload> & {
-  eventType: "reason_kept";
-};
+export const domainEventTypeRegistry = {
+  reason_selected: true,
+  reason_changed: true,
+  reason_kept: true,
+  reason_note_added: true,
+  manual_apu_off_observed: true,
+  data_quality_flag_created: true,
+  review_resolved: true,
+  settings_changed: true,
+} as const satisfies Record<DomainEventType, true>;
 
-export type ReasonNoteAddedEvent = EventEnvelope<ReasonNoteAddedPayload> & {
-  eventType: "reason_note_added";
-};
+export const domainEventTypes = Object.keys(domainEventTypeRegistry) as DomainEventType[];
 
-export type ManualApuOffObservedEvent = EventEnvelope<ManualApuOffObservedPayload> & {
-  eventType: "manual_apu_off_observed";
-};
+export type DomainEventOfType<TEventType extends DomainEventType> =
+  EventEnvelope<DomainEventPayloadByType[TEventType]> & {
+    eventType: TEventType;
+  };
 
-export type DataQualityFlagCreatedEvent = EventEnvelope<DataQualityFlagCreatedPayload> & {
-  eventType: "data_quality_flag_created";
-};
+export type ReasonSelectedEvent = DomainEventOfType<"reason_selected">;
 
-export type ReviewResolvedEvent = EventEnvelope<ReviewResolvedPayload> & {
-  eventType: "review_resolved";
-};
+export type ReasonChangedEvent = DomainEventOfType<"reason_changed">;
+
+export type ReasonKeptEvent = DomainEventOfType<"reason_kept">;
+
+export type ReasonNoteAddedEvent = DomainEventOfType<"reason_note_added">;
+
+export type ManualApuOffObservedEvent = DomainEventOfType<"manual_apu_off_observed">;
+
+export type DataQualityFlagCreatedEvent = DomainEventOfType<"data_quality_flag_created">;
+
+export type ReviewResolvedEvent = DomainEventOfType<"review_resolved">;
 
 export type DomainEvent =
-  | ReasonSelectedEvent
-  | ReasonChangedEvent
-  | ReasonKeptEvent
-  | ReasonNoteAddedEvent
-  | ManualApuOffObservedEvent
-  | DataQualityFlagCreatedEvent
-  | ReviewResolvedEvent
+  | {
+      [TEventType in Exclude<DomainEventType, "settings_changed">]: DomainEventOfType<TEventType>;
+    }[Exclude<DomainEventType, "settings_changed">]
   | SettingsChangedEvent;
 
 export type { SettingsChangedEvent, SettingsChangedPayload };

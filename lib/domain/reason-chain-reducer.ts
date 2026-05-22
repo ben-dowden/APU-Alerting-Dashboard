@@ -41,12 +41,12 @@ export type ReasonChainState = {
   isLocked: boolean;
 };
 
-const reasonEventTypes = new Set<DomainEvent["eventType"]>([
-  "reason_selected",
-  "reason_changed",
-  "reason_kept",
-  "review_resolved",
-]);
+type ReasonEvent = ReasonSelectedEvent | ReasonChangedEvent | ReasonKeptEvent | ReviewResolvedEvent;
+
+type ReasonChainAccumulator = {
+  segments: ReasonSegment[];
+  reviewResponseTelemetry: ReviewResponseTelemetry[];
+};
 
 const hasApuEventId = (event: DomainEvent): event is DomainEvent & { payload: { apuEventId: string } } =>
   "apuEventId" in event.payload && typeof event.payload.apuEventId === "string";
@@ -124,75 +124,119 @@ const reviewResponseTypeByResolution: Record<
   dismissed: "dismissed",
 };
 
+const keepFirstReasonSegment = (
+  state: ReasonChainAccumulator,
+  event: ReasonSelectedEvent,
+): ReasonChainAccumulator =>
+  state.segments.length === 0 ? { ...state, segments: [createSegment(event)] } : state;
+
+const changeReasonSegment = (
+  state: ReasonChainAccumulator,
+  event: ReasonChangedEvent,
+): ReasonChainAccumulator => {
+  const changedAt = eventTimestamp(event);
+  const previousIndex = state.segments.findIndex(
+    (segment) => segment.reasonSegmentId === event.payload.previousReasonSegmentId,
+  );
+  const fallbackIndex = state.segments.length - 1;
+  const segmentIndexToClose = previousIndex >= 0 ? previousIndex : fallbackIndex;
+  const nextSegment = createSegment(event);
+
+  return {
+    ...state,
+    segments:
+      segmentIndexToClose >= 0
+        ? [...closeSegmentAt(state.segments, segmentIndexToClose, changedAt), nextSegment]
+        : [nextSegment],
+  };
+};
+
+const recordKeptReview = (
+  state: ReasonChainAccumulator,
+  event: ReasonKeptEvent,
+): ReasonChainAccumulator => ({
+  ...state,
+  reviewResponseTelemetry: [
+    ...state.reviewResponseTelemetry,
+    {
+      reasonSegmentId: event.payload.reasonSegmentId,
+      responseType: "kept",
+      reviewDueAt: event.payload.reviewDueAt,
+      respondedAt: event.payload.keptAt,
+      respondedBy: event.payload.keptBy,
+      sourceEventId: event.eventId,
+    },
+  ],
+});
+
+const recordResolvedReview = (
+  state: ReasonChainAccumulator,
+  event: ReviewResolvedEvent,
+): ReasonChainAccumulator => ({
+  ...state,
+  reviewResponseTelemetry: [
+    ...state.reviewResponseTelemetry,
+    {
+      reasonSegmentId: event.payload.reasonSegmentId,
+      responseType: reviewResponseTypeByResolution[event.payload.resolutionType],
+      reviewDueAt: event.payload.reviewDueAt,
+      respondedAt: event.payload.reviewResolvedAt,
+      respondedBy: event.payload.resolvedBy,
+      sourceEventId: event.eventId,
+    },
+  ],
+});
+
+type ReasonEventHandlers = {
+  [TEventType in ReasonEvent["eventType"]]: (
+    state: ReasonChainAccumulator,
+    event: Extract<ReasonEvent, { eventType: TEventType }>,
+  ) => ReasonChainAccumulator;
+};
+
+const reasonEventHandlers = {
+  reason_selected: keepFirstReasonSegment,
+  reason_changed: changeReasonSegment,
+  reason_kept: recordKeptReview,
+  review_resolved: recordResolvedReview,
+} satisfies ReasonEventHandlers;
+
+const reasonEventTypes = new Set(
+  Object.keys(reasonEventHandlers) as Array<ReasonEvent["eventType"]>,
+);
+
+const isReasonEvent = (event: DomainEvent): event is ReasonEvent =>
+  reasonEventTypes.has(event.eventType as ReasonEvent["eventType"]);
+
+const applyReasonEvent = (
+  state: ReasonChainAccumulator,
+  event: ReasonEvent,
+): ReasonChainAccumulator => reasonEventHandlers[event.eventType](state, event as never);
+
 export const deriveReasonChain = (
   apuEvent: DerivedApuEvent,
   domainEvents: readonly DomainEvent[],
   settings: ReasonTaxonomySnapshot,
   nowIso: string,
 ): ReasonChainState => {
-  let segments: ReasonSegment[] = [];
-  let reviewResponseTelemetry: ReviewResponseTelemetry[] = [];
-
   const reasonEvents = domainEvents
-    .filter((event) => reasonEventTypes.has(event.eventType))
+    .filter(isReasonEvent)
     .filter((event) => matchesApuEvent(event, apuEvent))
     .filter((event) => event.occurredAt >= apuEvent.startedAt)
     .filter((event) => !apuEvent.endedAt || event.occurredAt <= apuEvent.endedAt)
     .sort(compareEventTime);
 
+  let replayState: ReasonChainAccumulator = {
+    segments: [],
+    reviewResponseTelemetry: [],
+  };
+
   for (const event of reasonEvents) {
-    if (event.eventType === "reason_selected") {
-      if (segments.length === 0) {
-        segments = [createSegment(event)];
-      }
-      continue;
-    }
-
-    if (event.eventType === "reason_changed") {
-      const changedAt = eventTimestamp(event);
-      const previousIndex = segments.findIndex(
-        (segment) => segment.reasonSegmentId === event.payload.previousReasonSegmentId,
-      );
-      const fallbackIndex = segments.length - 1;
-      const segmentIndexToClose = previousIndex >= 0 ? previousIndex : fallbackIndex;
-
-      segments =
-        segmentIndexToClose >= 0
-          ? [...closeSegmentAt(segments, segmentIndexToClose, changedAt), createSegment(event)]
-          : [createSegment(event)];
-      continue;
-    }
-
-    if (event.eventType === "reason_kept") {
-      reviewResponseTelemetry = [
-        ...reviewResponseTelemetry,
-        {
-          reasonSegmentId: event.payload.reasonSegmentId,
-          responseType: "kept",
-          reviewDueAt: event.payload.reviewDueAt,
-          respondedAt: event.payload.keptAt,
-          respondedBy: event.payload.keptBy,
-          sourceEventId: event.eventId,
-        },
-      ];
-      continue;
-    }
-
-    if (event.eventType === "review_resolved") {
-      const resolvedEvent = event as ReviewResolvedEvent;
-      reviewResponseTelemetry = [
-        ...reviewResponseTelemetry,
-        {
-          reasonSegmentId: resolvedEvent.payload.reasonSegmentId,
-          responseType: reviewResponseTypeByResolution[resolvedEvent.payload.resolutionType],
-          reviewDueAt: resolvedEvent.payload.reviewDueAt,
-          respondedAt: resolvedEvent.payload.reviewResolvedAt,
-          respondedBy: resolvedEvent.payload.resolvedBy,
-          sourceEventId: resolvedEvent.eventId,
-        },
-      ];
-    }
+    replayState = applyReasonEvent(replayState, event);
   }
+
+  let { segments } = replayState;
+  const { reviewResponseTelemetry } = replayState;
 
   if (apuEvent.endedAt) {
     segments = closeSegmentAt(segments, segments.length - 1, apuEvent.endedAt);

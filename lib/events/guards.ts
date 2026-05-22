@@ -1,28 +1,13 @@
-import type { ApuStateEvent, SourceEvent, SourceEventType } from "./source-events";
-import type { DomainEvent, DomainEventType } from "./domain-events";
+import type { ApuStateEvent, SourceEvent } from "./source-events";
+import { sourceEventTypes } from "./source-events";
+import type { DomainEvent } from "./domain-events";
+import { domainEventTypes } from "./domain-events";
 
-const sourceEventTypes = new Set<SourceEventType>([
-  "flight_state_event",
-  "stand_assignment_event",
-  "apu_state_event",
-  "weather_observation_event",
-  "tail_equipment_reference_event",
-  "stand_coordinate_reference_event",
-]);
-
-const domainEventTypes = new Set<DomainEventType>([
-  "reason_selected",
-  "reason_changed",
-  "reason_kept",
-  "reason_note_added",
-  "manual_apu_off_observed",
-  "data_quality_flag_created",
-  "review_resolved",
-  "settings_changed",
-]);
+const sourceEventTypeSet = new Set<string>(sourceEventTypes);
+const domainEventTypeSet = new Set<string>(domainEventTypes);
 
 type EventCandidate = {
-  eventType?: unknown;
+  eventType: string;
   payload?: unknown;
 };
 
@@ -33,10 +18,10 @@ const hasEventType = (value: unknown): value is EventCandidate =>
   isRecord(value) && typeof value.eventType === "string";
 
 export const isSourceEvent = (value: unknown): value is SourceEvent =>
-  hasEventType(value) && sourceEventTypes.has(value.eventType as SourceEventType);
+  hasEventType(value) && sourceEventTypeSet.has(value.eventType);
 
 export const isDomainEvent = (value: unknown): value is DomainEvent =>
-  hasEventType(value) && domainEventTypes.has(value.eventType as DomainEventType);
+  hasEventType(value) && domainEventTypeSet.has(value.eventType);
 
 export const isApuStateEvent = (value: unknown): value is ApuStateEvent => {
   if (!hasEventType(value) || value.eventType !== "apu_state_event" || !isRecord(value.payload)) {

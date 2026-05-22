@@ -26,6 +26,36 @@ export type ScenarioFixture = {
   events: ScenarioEvent[];
 };
 
+const bneSourceSystems = {
+  flightState: "AIMS",
+  standPlan: "BNE_STAND_PLAN",
+  apuState: "ACMS",
+  weather: "BOM",
+  app: "APU_APP",
+} as const satisfies Record<string, EventSourceSystem>;
+
+export const bneScenarioContext = {
+  port: "BNE",
+  terminal: "Domestic",
+  station: "BNE",
+  sourceSystems: bneSourceSystems,
+  sourceActions: {
+    selectReason: "select_reason",
+  },
+} as const;
+
+type BneCorrelationInput = Omit<EventCorrelation, "port" | "idempotencyKey">;
+
+const bneCorrelation = (correlation: BneCorrelationInput): EventCorrelation => ({
+  port: bneScenarioContext.port,
+  ...correlation,
+});
+
+const withBnePort = <TPayload extends object>(payload: TPayload) => ({
+  ...payload,
+  port: bneScenarioContext.port,
+});
+
 type EnvelopeInput<TEventType extends ScenarioEvent["eventType"], TPayload> = {
   eventType: TEventType;
   sourceSystem: EventSourceSystem;
@@ -82,20 +112,18 @@ export const flightStateEvent = (
 ): FlightStateEvent =>
   envelope({
     eventType: "flight_state_event",
-    sourceSystem: "AIMS",
+    sourceSystem: bneScenarioContext.sourceSystems.flightState,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
       flightNumber: input.flightNumber,
       arrivalFlightNumber: input.arrivalFlightNumber,
       departureFlightNumber: input.departureFlightNumber,
-    },
-    payload: {
+    }),
+    payload: withBnePort({
       tail: input.tail,
-      port: "BNE",
       flightNumber: input.flightNumber,
       aircraftType: input.aircraftType,
       arrivalFlightNumber: input.arrivalFlightNumber,
@@ -105,7 +133,7 @@ export const flightStateEvent = (
       gateState: input.gateState,
       onGroundAt: input.onGroundAt,
       offGroundAt: input.offGroundAt,
-    },
+    }),
   });
 
 export const standAssignmentEvent = (input: {
@@ -123,28 +151,26 @@ export const standAssignmentEvent = (input: {
 }): StandAssignmentEvent =>
   envelope({
     eventType: "stand_assignment_event",
-    sourceSystem: "BNE_STAND_PLAN",
+    sourceSystem: bneScenarioContext.sourceSystems.standPlan,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
       bay: input.bay,
       stand: input.stand,
-    },
+    }),
     quality: input.quality,
-    payload: {
+    payload: withBnePort({
       tail: input.tail,
-      port: "BNE",
       bay: input.bay,
       stand: input.stand,
-      terminal: "Domestic",
+      terminal: bneScenarioContext.terminal,
       assignmentState: input.assignmentState,
       validFrom: input.validFrom,
       validUntil: input.validUntil,
       sourceUpdatedAt: input.sourceUpdatedAt ?? input.occurredAt,
-    },
+    }),
   });
 
 export const apuStateEvent = (input: {
@@ -157,24 +183,22 @@ export const apuStateEvent = (input: {
 }): ApuStateEvent =>
   envelope({
     eventType: "apu_state_event",
-    sourceSystem: "ACMS",
+    sourceSystem: bneScenarioContext.sourceSystems.apuState,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
-    },
+    }),
     quality: {
       sourceLatencyMinutes: input.sourceLatencyMinutes,
     },
-    payload: {
+    payload: withBnePort({
       tail: input.tail,
-      port: "BNE",
       state: input.state,
       transitionedAt: input.occurredAt,
       acmsMessageType: input.state === "on" ? "apu_on" : "apu_off",
-    },
+    }),
   });
 
 export const weatherObservationEvent = (input: {
@@ -186,21 +210,18 @@ export const weatherObservationEvent = (input: {
 }): WeatherObservationEvent =>
   envelope({
     eventType: "weather_observation_event",
-    sourceSystem: "BOM",
+    sourceSystem: bneScenarioContext.sourceSystems.weather,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
-    },
-    payload: {
-      port: "BNE",
+    correlation: bneCorrelation({}),
+    payload: withBnePort({
       observedAt: input.occurredAt,
       temperatureC: input.temperatureC,
       temperatureBandC: input.temperatureBandC,
-      station: "BNE",
-    },
-    entityId: "BNE",
+      station: bneScenarioContext.station,
+    }),
+    entityId: bneScenarioContext.port,
   });
 
 export const reasonSelectedEvent = (input: {
@@ -218,16 +239,15 @@ export const reasonSelectedEvent = (input: {
 }): ReasonSelectedEvent =>
   envelope({
     eventType: "reason_selected",
-    sourceSystem: "APU_APP",
+    sourceSystem: bneScenarioContext.sourceSystems.app,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
       apuEventId: input.apuEventId,
       reasonSegmentId: input.reasonSegmentId,
-    },
+    }),
     payload: {
       apuEventId: input.apuEventId,
       reasonSegmentId: input.reasonSegmentId,
@@ -237,7 +257,7 @@ export const reasonSelectedEvent = (input: {
       detailLabel: input.detailLabel,
       selectedBy: input.selectedBy,
       selectedAt: input.occurredAt,
-      sourceAction: "select_reason",
+      sourceAction: bneScenarioContext.sourceActions.selectReason,
     },
   });
 
@@ -252,15 +272,14 @@ export const manualApuOffObservedEvent = (input: {
 }): ManualApuOffObservedEvent =>
   envelope({
     eventType: "manual_apu_off_observed",
-    sourceSystem: "APU_APP",
+    sourceSystem: bneScenarioContext.sourceSystems.app,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
       apuEventId: input.apuEventId,
-    },
+    }),
     payload: {
       apuEventId: input.apuEventId,
       tail: input.tail,
@@ -281,17 +300,16 @@ export const dataQualityFlagCreatedEvent = (
 ): DataQualityFlagCreatedEvent =>
   envelope({
     eventType: "data_quality_flag_created",
-    sourceSystem: "APU_APP",
+    sourceSystem: bneScenarioContext.sourceSystems.app,
     sourceEventId: input.sourceEventId,
     occurredAt: input.occurredAt,
     receivedAt: input.receivedAt,
-    correlation: {
-      port: "BNE",
+    correlation: bneCorrelation({
       tail: input.tail,
       apuEventId: input.apuEventId,
       aircraftGroundEventId: input.aircraftGroundEventId,
       relatedSourceEventIds: input.relatedEventIds,
-    },
+    }),
     quality: {
       confidence: input.severity === "critical" ? "high" : "medium",
     },

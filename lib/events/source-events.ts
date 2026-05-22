@@ -1,13 +1,5 @@
 import type { EventEnvelope } from "./envelope";
 
-export type SourceEventType =
-  | "flight_state_event"
-  | "stand_assignment_event"
-  | "apu_state_event"
-  | "weather_observation_event"
-  | "tail_equipment_reference_event"
-  | "stand_coordinate_reference_event";
-
 export type FlightStateEventPayload = {
   tail: string;
   port: string;
@@ -69,34 +61,45 @@ export type StandCoordinateReferenceEventPayload = {
   effectiveFrom: string;
 };
 
-export type FlightStateEvent = EventEnvelope<FlightStateEventPayload> & {
-  eventType: "flight_state_event";
+export type SourceEventPayloadByType = {
+  flight_state_event: FlightStateEventPayload;
+  stand_assignment_event: StandAssignmentEventPayload;
+  apu_state_event: ApuStateEventPayload;
+  weather_observation_event: WeatherObservationEventPayload;
+  tail_equipment_reference_event: TailEquipmentReferenceEventPayload;
+  stand_coordinate_reference_event: StandCoordinateReferenceEventPayload;
 };
 
-export type StandAssignmentEvent = EventEnvelope<StandAssignmentEventPayload> & {
-  eventType: "stand_assignment_event";
-};
+export type SourceEventType = keyof SourceEventPayloadByType;
 
-export type ApuStateEvent = EventEnvelope<ApuStateEventPayload> & {
-  eventType: "apu_state_event";
-};
+export const sourceEventTypeRegistry = {
+  flight_state_event: true,
+  stand_assignment_event: true,
+  apu_state_event: true,
+  weather_observation_event: true,
+  tail_equipment_reference_event: true,
+  stand_coordinate_reference_event: true,
+} as const satisfies Record<SourceEventType, true>;
 
-export type WeatherObservationEvent = EventEnvelope<WeatherObservationEventPayload> & {
-  eventType: "weather_observation_event";
-};
+export const sourceEventTypes = Object.keys(sourceEventTypeRegistry) as SourceEventType[];
 
-export type TailEquipmentReferenceEvent = EventEnvelope<TailEquipmentReferenceEventPayload> & {
-  eventType: "tail_equipment_reference_event";
-};
+export type SourceEventOfType<TEventType extends SourceEventType> =
+  EventEnvelope<SourceEventPayloadByType[TEventType]> & {
+    eventType: TEventType;
+  };
 
-export type StandCoordinateReferenceEvent = EventEnvelope<StandCoordinateReferenceEventPayload> & {
-  eventType: "stand_coordinate_reference_event";
-};
+export type FlightStateEvent = SourceEventOfType<"flight_state_event">;
 
-export type SourceEvent =
-  | FlightStateEvent
-  | StandAssignmentEvent
-  | ApuStateEvent
-  | WeatherObservationEvent
-  | TailEquipmentReferenceEvent
-  | StandCoordinateReferenceEvent;
+export type StandAssignmentEvent = SourceEventOfType<"stand_assignment_event">;
+
+export type ApuStateEvent = SourceEventOfType<"apu_state_event">;
+
+export type WeatherObservationEvent = SourceEventOfType<"weather_observation_event">;
+
+export type TailEquipmentReferenceEvent = SourceEventOfType<"tail_equipment_reference_event">;
+
+export type StandCoordinateReferenceEvent = SourceEventOfType<"stand_coordinate_reference_event">;
+
+export type SourceEvent = {
+  [TEventType in SourceEventType]: SourceEventOfType<TEventType>;
+}[SourceEventType];
