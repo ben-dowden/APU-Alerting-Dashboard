@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js App Router, React 19, TypeScript, Tailwind CSS, Vitest, Testing Library, lucide-react, class-variance-authority, clsx, tailwind-merge.
 
+**Status:** Merged 2026-05-22 via `df54f4e`.
+
 ---
 
 ## File Structure

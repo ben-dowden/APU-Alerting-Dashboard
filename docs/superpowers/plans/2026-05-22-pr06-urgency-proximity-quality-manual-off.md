@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript, React, Tailwind, lucide-react, Vitest, Testing Library.
 
+**Status:** Pending after PR 04 and PR 05 integration.
+
 ---
 
 ## PR 03 Clean-Code Carry-Forward
@@ -15,6 +17,13 @@
 - Extend existing helpers in `lib/domain/proximity.ts`, `lib/domain/time.ts`, `lib/domain/ids.ts`, `lib/read-models/current-board.ts`, and `lib/read-models/aircraft-card.ts` before adding parallel ranking, proximity, source-quality, or pending-state logic.
 - Ranking, proximity, source quality, and manual-off pending status remain derived facts. Components should receive fields such as urgency bucket, closest tail, source freshness, and pending confirmation state rather than inferring them from raw events.
 - Prefer table-driven bucket, label, charm, and telemetry mappings plus named helper functions. Avoid nested conditionals that mix business rules, source-quality semantics, and visual styling in one component.
+
+## PR 04 Command-Board Carry-Forward
+
+- Extend the PR 04 aircraft card display body rather than replacing it; PR 06 should add urgency, proximity, source-quality, and manual-off affordances around the established card metrics and current-reason layout.
+- Replace `Closest tail pending` with derived proximity text only after read-model fields exist and are tested.
+- Keep fallback fuel-assumption lineage out of collapsed aircraft cards; the PR 04 Senior surface intentionally shows runtime and estimated kg fuel only.
+- Preserve the compact command-board layout and avoid reintroducing the foundation left sidebar.
 
 ---
 

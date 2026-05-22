@@ -8,6 +8,8 @@
 
 **Tech Stack:** React client components, TypeScript, Tailwind, Testing Library, Vitest.
 
+**Status:** Pending after PR 04 integration.
+
 ---
 
 ## PR 03 Clean-Code Carry-Forward
@@ -15,6 +17,13 @@
 - Workflow actions should emit canonical APU event ids from the read model whenever possible. Use `matchesApuEventId` only at adapter or merge boundaries where PR 02 legacy fixture compatibility is required.
 - Prototype workflow code should call shared time helpers from `lib/domain/time.ts` for elapsed-minute or ISO minute calculations instead of creating local date math.
 - After each local workflow mutation, re-derive through PR 03 read models; card components should not interpret reason chains, replay domain events, or decide whether an APU event is locked.
+
+## PR 04 Command-Board Carry-Forward
+
+- Start from the PR 04 `/senior/bne` shell and keep its compact command bar, scorecard/benchmark band, aircraft grid, and ground-aircraft table structure intact.
+- Wrap the PR 04 display-only `AircraftCardContent` with `DesktopAircraftCard` for workflow controls; do not duplicate the card header, metrics, current-reason display, or read-model field mapping.
+- Keep reason actions inside the current-reason block and leave the PR 04 side-table focus button as a lightweight placeholder unless a PR 05 test explicitly covers refinement.
+- Re-derive the board after local workflow events are appended; do not replay source/domain events inside React components.
 
 ---
 

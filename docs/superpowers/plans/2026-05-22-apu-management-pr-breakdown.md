@@ -15,7 +15,7 @@
    - Gate: `/senior/bne` exists as the default route target, but remains a stub.
    - Follow-up: the large PR 01 left-hand sidebar is foundation-only and is not the desired product navigation. PR 04 must remove it from the Senior Engineer surface and replace page navigation with a far more discreet pattern.
 
-2. **PR 02: Event Contracts And Scenario Fixtures** - **Complete 2026-05-22 on branch `pr02-event-contracts-fixtures`; pending integration**
+2. **PR 02: Event Contracts And Scenario Fixtures** - **Merged 2026-05-22 via `51dd984`**
    - Creates source/domain event contracts and BNE event-shaped scenario packs.
    - Gate: fixtures validate independently of React.
    - Carry-forward from PR 01: run commands from the resolved repo path if Vitest path resolution behaves strangely through the workspace junction, keep the Next-generated TypeScript support intact, and avoid spending PR 02 effort on the foundation sidebar because the navigation correction is explicitly planned for PR 04.
@@ -24,7 +24,7 @@
    - PR 02 fixture semantics to preserve: manual APU-off is only `manual_apu_off_observed` domain telemetry until trusted ACMS off confirmation arrives; stale stand context is represented with low confidence plus `quality.isStale`/`quality.isPlanned` and must not be presented as live tracking; unmatched burn assumptions use the configured `UNKNOWN` fallback; equipment mismatch scenarios preserve both source/reference values through source events plus a data-quality flag.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` may need elevated execution permissions because esbuild can fail with `spawn EPERM` under the sandbox.
 
-3. **PR 03: Reducers And Read-Model Foundation** - **Complete 2026-05-22 on branch `pr03-reducers-read-models`; pending integration**
+3. **PR 03: Reducers And Read-Model Foundation** - **Merged 2026-05-22 via `8559a66`**
    - Converts event-shaped fixtures into current board state, cards, scorecards, benchmarks, burn rows, and diagnostics.
    - Gate: read models are deterministic and UI-free.
    - Carry-forward from PR 03: UI PRs should import read-model surfaces from `lib/read-models/index.ts`; the main entry points are `deriveCurrentBoard`, `deriveAircraftCards`, `deriveDailyScorecard`, `deriveBenchmarkPanel`, `deriveReasonTaggedBurnRows`, and `deriveDataQualityTelemetry`.
@@ -35,9 +35,12 @@
    - PR 03 fixture semantics to preserve: manual APU-off remains pending while the trusted source event is absent; reason-tagged burn rows keep unattributed runtime as its own bucket; fallback fuel assumptions retain assumption version/source metadata for HQ/export reconciliation; proximity is derived from stand coordinates only and must not be presented as live aircraft tracking.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` needed elevated execution permissions because esbuild/Next could fail with `spawn EPERM` under the sandbox. If `next build` fails on `.next` `EPERM` unlink/rmdir, remove the ignored `.next` output and rerun the build.
 
-4. **PR 04: Senior BNE Command Board Shell**
+4. **PR 04: Senior BNE Command Board Shell** - **Complete 2026-05-22 on branch `pr04-senior-command-board`; pending PR integration**
    - Builds the display shell for the Senior Engineer surface.
    - Gate: command bar, scorecard/benchmark band, aircraft board, and side table render from the PR 03 read model.
+   - PR 04 implementation notes for later PRs: `/senior/bne` renders `BneCommandBoard` directly instead of the foundation `AppShell` sidebar; the command bar carries compact HQ/Admin route shortcuts; the benchmark panel defaults to similar-temperature comparison; aircraft cards are display-only and intentionally contain no reason, drawer, manual-off, data-quality, or popover actions; the side-table focus action is a lightweight `data-focus-tail` placeholder for later refinement.
+   - PR 04 carry-forward to PR 05/06/07: preserve `AircraftCardContent` as the shared display body, wrap it for workflow behavior in PR 05 rather than rebuilding the card contents, replace `Closest tail pending` only when PR 06 wires derived proximity fields, and keep the wallboard passive by reusing read-model data without bringing over desktop workflow actions.
+   - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` passed after elevated execution; if `next build` hits `.next` `EPERM` cleanup or rename errors, remove the ignored `.next` output and rerun with elevated file-write permission.
 
 5. **PR 05: Aircraft Card Reason Workflow**
    - Adds the core reason-chain interaction on desktop cards.
