@@ -110,7 +110,12 @@ const sourceCharmsFor = (
   flight: FlightStateEvent,
   stand: StandAssignmentEvent | undefined,
   apuState: ApuStateEvent | undefined,
-) => [flight, stand, apuState].filter((event): event is SourceEvent => Boolean(event)).map(sourceCharm);
+) =>
+  [flight, stand, apuState]
+    .filter((event): event is FlightStateEvent | StandAssignmentEvent | ApuStateEvent =>
+      Boolean(event),
+    )
+    .map(sourceCharm);
 
 const matchesApuEvent = (event: ManualApuOffObservedEvent, apuEvent: DerivedApuEvent) => {
   const legacyFixtureId = `apu:${apuEvent.tail}:${apuEvent.startedAt}`;

@@ -41,11 +41,11 @@ const distanceMeters = (from: StandCoordinate, to: StandCoordinate) => {
 };
 
 const coordinatesFromInput = (standCoordinates: StandCoordinatesInput): StandCoordinate[] => {
-  if (Array.isArray(standCoordinates)) {
-    return standCoordinates.map((event) => event.payload);
+  if ("stands" in standCoordinates) {
+    return standCoordinates.stands;
   }
 
-  return standCoordinates.stands;
+  return standCoordinates.map((event) => event.payload);
 };
 
 const coordinateMap = (standCoordinates: StandCoordinatesInput) =>
@@ -63,26 +63,26 @@ const withDistances = (
     return [];
   }
 
-  return candidates
-    .filter((candidate) => candidate.tail !== target.tail)
-    .map((candidate) => {
-      const candidateCoordinate = coordinates.get(candidate.stand);
+  const distances: AircraftDistance[] = [];
 
-      if (!candidateCoordinate) {
-        return undefined;
-      }
+  for (const candidate of candidates) {
+    const candidateCoordinate = coordinates.get(candidate.stand);
 
-      return {
-        ...candidate,
-        bay: candidate.bay ?? candidateCoordinate.bay,
-        distanceMeters: distanceMeters(targetCoordinate, candidateCoordinate),
-      };
-    })
-    .filter((candidate): candidate is AircraftDistance => Boolean(candidate))
-    .sort(
-      (left, right) =>
-        left.distanceMeters - right.distanceMeters || left.tail.localeCompare(right.tail),
-    );
+    if (candidate.tail === target.tail || !candidateCoordinate) {
+      continue;
+    }
+
+    distances.push({
+      ...candidate,
+      bay: candidate.bay ?? candidateCoordinate.bay,
+      distanceMeters: distanceMeters(targetCoordinate, candidateCoordinate),
+    });
+  }
+
+  return distances.sort(
+    (left, right) =>
+      left.distanceMeters - right.distanceMeters || left.tail.localeCompare(right.tail),
+  );
 };
 
 export const calculateClosestAircraft = (
