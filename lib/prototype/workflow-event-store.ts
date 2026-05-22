@@ -1,4 +1,5 @@
 import type { DomainEvent } from "@/lib/events";
+import { isDomainEvent } from "@/lib/events";
 
 export const WORKFLOW_EVENT_STORAGE_KEY = "apu-alerting-dashboard.workflow-events";
 
@@ -19,7 +20,7 @@ const parseStoredEvents = (storedEvents: string | null): DomainEvent[] => {
 
   try {
     const parsed = JSON.parse(storedEvents);
-    return Array.isArray(parsed) ? (parsed as DomainEvent[]) : [];
+    return Array.isArray(parsed) ? parsed.filter(isDomainEvent) : [];
   } catch {
     return [];
   }

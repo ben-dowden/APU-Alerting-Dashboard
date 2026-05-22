@@ -77,6 +77,21 @@ describe("workflow event store", () => {
     expect(readWorkflowEvents()[0].eventId).toBe("hydrated");
   });
 
+  it("ignores stored entries that are not domain events", () => {
+    localStorage.setItem(
+      WORKFLOW_EVENT_STORAGE_KEY,
+      JSON.stringify([
+        event("hydrated"),
+        { eventId: "not-a-domain-event", eventType: "flight_state_event" },
+        { eventId: "missing-type" },
+      ]),
+    );
+
+    expect(readWorkflowEvents().map((workflowEvent) => workflowEvent.eventId)).toEqual([
+      "hydrated",
+    ]);
+  });
+
   it("ignores malformed localStorage JSON", () => {
     localStorage.setItem(WORKFLOW_EVENT_STORAGE_KEY, "{not-json");
 
