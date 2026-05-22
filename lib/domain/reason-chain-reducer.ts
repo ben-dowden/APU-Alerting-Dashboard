@@ -8,6 +8,7 @@ import type {
 } from "@/lib/events";
 import type { DerivedApuEvent } from "./apu-reducer";
 import { matchesApuEventId } from "./ids";
+import { addMinutesIso, compareEventTime } from "./time";
 
 export type ReasonSegment = {
   reasonSegmentId: string;
@@ -58,16 +59,8 @@ const matchesApuEvent = (event: DomainEvent, apuEvent: DerivedApuEvent) => {
   return matchesApuEventId(event.payload.apuEventId, apuEvent);
 };
 
-const byEventTime = (left: DomainEvent, right: DomainEvent) =>
-  left.occurredAt.localeCompare(right.occurredAt) ||
-  left.receivedAt.localeCompare(right.receivedAt) ||
-  left.eventId.localeCompare(right.eventId);
-
 const eventTimestamp = (event: ReasonSelectedEvent | ReasonChangedEvent) =>
   event.payload.selectedAt || event.occurredAt;
-
-const addMinutesIso = (iso: string, minutes: number) =>
-  new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
 
 const findReviewIntervalMinutes = (
   settings: ReasonTaxonomySnapshot,
@@ -139,7 +132,7 @@ export const deriveReasonChain = (
     .filter((event) => matchesApuEvent(event, apuEvent))
     .filter((event) => event.occurredAt >= apuEvent.startedAt)
     .filter((event) => !apuEvent.endedAt || event.occurredAt <= apuEvent.endedAt)
-    .sort(byEventTime);
+    .sort(compareEventTime);
 
   for (const event of reasonEvents) {
     if (event.eventType === "reason_selected") {

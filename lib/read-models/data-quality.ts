@@ -1,5 +1,6 @@
 import type { DataQualityFlagCreatedEvent, DomainEvent } from "@/lib/events";
 import { isDomainEvent } from "@/lib/events";
+import { compareEventTime } from "@/lib/domain/time";
 
 export type DataQualityTelemetry = {
   flagId: string;
@@ -23,7 +24,7 @@ export const deriveDataQualityTelemetry = (events: readonly unknown[]): DataQual
   events
     .filter(isDomainEvent)
     .filter(isDataQualityFlagCreatedEvent)
-    .sort((left, right) => left.occurredAt.localeCompare(right.occurredAt))
+    .sort(compareEventTime)
     .map((event) => ({
       flagId: event.payload.flagId,
       tail: event.payload.tail,

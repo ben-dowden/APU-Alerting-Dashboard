@@ -1,6 +1,7 @@
 import type { ApuStateEvent, FlightStateEvent } from "@/lib/events";
 import { isApuStateEvent } from "@/lib/events";
 import { createApuEventId, normalizeTail } from "./ids";
+import { compareEventTime, compareIsoStrings } from "./time";
 
 export type ApuEventClosureType = "open" | "source_off" | "inferred_departed";
 export type ApuEventState = "open" | "closed";
@@ -23,23 +24,10 @@ export type DeriveApuEventsOptions = {
   inferClosureFromFlightState?: boolean;
 };
 
-type EventWithClock = {
-  eventType: string;
-  eventId: string;
-  occurredAt: string;
-  receivedAt: string;
-  payload: unknown;
-};
-
 const isFlightStateEvent = (event: unknown): event is FlightStateEvent =>
   typeof event === "object" &&
   event !== null &&
-  (event as EventWithClock).eventType === "flight_state_event";
-
-const bySourceTime = (left: EventWithClock, right: EventWithClock) =>
-  left.occurredAt.localeCompare(right.occurredAt) ||
-  left.receivedAt.localeCompare(right.receivedAt) ||
-  left.eventId.localeCompare(right.eventId);
+  (event as { eventType?: unknown }).eventType === "flight_state_event";
 
 const transitionTime = (event: ApuStateEvent) => event.payload.transitionedAt || event.occurredAt;
 
@@ -67,7 +55,7 @@ export const deriveApuEvents = (
   const apuEvents: DerivedApuEvent[] = [];
   const openByTail = new Map<string, DerivedApuEvent>();
 
-  const apuStateEvents = events.filter(isApuStateEvent).sort(bySourceTime);
+  const apuStateEvents = events.filter(isApuStateEvent).sort(compareEventTime);
 
   for (const event of apuStateEvents) {
     const tail = normalizeTail(event.payload.tail);
@@ -119,7 +107,7 @@ export const deriveApuEvents = (
     const departedFlightEvents = events
       .filter(isFlightStateEvent)
       .filter((event) => event.payload.gateState === "departed" && event.payload.offGroundAt)
-      .sort(bySourceTime);
+      .sort(compareEventTime);
 
     for (const apuEvent of apuEvents.filter((event) => event.state === "open")) {
       const closureEvent = departedFlightEvents.find(
@@ -146,5 +134,5 @@ export const deriveApuEvents = (
     }
   }
 
-  return apuEvents.sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+  return apuEvents.sort((left, right) => compareIsoStrings(left.startedAt, right.startedAt));
 };

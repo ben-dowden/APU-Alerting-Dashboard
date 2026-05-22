@@ -1,4 +1,5 @@
 import type { UrgencyBucket } from "@/lib/events";
+import { compareIsoStrings, minutesBetweenIso } from "@/lib/domain/time";
 import type { GroundAircraftState, SourceCharm, CurrentBoardState } from "./current-board";
 
 export type AircraftCardReadModel = {
@@ -43,9 +44,6 @@ const statusLabels: Record<UrgencyBucket, string> = {
   manual_off_pending: "Manual off pending",
   apu_off: "APU off",
 };
-
-const minutesBetween = (startIso: string, endIso: string) =>
-  Math.max(0, Math.floor((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000));
 
 const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket => {
   if (aircraft.apuState === "off") {
@@ -93,7 +91,7 @@ const cardForAircraft = (
           categoryLabel: currentReason.categoryLabel,
           detailId: currentReason.detailId,
           detailLabel: currentReason.detailLabel,
-          elapsedMinutes: minutesBetween(currentReason.startedAt, nowIso),
+          elapsedMinutes: minutesBetweenIso(currentReason.startedAt, nowIso),
         }
       : undefined,
     reviewState: {
@@ -115,6 +113,6 @@ export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCard
       (left, right) =>
         bucketOrder.indexOf(left.urgencyBucket) - bucketOrder.indexOf(right.urgencyBucket) ||
         right.aircraft.apuRuntimeMinutes - left.aircraft.apuRuntimeMinutes ||
-        left.aircraft.tail.localeCompare(right.aircraft.tail),
+        compareIsoStrings(left.aircraft.tail, right.aircraft.tail),
     )
     .map(({ aircraft }, index) => cardForAircraft(aircraft, boardState.nowIso, index + 1));

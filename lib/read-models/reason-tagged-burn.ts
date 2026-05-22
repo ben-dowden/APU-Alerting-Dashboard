@@ -1,5 +1,6 @@
 import type { GroundAircraftState, CurrentBoardState } from "./current-board";
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
+import { compareIsoStrings, minutesBetweenIso } from "@/lib/domain/time";
 
 export type ReasonTaggedBurnRow = {
   apuEventId: string;
@@ -29,9 +30,6 @@ type BurnSlice = {
   isUnattributed: boolean;
 };
 
-const minutesBetween = (startIso: string, endIso: string) =>
-  Math.max(0, Math.floor((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000));
-
 const roundKg = (value: number) => Math.round(value * 10) / 10;
 
 const maxIso = (left: string, right: string) => (left >= right ? left : right);
@@ -56,7 +54,7 @@ const buildBurnSlices = (aircraft: GroundAircraftState, runtimeEnd: string): Bur
       endedAt: minIso(segment.endedAt ?? runtimeEnd, runtimeEnd),
     }))
     .filter((entry) => entry.startedAt < entry.endedAt)
-    .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+    .sort((left, right) => compareIsoStrings(left.startedAt, right.startedAt));
 
   if (segments.length === 0) {
     return [createUnattributedSlice(runtimeStart, runtimeEnd)];
@@ -91,7 +89,7 @@ const rowForSlice = (aircraft: GroundAircraftState, slice: BurnSlice): ReasonTag
     throw new Error("Reason-tagged burn rows require APU and fuel estimate state");
   }
 
-  const runtimeMinutes = minutesBetween(slice.startedAt, slice.endedAt);
+  const runtimeMinutes = minutesBetweenIso(slice.startedAt, slice.endedAt);
   const estimatedKg = roundKg((runtimeMinutes / 60) * aircraft.fuelEstimate.kgPerHour);
   const segment = slice.reasonSegment;
 

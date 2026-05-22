@@ -14,6 +14,7 @@ import { estimateFuelKgForEquipment } from "@/lib/domain/fuel";
 import { deriveApuEvents, type DerivedApuEvent } from "@/lib/domain/apu-reducer";
 import { deriveReasonChain, type ReasonChainState } from "@/lib/domain/reason-chain-reducer";
 import { matchesApuEventId, normalizeTail } from "@/lib/domain/ids";
+import { compareEventTime, compareIsoStrings, minutesBetweenIso } from "@/lib/domain/time";
 
 export type SourceCharm = {
   sourceSystem: string;
@@ -75,21 +76,10 @@ type TailEvent = {
   eventId: string;
 };
 
-const minutesBetween = (startIso: string, endIso: string) =>
-  Math.max(0, Math.floor((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000));
-
-const byEventTime = <TEvent extends { occurredAt: string; receivedAt: string; eventId: string }>(
-  left: TEvent,
-  right: TEvent,
-) =>
-  left.occurredAt.localeCompare(right.occurredAt) ||
-  left.receivedAt.localeCompare(right.receivedAt) ||
-  left.eventId.localeCompare(right.eventId);
-
 const latestByTail = <TEvent extends TailEvent>(events: TEvent[]) => {
   const latest = new Map<string, TEvent>();
 
-  for (const event of events.sort(byEventTime)) {
+  for (const event of [...events].sort(compareEventTime)) {
     latest.set(normalizeTail(event.payload.tail), event);
   }
 
@@ -168,8 +158,8 @@ const createBoardEventContext = (
     latestStandByTail: latestByTail(sourceEvents.filter(isStandAssignmentEvent)),
     latestApuStateByTail: latestByTail(sourceEvents.filter(isApuStateEvent)),
     apuEventsByTail: createApuEventsByTail(sourceEvents),
-    manualOffEvents: domainEvents.filter(isManualApuOffObservedEvent).sort(byEventTime),
-    weather: sourceEvents.filter(isWeatherObservationEvent).sort(byEventTime).at(-1)?.payload,
+    manualOffEvents: domainEvents.filter(isManualApuOffObservedEvent).sort(compareEventTime),
+    weather: sourceEvents.filter(isWeatherObservationEvent).sort(compareEventTime).at(-1)?.payload,
   };
 };
 
@@ -226,7 +216,7 @@ const createGroundAircraftState = (
   const apuEvent = context.apuEventsByTail.get(tail);
   const reasonChain = reasonChainFor(apuEvent, context.domainEvents, settings, nowIso);
   const apuRuntimeMinutes = apuEvent
-    ? minutesBetween(apuEvent.startedAt, apuEvent.endedAt ?? nowIso)
+    ? minutesBetweenIso(apuEvent.startedAt, apuEvent.endedAt ?? nowIso)
     : 0;
 
   return {
@@ -243,7 +233,7 @@ const createGroundAircraftState = (
     apuEvent,
     reasonChain,
     manualOffPending: isManualOffPending(apuEvent, context.manualOffEvents),
-    groundMinutes: minutesBetween(flight.payload.onGroundAt ?? flight.occurredAt, nowIso),
+    groundMinutes: minutesBetweenIso(flight.payload.onGroundAt ?? flight.occurredAt, nowIso),
     apuRuntimeMinutes,
     fuelEstimate: fuelEstimateFor(apuRuntimeMinutes, apuEvent, flight, settings),
     sourceCharms: sourceCharmsFor(flight, stand, context.latestApuStateByTail.get(tail)),
@@ -261,7 +251,7 @@ export const deriveCurrentBoard = (
     .filter((event) => event.payload.port === "BNE")
     .filter((event) => isAircraftStillOnGround(event, nowIso))
     .map((flight) => createGroundAircraftState(flight, context, settings, nowIso))
-    .sort((left, right) => left.tail.localeCompare(right.tail));
+    .sort((left, right) => compareIsoStrings(left.tail, right.tail));
 
   return {
     port: "BNE",
