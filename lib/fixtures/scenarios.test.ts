@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bneScenarios } from "./scenarios";
+import { bneScenarios, type ScenarioEvent } from "./scenarios";
 
-const isSortedBy = (events: { [key: string]: string }[], field: "receivedAt" | "occurredAt") =>
+const isSortedBy = (
+  events: Array<Pick<ScenarioEvent, "receivedAt" | "occurredAt">>,
+  field: "receivedAt" | "occurredAt",
+) =>
   events.every((event, index) => index === 0 || event[field] >= events[index - 1][field]);
 
 describe("BNE scenario fixtures", () => {
