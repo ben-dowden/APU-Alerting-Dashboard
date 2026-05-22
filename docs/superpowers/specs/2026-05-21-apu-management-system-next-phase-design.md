@@ -28,6 +28,8 @@ Purple (`#511C98`) is the default colour for primary action buttons, selected co
 
 Use neutral black/white/grey treatments for calm states. Avoid adding a broad secondary palette unless a specific operational state cannot be communicated clearly with the Virgin palette. If a non-brand semantic colour is introduced later, it should be deliberate, minimal, and documented as a semantic exception rather than a brand colour.
 
+The Senior Engineer table/index may use a restrained semantic green for compact `Off` / `OK` APU-state chips. This is an operational status exception, not a new brand colour. Keep it contained to calm completion/status affordances and avoid spreading green into primary actions, benchmark deltas, or decorative UI.
+
 Cards, panels, popovers, tables, and controls should use 6-8px border radius. Avoid nested decorative cards. Use cards only for aircraft, repeated summary panels, popovers, drawers, and settings rows. Page sections should be unframed layout regions or full-width operational bands.
 
 Use icons from `lucide-react` for actions. Avoid verbose action labels where a standard icon plus tooltip is clearer, but the first missing-reason action must be a clear text button.
@@ -339,17 +341,23 @@ When a side-table row focuses a card, scroll the card into view and apply a brie
 The side table is an index, not a second workflow. It should be compact enough to stay visible on a TV:
 
 ```text
-Tail    Bay   APU   APU min   Ground   ↗
-VH-8IA  43    On    84        112      ↗
-VH-YIB  44    Off   0         76       ↗
-VH-YIO  02    On    31        58       ↗
+Tail    Bay   APU    APU min   Ground   Reason signal     ↗
+VH-8IA  43    On     84        112      Missing           ↗
+VH-YIB  44    Off    0         76       OK                ↗
+VH-YIO  02    On     31        58       Cleaning · Review ↗
 ```
 
 Rows should use understated state cues:
 
-- APU on: small red or purple status dot depending on reason/review state
-- APU off: small neutral complete-status dot or outline
-- Missing reason: red `Missing` micro-label if space allows
+- APU on: compact red `On` chip.
+- APU off: compact calm green `Off` chip.
+- Missing reason: red `Missing` reason signal.
+- Current reason valid: current primary reason category, such as `Cleaning`, `Infrastructure`, `Engineering`, `Flight ops`, or `Logistics`.
+- Review due: keep the current primary reason category visible and add a small review marker or tiny `Review` badge. Do not replace the category with `Review due` unless space is extremely constrained.
+- Manual APU-off pending source confirmation: show `Pending off`.
+- APU off: show `OK` or `No action`.
+
+The reason signal column should be clipped or truncated before it becomes a second aircraft card. It shows category-level context and lightweight review markers only, not reason detail, notes, benchmark deltas, proximity, or long text. The review marker should have a tooltip such as `Review due - current reason: Cleaning in progress`.
 
 The table should not show benchmark deltas, dollars, or long reason text. Its job is complete ground-aircraft awareness and quick navigation.
 
@@ -1673,7 +1681,10 @@ Senior Engineer command board:
 - `AircraftCardContent`: shared aircraft-card content and formatting helpers consumed by both desktop and wallboard cards.
 - `DesktopAircraftCard`: shadcn `Card` composed with `Badge`, `Button`, `Tooltip`, reason actions, drawer trigger, and small custom status strips.
 - `WallboardAircraftCard`: shadcn `Card` composed from shared card content, using larger typography, near-parity visible facts, passive state display, and no action controls.
-- `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact row density and a ghost `Button` to focus the card.
+- `GroundAircraftTable`: shadcn `Table` inside `ScrollArea`; compact urgency-sorted index, dense row height, sticky header where useful, and a ghost `Button` to focus the card.
+- `GroundAircraftApuChip`: compact shadcn `Badge` or badge-like cell treatment; red `On`, calm green `Off`.
+- `GroundAircraftReasonSignal`: compact category/status cell. Shows `Missing`, current primary reason category, category plus review marker, `Pending off`, or `OK` according to aircraft state. Use `Tooltip` for review/context detail.
+- `GroundAircraftFocusButton`: ghost icon `Button` with tooltip `Show aircraft card`; scrolls to and briefly focuses the corresponding aircraft card without opening the drawer.
 - `SeniorDesktopLayout`: route wrapper for `/senior/bne`, optimized for active work and drawer interactions.
 - `SeniorWallboardLayout`: route wrapper for `/senior/bne/wallboard`, optimized for 16:9 display, reduced chrome, and read-only large-format passive card status display with no drawer or overlay.
 
@@ -1771,8 +1782,8 @@ First slice acceptance target:
 - On `/senior/bne`, the card-attached `CardReasonDrawer` opens below the aircraft card and shows a compact default view: current reason, note field, and recent timeline preview. Full chain, fuel estimate detail, assumption version, and fallback charms remain available lower in the tray or through quiet disclosure.
 - On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
 - Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
-- On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card.
-- On `/senior/bne/wallboard`, the ground-aircraft side index is passive and enlarged for TV readability.
+- On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card and uses red/green APU state chips plus compact reason signals.
+- On `/senior/bne/wallboard`, the ground-aircraft side index is passive, enlarged for TV readability, and preserves the same APU chip/reason-signal meaning.
 
 First-slice layout checks:
 
@@ -1791,7 +1802,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, scorecard metric order, scorecard one-helper-line limit, benchmark fuel-kg hero delta with runtime secondary delta, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, scorecard metric order, scorecard one-helper-line limit, benchmark fuel-kg hero delta with runtime secondary delta, ground-aircraft red `On` and green `Off` APU chips, reason signal category plus review marker behaviour, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
