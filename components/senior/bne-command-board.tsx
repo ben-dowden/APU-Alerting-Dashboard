@@ -11,6 +11,7 @@ import {
 
 import { CommandBar } from "./command-bar";
 import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
+import { AircraftBoard } from "./aircraft-board";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -72,6 +73,7 @@ export function BneCommandBoard() {
 
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
         <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
+        <AircraftBoard aircraft={aircraftCards} />
       </main>
     </div>
   );

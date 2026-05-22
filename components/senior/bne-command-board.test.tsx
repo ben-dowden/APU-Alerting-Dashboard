@@ -44,4 +44,24 @@ describe("BneCommandBoard", () => {
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/AUD/i)).not.toBeInTheDocument();
   });
+
+  it("renders display-only aircraft cards from the read model", () => {
+    render(<BneCommandBoard />);
+
+    const board = screen.getByRole("region", { name: "Aircraft work queue" });
+    const card = within(board).getByRole("article", { name: "VH-8IA aircraft card" });
+
+    expect(within(card).getByText("VH-8IA")).toBeVisible();
+    expect(within(card).getByText("B738")).toBeVisible();
+    expect(within(card).getByText("Bay 20")).toBeVisible();
+    expect(within(card).getByText("APU On")).toBeVisible();
+    expect(within(card).getByText("00:46")).toBeVisible();
+    expect(within(card).getByText("00:55")).toBeVisible();
+    expect(within(card).getByText("85.9 kg")).toBeVisible();
+    expect(within(card).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(card).getByText("Cleaner onboard")).toBeVisible();
+    expect(within(card).getByText("Review due")).toBeVisible();
+    expect(within(card).getByText("Closest tail pending")).toBeVisible();
+    expect(within(board).queryByRole("button", { name: /reason|manual|drawer/i })).not.toBeInTheDocument();
+  });
 });
