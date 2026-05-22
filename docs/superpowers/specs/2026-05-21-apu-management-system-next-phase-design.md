@@ -384,7 +384,7 @@ The APU source is treated as timestamped event data:
 - APU-off timestamp closes the APU event.
 - The app does not claim the APU is off until the off message arrives.
 
-Review prompts are product workflow events, not feed-interval events. While an APU event is open, the app prompts for reason review based on the configured review interval for the current reason detail. The default review interval is 30 minutes.
+Review prompts are derived product workflow state, not feed-interval events. While an APU event is open, the app prompts for reason review based on the configured review interval for the current reason detail. The default review interval is 30 minutes.
 
 When the APU-off timestamp arrives, the app closes the ground-time event, stops review prompts, finalizes reason segment durations, and locks the reason chain for normal users.
 
@@ -1177,9 +1177,105 @@ This direction fits the product because APU management depends on timestamped ch
 - Stand assignment changes
 - Weather/temperature observations
 - Reason-chain user actions
-- Review due and review resolved workflow events
+- Derived review due state and review resolved workflow events
 
 The UI should not depend on synchronous point-to-point API calls as the primary truth for the command board. Synchronous APIs may still be useful for admin settings, lookup/reference data, user permissions, and historical report queries.
+
+### Event Model Decisions
+
+The prototype and future integration design should use a two-layer event model:
+
+1. Raw/source events stay close to the future source-system feeds.
+2. APU app domain events represent product workflow actions and governed app-owned state changes.
+
+This preserves source truth while allowing the APU app to own reason-chain workflow, manual observations, data-quality flags, and settings changes.
+
+Every event should use a strict common envelope with a typed payload:
+
+```ts
+{
+  eventId: string
+  eventType: string
+  eventVersion: number
+  sourceSystem: string
+  sourceEventId?: string
+  occurredAt: string
+  receivedAt: string
+  correlation: EventCorrelation
+  quality: EventQuality
+  payload: unknown
+}
+```
+
+`occurredAt` is the source or user-action timestamp used for timeline and reporting calculations. `receivedAt` is when the app or integration layer received the event, used for latency, staleness, and diagnostics.
+
+`correlation` should carry the identifiers available for joining events safely:
+
+- Port
+- Tail
+- Flight number and flight date when available
+- Bay or stand
+- Aircraft ground event id when derived
+- APU event id when derived
+- Related source event ids
+
+`quality` should carry source meaning and reliability context:
+
+- Confidence, such as `high`, `medium`, or `low`
+- Source meaning, such as `assigned_stand`, `reported_position`, or `manual_observation`
+- Stale/unknown/conflicting markers
+- Fallback-derived markers
+- Notes needed for tooltips, HQ diagnostics, and export reconciliation
+
+Canonical ids such as `aircraftGroundEventId` and `apuEventId` are app/integration-derived ids. They should be stable across replay and linked back to the source events that created or updated them. The app should not assume that any one source-system id is sufficient across ACMS, flight-state, stand assignment, and reference-data feeds.
+
+Prototype source event families should be full-but-lean:
+
+- `flight_state_event`
+- `stand_assignment_event`
+- `apu_state_event`
+- `weather_observation_event`
+- `tail_equipment_reference_event`
+- `stand_coordinate_reference_event`
+
+APU app domain event families should include:
+
+- `reason_selected`
+- `reason_changed`
+- `reason_kept`
+- `reason_note_added`
+- `manual_apu_off_observed`
+- `data_quality_flag_created`
+- `settings_changed`
+- `review_resolved`
+
+Do not persist `review_due` as a timer event for MVP. Review due state is derived from the active reason segment, the applicable review interval, and current time. When a user acts on a due review, persist `review_resolved` with `reviewDueAt`, `reviewResolvedAt`, `resolutionType`, and `responseMinutes` so HQ/product diagnostics can calculate response-time metrics without filling the event stream with timer ticks.
+
+Settings changes should be stored as versioned settings snapshots. A `settings_changed` event should include:
+
+- Settings family, such as reason taxonomy, fuel price, burn assumptions, urgency ranking, or reference data
+- Settings version or calculation version label
+- Effective-from timestamp or date
+- Changed by/persona
+- Changed timestamp
+- Human-readable summary
+- Snapshot of the active settings for that family
+
+Read models and exports should carry the active settings version used for calculations so reporting can reconcile later.
+
+ACMS/APU source events should be modelled as timestamped transition events, not sampled-state ticks. The source sends `on` and `off` transitions with source timestamps. The reducer opens an APU event on `on`, closes it on `off`, treats duplicate same-state messages idempotently, and preserves late or out-of-order messages for replay.
+
+Late or out-of-order source events should be handled by a replayable reducer. Read models sort primarily by `occurredAt` and use `receivedAt` for latency diagnostics. If a late APU-off event arrives with an earlier source timestamp, reporting uses the source off timestamp while the UI and HQ diagnostics can still show that confirmation arrived late.
+
+If an explicit APU-off event never arrives, inferred closure is derived by the reducer and marked low confidence. Do not create a fake source `apu_off` event. The derived APU event should preserve closure metadata such as:
+
+- `closureType`: `explicit_source` or `inferred`
+- `closureConfidence`
+- `closureReason`
+- `closureSourceEventIds`
+- `officialEndAt`
+
+Manual APU-off observations are app domain events only. `manual_apu_off_observed` moves the card into pending confirmation, pauses review prompting, and remains workflow telemetry. It does not close the official APU event, finalize reason-chain burn durations, or overwrite source state. The official timeline closes only when a trusted APU-off transition or governed inferred closure is available.
 
 Candidate Kafka topic families:
 
@@ -1189,7 +1285,7 @@ Candidate Kafka topic families:
 - `aircraft.reference-data.events`: tail-to-equipment mapping and aircraft reference metadata.
 - `airport.weather.events`: BNE temperature observations and derived 3 degree Celsius bands.
 - `apu.reason-chain.events`: reason selected, reason changed, current reason kept, note added, event closed.
-- `apu.review-workflow.events`: review due, review resolved, resolution type, response-time telemetry.
+- `apu.review-workflow.events`: review resolved events, resolution type, and response-time telemetry. Review due state is derived for MVP rather than persisted as timer events.
 - `apu.data-quality-flag.events`: Senior Engineer data issue flags, source freshness context, and related source-event metadata.
 - `apu.manual-observation.events`: user-authored operational observations such as manual APU-off pending confirmation.
 - `apu.reference-data.events`: governed reason taxonomy, port overrides, fuel price assumptions, and equipment-type fuel-burn assumptions.
@@ -1596,7 +1692,7 @@ Fixture event families:
 - `apuStateEvents`
 - `weatherEvents`
 - `reasonChainEvents`
-- `reviewWorkflowEvents`
+- `reviewWorkflowEvents` for review resolutions and response-time telemetry
 - `manualObservationEvents`
 - `dataQualityEvents`
 - `tailEquipmentReference`
