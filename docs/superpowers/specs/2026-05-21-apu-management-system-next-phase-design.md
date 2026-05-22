@@ -1523,12 +1523,13 @@ Migration sequence:
 8. Port or rewrite export/reporting logic against the new reason-tagged burn rows.
 9. Remove obsolete Vite files and any old UI modules that no longer map to the Next.js component architecture.
 
-The first implementation slice should optimize for the value-driving Senior Engineer workflow rather than old Vite behavior parity. HQ/Admin routes can exist as simple navigation stubs or thin read-only shells during the first slice, but the first screen that should feel genuinely usable is `/senior/bne`.
+The first implementation slice should optimize for the value-driving Senior Engineer workflow rather than old Vite behavior parity. HQ/Admin routes should exist only as simple navigation stubs during the first slice. They should make the app architecture and persona switcher visible, but they should not include placeholder dashboards, read-only shells, or mock reporting that steals effort from `/senior/bne`.
 
 First slice acceptance target:
 
 - Next.js app boots from the in-place repo.
 - `/senior/bne` is the default working surface for the Senior Engineer persona.
+- HQ/Admin routes exist as stubs reachable from navigation/persona switching.
 - Event-shaped BNE fixtures derive the command board read model.
 - Top command bar shows BNE context, current temperature, persona switcher, and scenario controls.
 - Daily scorecard strip shows the agreed Senior Engineer metrics.
