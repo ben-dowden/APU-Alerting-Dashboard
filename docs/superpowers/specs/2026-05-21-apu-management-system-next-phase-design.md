@@ -218,6 +218,7 @@ Card controls:
 - Missing reason: show a clear filled primary button labelled `Select reason`.
 - Review due: show an icon button with `Repeat2` or similar to keep the current reason. Tooltip: `Keep current reason`.
 - Change reason: show a clear secondary text button labelled `Change reason`.
+- Manual APU-off observation: show a restrained secondary or ghost action labelled `Mark APU off`. Tooltip: `Mark as off pending source confirmation`.
 - Reason chain drawer: show a light ghost icon button, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`.
 - Side table focus action: use a ghost button with an arrow or target-style icon. Tooltip: `Show aircraft card`.
 
@@ -854,6 +855,18 @@ Missing APU-off behaviour:
 - The UI should not show noisy warnings for inferred closure, but tooltips/admin diagnostics should preserve the source and confidence trail.
 - The full list of acceptable inference sources and precedence rules is an IT discovery item.
 
+Manual APU-off observation behaviour:
+
+- A Senior Engineer may mark an APU as turned off from the card or drawer when they believe the APU has been shut down.
+- This action does not create an authoritative APU-off event and does not overwrite ACMS/source state.
+- It creates a user-authored observation event, such as `manual_apu_off_observed`.
+- The card moves into a neutral pending state, such as `APU off pending confirmation`.
+- In pending state, the card should look calmer than an active APU-running alert but not as complete/green as a confirmed APU-off card.
+- Reason review prompts pause while pending confirmation, but the chain is not finalized until a trusted APU-off or closure source arrives.
+- If ACMS or another trusted source later confirms APU-off, the system finalizes the APU event using the trusted source timestamp as the official APU-off timestamp. The manual observation timestamp remains as workflow telemetry.
+- If ACMS or another trusted source later indicates the APU is still running, the card reopens as APU-running, preserves the manual observation in telemetry, and resumes reason review logic based on the active reason state.
+- Pending manual-off cards should include a compact charm/tooltip explaining that source confirmation is still outstanding.
+
 The prototype should model these differences using dummy source timestamps and freshness charms, so stakeholders understand how the real board will behave under imperfect data.
 
 ## Event-Sourced Integration Direction
@@ -879,6 +892,8 @@ Candidate Kafka topic families:
 - `airport.weather.events`: BNE temperature observations and derived 3 degree Celsius bands.
 - `apu.reason-chain.events`: reason selected, reason changed, current reason kept, note added, event closed.
 - `apu.review-workflow.events`: review due, review resolved, resolution type, response-time telemetry.
+- `apu.data-quality-flag.events`: Senior Engineer data issue flags, source freshness context, and related source-event metadata.
+- `apu.manual-observation.events`: user-authored operational observations such as manual APU-off pending confirmation.
 - `apu.reference-data.events`: governed reason taxonomy, port overrides, fuel price assumptions.
 
 Every consumed event should include:
@@ -1012,6 +1027,8 @@ The minimum reason-tagged burn dataset should include:
 - Temperature band when available
 - Location source and meaning metadata
 - Source-system freshness/confidence metadata
+- Manual APU-off observation timestamp when present
+- Official APU-off timestamp source, such as ACMS, inferred closure, or another trusted source
 
 Not required for MVP:
 
