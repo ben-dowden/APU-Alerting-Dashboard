@@ -1,11 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { appRouteById, type AppRoute, type AppRouteId } from "@/lib/app-routes";
 
-type RouteStubProps = {
-  title: string;
-  eyebrow: string;
-  description: string;
-};
+import { AppShell } from "./app-shell";
+
+type RouteStubProps = Pick<AppRoute, "title" | "eyebrow" | "description">;
 
 export function RouteStub({ title, eyebrow, description }: RouteStubProps) {
   return (
@@ -42,5 +41,15 @@ export function RouteStub({ title, eyebrow, description }: RouteStubProps) {
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+export function RouteStubPage({ routeId }: { routeId: AppRouteId }) {
+  const route = appRouteById[routeId];
+
+  return (
+    <AppShell>
+      <RouteStub eyebrow={route.eyebrow} title={route.title} description={route.description} />
+    </AppShell>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bneScenarios, type ScenarioEvent } from "./scenarios";
+import { bneScenarioContext, reasonSelectedEvent, standAssignmentEvent } from "./scenarios/builders";
 
 const isSortedBy = (
   events: Array<Pick<ScenarioEvent, "receivedAt" | "occurredAt">>,
@@ -48,5 +49,50 @@ describe("BNE scenario fixtures", () => {
           Boolean(event.quality.idempotencyKey || event.correlation.idempotencyKey),
       ),
     ).toBe(true);
+  });
+
+  it("applies shared BNE defaults in scenario builders", () => {
+    const standEvent = standAssignmentEvent({
+      tail: "VH-8IA",
+      bay: "Bay 17",
+      stand: "17",
+      assignmentState: "current",
+      validFrom: "2026-05-22T08:00:00.000Z",
+      occurredAt: "2026-05-22T08:00:00.000Z",
+      receivedAt: "2026-05-22T08:01:00.000Z",
+      sourceEventId: "BNE-STAND-DEFAULTS",
+    });
+    const reasonEvent = reasonSelectedEvent({
+      tail: "VH-8IA",
+      apuEventId: "BNE:VH-8IA:apu:2026-05-22T08:37:00.000Z",
+      reasonSegmentId: "segment-1",
+      categoryId: "cleaning",
+      categoryLabel: "Cleaning in progress",
+      detailId: "cleaner-onboard",
+      detailLabel: "Cleaner onboard",
+      selectedBy: "se-user",
+      occurredAt: "2026-05-22T08:45:00.000Z",
+      receivedAt: "2026-05-22T08:45:05.000Z",
+      sourceEventId: "REASON-DEFAULTS",
+    });
+
+    expect(standEvent).toEqual(
+      expect.objectContaining({
+        sourceSystem: bneScenarioContext.sourceSystems.standPlan,
+        correlation: expect.objectContaining({ port: bneScenarioContext.port }),
+        payload: expect.objectContaining({
+          port: bneScenarioContext.port,
+          terminal: bneScenarioContext.terminal,
+        }),
+      }),
+    );
+    expect(reasonEvent).toEqual(
+      expect.objectContaining({
+        sourceSystem: bneScenarioContext.sourceSystems.app,
+        payload: expect.objectContaining({
+          sourceAction: bneScenarioContext.sourceActions.selectReason,
+        }),
+      }),
+    );
   });
 });

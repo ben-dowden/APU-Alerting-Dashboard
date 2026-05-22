@@ -55,7 +55,7 @@
 - [x] Run full unit test suite.
 - [x] Run TypeScript no-emit check.
 - [x] Run production build in a clean temporary copy without stale build artifacts.
-- [ ] Rerun production build in this worktree after the locked `.next` static artifact is released.
+- [x] Rerun production build in this worktree after clearing the ignored locked `.next` output.
 - [x] Inspect final diff for accidental unrelated changes.
 
 ---
@@ -64,4 +64,4 @@
 
 - Spec coverage: inactive legacy app removed, docs/scripts consolidated, direct unused dependencies removed, reducer mutation reduced.
 - Public interfaces: Next.js routes and package scripts remain stable.
-- Handoff checks: full tests and build are the final gates.
+- Handoff checks: full tests and build are the final gates. Latest verification: `npm run test` passed with 99 tests and `npm run build` passed in this worktree after removing ignored `.next` artifacts.

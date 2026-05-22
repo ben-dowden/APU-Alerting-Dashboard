@@ -253,10 +253,11 @@ git commit -m feat-add-scorecard-benchmark-burn-read-models
 
 - Pass 1, `refactor-clean-read-model-domain-helpers`: centralized canonical/legacy APU id matching in `lib/domain/ids.ts`, split current-board event collection context from per-aircraft projection, moved aircraft-card labels to table-driven mappings, and made reason review-resolution mapping declarative.
 - Pass 2, `refactor-centralize-time-event-ordering`: added `lib/domain/time.ts` and `lib/domain/time.test.ts`, then replaced duplicated elapsed-minute math, ISO minute addition, and event replay ordering across domain reducers and read models.
-- Carry-forward framework: keep domain and read-model functions small and named by intent; centralize deterministic replay/time/id helpers; prefer table-driven mappings over nested conditional label or telemetry logic; preserve the boundary where UI imports `lib/read-models/index.ts` instead of replaying source events locally.
+- Pass 3, `refactor-post-vite-clean-code`: centralized route metadata in `lib/app-routes.ts`, reduced route stubs to registry lookups, split current-board derivation into context/projection/type modules, derived source/domain event guards from event registries, moved BNE fixture defaults into one scenario context, and made reason-chain replay handlers table-driven.
+- Carry-forward framework: keep domain and read-model functions small and named by intent; centralize deterministic replay/time/id helpers; prefer table-driven mappings and registries over nested conditional label, telemetry, route, or event-family logic; preserve the boundary where UI imports `lib/read-models/index.ts` instead of replaying source events locally.
 
 ## Self-Review
 
 - Spec coverage: replay, APU state, inferred closure, manual pending state, reason chain, review derivation, fuel assumptions, proximity, scorecards, benchmarks, burn attribution, and diagnostics are covered.
-- Public interfaces: later UI PRs should import only from `lib/read-models`.
-- Handoff checks: all domain/read-model tests plus build pass before PR 04.
+- Public interfaces: later UI PRs should import read models from `lib/read-models` and route metadata from `lib/app-routes` instead of duplicating route labels, descriptions, or navigation groups.
+- Handoff checks: all domain/read-model tests plus build pass before PR 04. Latest clean-code verification: `npm run test` passed with 99 tests, and `npm run build` passed after clearing ignored `.next` output.
