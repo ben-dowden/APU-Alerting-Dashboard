@@ -247,6 +247,16 @@ Desktop and wallboard cards should use shared aircraft-card content and a shared
 - `DesktopAircraftCard`: active workflow wrapper for `/senior/bne`; includes reason actions, drawer trigger, manual APU-off, data issue flagging, and pointer-focused density.
 - `WallboardAircraftCard`: passive display wrapper for `/senior/bne/wallboard`; uses the same content/read model and near-parity visible facts, but increases card size, spacing, and typography for a 70-inch display.
 
+Aircraft card shadcn composition:
+
+- Root: shadcn `Card` with custom Tailwind state strip. Use a 3-4px left border or top strip for state, not a heavy coloured card background.
+- Header: `CardHeader` or custom header layout with tail as the largest text, equipment and bay/stand as secondary facts, and compact `Badge`s for `APU on`, `Reason missing`, `Review due`, `Pending confirmation`, or `APU off`.
+- Body: `CardContent` with a compact fact grid: APU runtime, total ground time, estimated kg fuel, ground support availability, closest tail/distance, and source freshness charms where allowed.
+- Proximity: closest-tail row uses `HoverCard` when there are nearby APU-running aircraft within 100 metres, listing tail, bay, and distance from the selected aircraft. If no richer detail is needed, use `Tooltip`.
+- Current reason block: a product subcomponent inside `CardContent`, visually separated with a light divider or soft neutral band. It shows only current category/detail and elapsed timer in `HH:MM`.
+- Reason action cluster: placed inside the current-reason block, aligned with the current reason and timer. It contains the primary reason action, keep-current icon action when relevant, change reason action, and the reason-chain `Sheet` trigger.
+- Footer: do not use `CardFooter` for reason actions. If a footer is used at all, keep it for quiet utility actions and make sure the card still reads as an aircraft status surface, not a form.
+
 The wallboard card should keep nearly all desktop aircraft facts visible, but render them larger and non-interactive. It should include tail, equipment type, bay/stand context, APU state, APU runtime, total ground time, estimated kg fuel, ground service availability when known, closest tail and distance, current reason and `HH:MM` timer, review due state, and compact source/freshness charms where useful. The main difference from the desktop card is interaction, not information: remove reason action buttons, drawer triggers, manual APU-off action, data issue action, editable notes, QR/deep links, and other workflow affordances. Drawer-only detail, such as the full reason timeline and fallback fuel-assumption explanation, remains out of the wallboard card.
 
 Wallboard typography should be visibly larger than the desktop card without using viewport-width font scaling. Use fixed responsive Tailwind sizes so the tail, status, and current-reason timer can be read at TV distance, while preserving stable card dimensions and preventing timer/reason text from shifting the board.
@@ -262,11 +272,12 @@ The card should not display dollar impact. Replace existing frontline dollar fie
 
 Card controls:
 
-- Missing reason: show a clear filled primary button labelled `Select reason`.
-- Review due: show an icon button with `Repeat2` or similar to keep the current reason. Tooltip: `Keep current reason`.
-- Change reason: show a clear secondary text button labelled `Change reason`.
-- Manual APU-off observation: show a restrained secondary or ghost action labelled `Mark APU off`. Tooltip: `Mark as off pending source confirmation`.
-- Reason chain drawer: show a light ghost icon button, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`.
+- Missing reason: show a clear filled shadcn `Button` labelled `Select reason`, using purple `#511C98`, with a small reason/list icon if it helps communicate action.
+- Review due: show an icon-only shadcn `Button` with `Repeat2`, `RefreshCcw`, or similar to keep the current reason. The visual label is the icon; tooltip text is `Keep current reason`.
+- Change reason: show a secondary shadcn `Button` labelled `Change reason`, using `outline` or `secondary` styling. It opens the same anchored reason `Popover`.
+- Current reason valid: still allow `Change reason`, but keep it quieter than the missing/review-due actions.
+- Manual APU-off observation: show a restrained secondary or ghost shadcn `Button` labelled `Mark APU off`. Tooltip: `Mark as off pending source confirmation`. Keep this near APU state context rather than the main reason action group where possible.
+- Reason chain drawer: show a light ghost icon shadcn `Button`, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`. It opens the right-side shadcn `Sheet`.
 - Side table focus action: use a ghost button with an arrow or target-style icon. Tooltip: `Show aircraft card`.
 
 Reason actions should sit inside the current-reason block, aligned with the current reason and chain icon. They should not sit as a dominant global footer that makes the whole aircraft card feel like it exists only to collect a reason. The card hierarchy is aircraft state first, current reason second, actions third.
