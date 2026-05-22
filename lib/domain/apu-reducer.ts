@@ -38,21 +38,32 @@ const closeApuEvent = (
   closureConfidence: "high" | "medium" | "low",
   closureReason: string,
   closureSourceEventIds: string[],
-) => {
-  apuEvent.endedAt = endedAt;
-  apuEvent.state = "closed";
-  apuEvent.closureType = closureType;
-  apuEvent.closureConfidence = closureConfidence;
-  apuEvent.closureReason = closureReason;
-  apuEvent.closureSourceEventIds = closureSourceEventIds;
-};
+): DerivedApuEvent => ({
+  ...apuEvent,
+  endedAt,
+  state: "closed",
+  closureType,
+  closureConfidence,
+  closureReason,
+  closureSourceEventIds,
+});
+
+const appendSourceEvent = (apuEvent: DerivedApuEvent, sourceEventId: string): DerivedApuEvent => ({
+  ...apuEvent,
+  sourceEventIds: [...apuEvent.sourceEventIds, sourceEventId],
+});
+
+const replaceApuEvent = (apuEvents: DerivedApuEvent[], updatedEvent: DerivedApuEvent) =>
+  apuEvents.map((apuEvent) =>
+    apuEvent.apuEventId === updatedEvent.apuEventId ? updatedEvent : apuEvent,
+  );
 
 export const deriveApuEvents = (
   events: readonly unknown[],
   options: DeriveApuEventsOptions = {},
 ): DerivedApuEvent[] => {
   const inferClosureFromFlightState = options.inferClosureFromFlightState ?? true;
-  const apuEvents: DerivedApuEvent[] = [];
+  let apuEvents: DerivedApuEvent[] = [];
   const openByTail = new Map<string, DerivedApuEvent>();
 
   const apuStateEvents = events.filter(isApuStateEvent).sort(compareEventTime);
@@ -64,7 +75,9 @@ export const deriveApuEvents = (
 
     if (event.payload.state === "on") {
       if (current) {
-        current.sourceEventIds.push(event.eventId);
+        const updatedEvent = appendSourceEvent(current, event.eventId);
+        apuEvents = replaceApuEvent(apuEvents, updatedEvent);
+        openByTail.set(tail, updatedEvent);
         continue;
       }
 
@@ -91,15 +104,15 @@ export const deriveApuEvents = (
       continue;
     }
 
-    current.sourceEventIds.push(event.eventId);
-    closeApuEvent(
-      current,
+    const closedEvent = closeApuEvent(
+      appendSourceEvent(current, event.eventId),
       occurredAt,
       "source_off",
       "high",
       "Trusted ACMS APU-off transition",
       [event.eventId],
     );
+    apuEvents = replaceApuEvent(apuEvents, closedEvent);
     openByTail.delete(tail);
   }
 
@@ -122,15 +135,15 @@ export const deriveApuEvents = (
         continue;
       }
 
-      closeApuEvent(
-        apuEvent,
+      const closedEvent = closeApuEvent(
+        appendSourceEvent(apuEvent, closureEvent.eventId),
         closureEvent.payload.offGroundAt,
         "inferred_departed",
         "low",
         "Inferred from departed flight state without trusted APU-off transition",
         [closureEvent.eventId],
       );
-      apuEvent.sourceEventIds.push(closureEvent.eventId);
+      apuEvents = replaceApuEvent(apuEvents, closedEvent);
     }
   }
 

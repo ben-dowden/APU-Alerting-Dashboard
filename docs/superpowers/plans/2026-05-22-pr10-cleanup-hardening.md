@@ -2,240 +2,66 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove obsolete Vite-era active paths, consolidate scripts/docs, and harden the completed Next.js prototype with full regression checks.
+**Goal:** Keep the Next.js prototype as the only active app surface, remove retired browser-entry scaffolding, and harden the event-first domain/read-model code.
 
-**Architecture:** This PR changes no product behavior except removal of obsolete code paths. It proves the Next.js/event-first implementation is the only active app.
+**Architecture:** This PR changes no product behavior except removal of inactive legacy files. The active app remains the Next.js route shell backed by `lib/` event contracts, reducers, fixtures, and read models.
 
-**Tech Stack:** Next.js, TypeScript, Vitest, Testing Library, existing export tooling.
+**Tech Stack:** Next.js, TypeScript, Vitest, Testing Library.
 
 ---
 
 ## File Structure
 
-- Delete: Vite-only active files `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, and exact old UI files only after confirming no imports from `app/`, `components/`, or `lib/`.
-- Keep: reusable domain code only if imported by new code.
-- Modify: `.gitignore`, `README.md`, `package.json`, `tsconfig.json` if needed.
-- Create: `docs/superpowers/plans/2026-05-22-implementation-summary.md` only if the execution team wants a final checklist.
+- Delete: the inactive legacy `src/` application tree, old root browser entry, old standalone dev helper, and obsolete standalone config.
+- Keep: `app/`, `components/`, `lib/`, `test/`, package metadata, and Next.js/Tailwind configuration.
+- Modify: `README.md`, `package.json`, `package-lock.json`, and reducer files in `lib/domain/`.
 
 ---
 
-### Task 1: Identify Active Imports And Obsolete Files
+### Task 1: Prove Active Imports
 
-**Files:**
-- Verify: entire repo.
-
-- [ ] **Step 1: Generate import evidence**
-
-Run:
-
-```bash
-rg "from \"\\./src|from \"\\.\\./src|from \"src/|from '@/src" app components lib
-rg "vite|Vite|index.html|src/main.tsx|src/App.tsx" .
-```
-
-Expected: New app code does not import Vite app entrypoints. Any remaining references are docs, old files, package lock metadata, or planned deletion targets.
-
-- [ ] **Step 2: Commit nothing**
-
-This is an inspection task only.
+- [x] Confirm the Next app and shared modules do not import the retired legacy UI/data/domain tree.
+- [x] Confirm package metadata and README do not depend on the retired standalone dev workflow.
 
 ---
 
-### Task 2: Remove Obsolete Vite Entrypoints
+### Task 2: Remove Retired Legacy Files
 
-**Files:**
-- Delete: `index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`
-- Delete: `.vite-cache` from disk if present and untracked.
-
-- [ ] **Step 1: Delete obsolete entrypoints**
-
-Remove Vite entry files only after Task 1 confirms no new app imports them. Use exact tracked filenames, not a broad directory delete.
-
-- [ ] **Step 2: Run build**
-
-Run:
-
-```bash
-npm run build
-```
-
-Expected: PASS.
-
-- [ ] **Step 3: Commit**
-
-Run:
-
-```bash
-git add -A index.html vite.config.ts src/main.tsx src/App.tsx
-git commit -m chore-remove-obsolete-vite-entrypoints
-```
+- [x] Delete the inactive legacy application tree and old standalone entry/config files.
+- [x] Remove old tests that only covered retired modules.
+- [x] Remove direct package dependencies that existed only for retired reporting/export code.
+- [x] Run `npm run test`.
 
 ---
 
-### Task 3: Remove Old UI Modules Not Used By Next App
+### Task 3: Consolidate Docs And Scripts
 
-**Files:**
-- Delete exact old `src/components`, `src/hooks`, and `src/data` files only when `rg` confirms they are unused by new imports.
-- Keep old domain/reporting files only if they are still imported; otherwise migrate or delete them.
-
-- [ ] **Step 1: Inspect imports**
-
-Run:
-
-```bash
-rg "src/components|src/data|src/hooks|src/domain" app components lib
-```
-
-Expected: No active imports from old UI directories unless explicitly preserved.
-
-- [ ] **Step 2: Delete unused old UI directories**
-
-Create an explicit deletion list from `git ls-files src` and remove only those files after confirming each path is obsolete. Do not delete files that contain reusable domain logic until either migrated into `lib/` or intentionally kept. On Windows, do not use a recursive directory delete for this task; if a file must be removed, remove exact tracked files after confirming their resolved paths remain inside the workspace.
-
-- [ ] **Step 3: Run tests and build**
-
-Run:
-
-```bash
-npm run test
-npm run build
-```
-
-Expected: PASS.
-
-- [ ] **Step 4: Commit**
-
-Run:
-
-```bash
-git add -A src
-git commit -m chore-remove-obsolete-vite-ui-modules
-```
+- [x] Keep package scripts on the Next.js workflow: `dev`, `dev:lan`, `build`, `start`, `test`, `test:all`.
+- [x] Update README quick start, route list, data-model notes, and OneDrive guidance.
+- [x] Keep ignore rules for generated folders and local artifacts.
 
 ---
 
-### Task 4: Consolidate Scripts, Ignore Rules, And README
+### Task 4: Harden Reducers
 
-**Files:**
-- Modify: `package.json`
-- Modify: `.gitignore`
-- Modify: `README.md`
-
-- [ ] **Step 1: Verify scripts**
-
-Ensure scripts are:
-
-```json
-{
-  "dev": "next dev -H 127.0.0.1",
-  "dev:lan": "next dev -H 0.0.0.0",
-  "build": "next build",
-  "start": "next start -H 127.0.0.1",
-  "test": "vitest run",
-  "test:all": "npm run test && npm run build"
-}
-```
-
-- [ ] **Step 2: Update `.gitignore`**
-
-Ensure it ignores:
-
-```text
-.next
-node_modules
-dist
-.vite-cache
-*.local
-```
-
-- [ ] **Step 3: Update README**
-
-README must state:
-
-```text
-npm install
-npm run dev
-npm run test
-npm run build
-```
-
-It must list primary routes: `/senior/bne`, `/senior/bne/wallboard`, `/hq`, `/hq/reports`, `/hq/data-quality`, `/admin`.
-
-- [ ] **Step 4: Commit**
-
-Run:
-
-```bash
-git add package.json .gitignore README.md
-git commit -m docs-update-nextjs-prototype-instructions
-```
+- [x] Refactor APU event closure to create updated event objects instead of mutating existing ones.
+- [x] Refactor reason-chain segment closure and telemetry accumulation to create updated arrays/objects.
+- [x] Run targeted reducer tests.
 
 ---
 
-### Task 5: Full Regression And Visual Sanity Pass
+### Task 5: Full Regression
 
-**Files:**
-- Verify: entire repo.
-
-- [ ] **Step 1: Full automated checks**
-
-Run:
-
-```bash
-npm run test
-npm run build
-```
-
-Expected: PASS.
-
-- [ ] **Step 2: Manual route smoke test**
-
-Start dev server:
-
-```bash
-npm run dev
-```
-
-Verify these routes load without blank screens:
-
-```text
-http://127.0.0.1:3000/senior/bne
-http://127.0.0.1:3000/senior/bne/wallboard
-http://127.0.0.1:3000/hq
-http://127.0.0.1:3000/hq/reports
-http://127.0.0.1:3000/hq/data-quality
-http://127.0.0.1:3000/admin
-```
-
-- [ ] **Step 3: Verify critical flows**
-
-Check:
-
-```text
-Senior board renders aircraft cards and side table.
-Reason picker can select a reason.
-Reason drawer opens and closes.
-Manual APU off creates pending state.
-Wallboard shows no workflow actions.
-HQ report export downloads workbook.
-Admin settings save creates settings snapshot event.
-```
-
-- [ ] **Step 4: Commit final fixes if any**
-
-If adjustments were needed:
-
-```bash
-git add -A
-git commit -m fix-final-prototype-hardening
-```
-
-If no adjustments were needed, no commit is required.
+- [x] Run full unit test suite.
+- [x] Run TypeScript no-emit check.
+- [x] Run production build in a clean temporary copy without stale build artifacts.
+- [ ] Rerun production build in this worktree after the locked `.next` static artifact is released.
+- [x] Inspect final diff for accidental unrelated changes.
 
 ---
 
 ## Self-Review
 
-- Spec coverage: old Vite active paths removed, scripts/docs consolidated, and final regression path defined.
-- Public interfaces: Next.js routes and package scripts are final.
-- Handoff checks: full tests, build, and manual smoke route checks pass.
+- Spec coverage: inactive legacy app removed, docs/scripts consolidated, direct unused dependencies removed, reducer mutation reduced.
+- Public interfaces: Next.js routes and package scripts remain stable.
+- Handoff checks: full tests and build are the final gates.
