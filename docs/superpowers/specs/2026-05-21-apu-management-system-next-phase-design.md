@@ -1530,6 +1530,7 @@ First slice acceptance target:
 - Next.js app boots from the in-place repo.
 - `/senior/bne` is the default working surface for the Senior Engineer persona.
 - HQ/Admin routes exist as stubs reachable from navigation/persona switching.
+- The Senior Engineer board is designed and verified for both 16:9 wallboard display and desktop/laptop interaction from the first slice.
 - Event-shaped BNE fixtures derive the command board read model.
 - Top command bar shows BNE context, current temperature, persona switcher, and scenario controls.
 - Daily scorecard strip shows the agreed Senior Engineer metrics.
@@ -1539,6 +1540,13 @@ First slice acceptance target:
 - Reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
 - Manual APU-off pending confirmation state is represented in the card/drawer workflow.
 - Ground-aircraft side table can focus the selected aircraft card.
+
+First-slice layout checks:
+
+- 16:9 wallboard viewport keeps command bar, scorecard, benchmark band, active aircraft board, and side table visible without awkward crowding.
+- Desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
+- The wallboard layout can prioritize density and scanability; the desktop layout can allow scrolling, but key scorecard and active queue context must remain immediately visible.
+- Both modes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
 
