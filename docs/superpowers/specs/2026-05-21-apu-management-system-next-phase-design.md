@@ -506,14 +506,26 @@ Fuel price screen:
 
 Fuel-burn calculation screen:
 
+- Editable fuel-burn assumptions table by aircraft equipment type
+- Equipment type code, such as `B738`, `B737`, or `B38M`
+- Equipment type label, such as `737-800`
 - APU fuel-burn rate assumption used for estimated kg calculations
-- Aircraft type applicability where needed
-- Effective date
-- Calculation version label
+- Unit, such as kg per minute
+- Effective from date
+- Calculation version label or assumption set version
+- Active/inactive state
 - Source/note
 - Last updated by/persona in POC
 
-HQ reports should show the active fuel price assumption used for dollar conversion and the active fuel-burn calculation version used for estimated kg.
+The fuel-burn assumptions table should be simple and spreadsheet-like. HQ/Admin users should be able to add, edit, deactivate, and reorder or filter rows, but the MVP does not need advanced model governance.
+
+Validation rules:
+
+- Each active equipment type should have one active burn-rate assumption for the relevant effective period.
+- The table should warn when an equipment type used by current aircraft has no active burn-rate assumption.
+- If the app uses a configured fallback rate for an unknown equipment type, the UI and export should mark that estimate as fallback-derived.
+
+HQ reports should show the active fuel price assumption used for dollar conversion and the active fuel-burn calculation version or assumption set used for estimated kg.
 
 The MVP should not include a full calculation model-management UI. Admin configuration only needs to store and expose the active assumptions well enough for reporting transparency and reconciliation.
 
@@ -566,7 +578,7 @@ HQ reporting is a secondary view and has no operational write-back except for HQ
 
 Dollar conversion uses a configurable fuel price from HQ/Admin settings. It must not be hard-coded. Reports should show which fuel price assumption was used.
 
-Estimated kg fuel uses a configurable fuel-burn calculation assumption and calculation version from HQ/Admin settings. It must not be hard-coded into reporting outputs. Reports should show the active calculation version so HQ totals, exports, and future EDP datasets can reconcile against the same assumptions.
+Estimated kg fuel uses configurable aircraft equipment-type fuel-burn assumptions and a calculation version from HQ/Admin settings. It must not be hard-coded into reporting outputs. Reports should show the active calculation version or assumption set so HQ totals, exports, and future EDP datasets can reconcile against the same assumptions.
 
 Frontline surfaces should not show dollar impact as a primary metric.
 
@@ -634,7 +646,7 @@ The prototype should use dummy data with realistic boundaries:
 ### Aircraft Ground State
 
 - Tail
-- Aircraft type
+- Aircraft type / equipment type code
 - Bay or stand
 - On-ground state
 - Ground start timestamp
@@ -687,11 +699,15 @@ The prototype should use dummy data with realistic boundaries:
 
 ### Fuel Burn Calculation Assumption
 
+- Assumption id
 - Calculation version label
-- Effective date
+- Effective from date
+- Active/inactive state
+- Equipment type code
+- Equipment type label
 - APU fuel-burn rate assumption
 - Unit, such as kg per minute
-- Aircraft type applicability where needed
+- Fallback flag, if used for unknown equipment types
 - Source or note
 
 ## Real API Feasibility Discovery
@@ -917,7 +933,7 @@ Candidate Kafka topic families:
 - `apu.review-workflow.events`: review due, review resolved, resolution type, response-time telemetry.
 - `apu.data-quality-flag.events`: Senior Engineer data issue flags, source freshness context, and related source-event metadata.
 - `apu.manual-observation.events`: user-authored operational observations such as manual APU-off pending confirmation.
-- `apu.reference-data.events`: governed reason taxonomy, port overrides, fuel price assumptions.
+- `apu.reference-data.events`: governed reason taxonomy, port overrides, fuel price assumptions, and equipment-type fuel-burn assumptions.
 
 Every consumed event should include:
 
@@ -1026,7 +1042,7 @@ Minimum backend capabilities:
 - Persist APU app-owned reason-chain events.
 - Publish reason-chain and review-workflow events for enterprise consumption.
 - Persist or derive enough APU event state to allocate burn time and estimated fuel kg to reason segments.
-- Apply the active configured fuel-burn calculation assumption when deriving estimated kg.
+- Apply the active configured equipment-type fuel-burn calculation assumption when deriving estimated kg.
 - Preserve source timestamp, ingestion timestamp, source system, and data-quality metadata needed by the UI.
 
 Reason-tagged burn allocation:
@@ -1039,7 +1055,8 @@ Reason-tagged burn allocation:
 - If no reason has been captured, burn time is tagged as unattributed.
 - When the APU-off event arrives, the current segment closes and the APU event is finalized.
 - Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
-- Estimated fuel kg should use the active configured fuel-burn calculation assumption and store the calculation version used.
+- Estimated fuel kg should use the active configured equipment-type fuel-burn calculation assumption and store the calculation version or assumption set used.
+- If an APU event's aircraft equipment type cannot be matched to an active burn-rate assumption, the estimate should be marked as missing or fallback-derived rather than silently using a hidden global value.
 
 Unattributed burn is a first-class reporting bucket. Reporting should not hide unattributed APU burn or exclude it from totals. The system should also show attribution coverage as a headline quality metric:
 
@@ -1067,6 +1084,7 @@ The minimum reason-tagged burn dataset should include:
 - Reason-chain event ids used to derive the row
 - Tail
 - Flight number when available
+- Aircraft type / equipment type code
 - Port
 - Bay or stand
 - APU-on timestamp
@@ -1077,6 +1095,8 @@ The minimum reason-tagged burn dataset should include:
 - Estimated fuel kg for the segment
 - Fuel-burn calculation version
 - Fuel-burn rate assumption used
+- Fuel-burn assumption id
+- Fuel-burn assumption fallback flag
 - Reason category id and label
 - Reason detail id and label
 - Attributed/unattributed flag
