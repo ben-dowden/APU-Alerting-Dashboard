@@ -566,7 +566,7 @@ Urgency ranking screen:
 - Allow HQ Admin to edit the weighted tiebreaker factors used inside each bucket.
 - Editable factors should include overdue review minutes, APU runtime minutes, estimated kg fuel burned, proximity cluster signal, and total ground time.
 - Show a non-editable deterministic fallback tiebreaker, such as tail or APU event id, so users understand why tied rows remain stable.
-- Provide a small BNE preview table showing how current mock aircraft would rank under the configured weights.
+- Provide a small BNE preview table showing how the current BNE board would rank under the configured weights. In the mock-driven prototype, this means the currently loaded BNE mock board state, not a library of saved scenario examples.
 - Include reset-to-default behaviour for the prototype so ranking experiments can be safely undone.
 - Capture a ranking settings version label and last-updated metadata.
 
@@ -576,6 +576,7 @@ Validation rules:
 - At least one active tiebreaker weight must be greater than zero.
 - Bucket order is not editable in MVP.
 - The preview should flag when a change materially reorders current aircraft so HQ Admin understands the operational effect before saving.
+- The MVP urgency preview should not include a saved-scenario selector or scenario comparison suite.
 
 Fuel price screen:
 
@@ -1602,7 +1603,7 @@ Admin settings:
 
 - Reason taxonomy: shadcn `Table` or `Data Table` pattern for categories, with a side editor using `Input`, `Switch`, `Select`, `Button`, and `Alert` for validation.
 - Fuel assumptions: shadcn `Table` for equipment-type burn assumptions; `Input` for kg/min and fuel price; `Switch` for active state; `Badge` for fallback/default rows.
-- Urgency ranking: shadcn `Table` for editable tiebreaker weights; `Input` or `Slider` for weight values; `Alert` for validation; `Button` for reset defaults; preview table using the current BNE mock aircraft order.
+- Urgency ranking: shadcn `Table` for editable tiebreaker weights; `Input` or `Slider` for weight values; `Alert` for validation; `Button` for reset defaults; preview table using only the current BNE board/current mock board order.
 - Reference data: shadcn `Table` for tail/equipment and stand coordinates; keep it simple for prototype.
 - Forms should use a validation approach such as React Hook Form plus schema validation when the implementation needs robust admin validation.
 
@@ -1690,7 +1691,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
