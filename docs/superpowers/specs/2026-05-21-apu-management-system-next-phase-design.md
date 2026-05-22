@@ -1417,7 +1417,7 @@ For the first slice, `/senior/bne/wallboard` is read-only:
 - No detail overlay or card expansion.
 - No drawer/open-state client state.
 
-The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms on compact aircraft cards only. It should direct users to the desktop workflow surface for action.
+The wallboard route may show current reason state, review due state, manual-off pending state, and source/freshness charms on compact aircraft cards only. It should not include prompts, links, QR codes, or deep links back to the desktop workflow surface. The wallboard is a passive information surface; users know to use the desktop workflow through operational practice, not in-app prompting.
 
 ### State Management
 
@@ -1582,7 +1582,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
-- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
