@@ -970,6 +970,24 @@ Replay should be possible for testing and operational correction. If a source ev
 
 For the prototype, Kafka does not need to be running. Dummy data should be shaped like events so that replacing mock arrays with topic consumers later is a natural step.
 
+## Testability And Real-Feed Readiness
+
+The MVP prototype should use event-shaped fixtures and replayable scenario packs rather than direct replacement of dummy data with live endpoints.
+
+This means dummy data should be structured as realistic source events, not only UI-ready card objects. The prototype can then derive aircraft cards, reason chains, scorecards, and reporting rows from those fixtures in the same shape that a real integration layer would later provide.
+
+Minimum MVP testability requirements:
+
+- Event-shaped fixture files for source inputs such as flight state, stand assignment, APU state, weather, reason-chain events, manual observations, and reference data.
+- Scenario packs for key operational cases, including normal APU on/off, delayed ACMS off messages, manual APU-off pending confirmation, contradicted manual observations, missing APU-off inferred closure, stale stand assignment, and missing equipment-type burn assumptions.
+- A simple replay mechanism in the prototype data layer so the same scenario can be run repeatedly and inspected.
+- Clear separation between raw mock source events, derived read models, and UI components.
+- Contract-like TypeScript types or schemas for fixture events so IT can map real feeds into the same structures during discovery.
+
+The MVP should not build a full local Kafka or enterprise integration test platform. That level of infrastructure becomes useful when IT begins formal integration work and source-system contracts are known. At that point, the replayable fixtures should evolve into a proper integration test harness connected to Kafka topics, schema registry or equivalent contracts, and real source-system adapters.
+
+This keeps the prototype lightweight while still making the path from dummy data to real endpoints credible.
+
 ## Reason-Chain Event Ownership
 
 The APU Management System should own reason-chain authoring initially. When a Senior Engineer selects a reason, keeps the current reason, changes a reason, adds a note, or when an APU-off event closes the chain, the APU app creates the corresponding reason-chain or review-workflow event.
