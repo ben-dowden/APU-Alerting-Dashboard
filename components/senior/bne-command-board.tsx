@@ -1,18 +1,34 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
+import type { DomainEvent } from "@/lib/events";
 import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
 import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
 import { bneBaselineScenario } from "@/lib/fixtures/scenarios";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import {
+  addReasonNote,
+  changeReason,
+  correctPreviousReason,
+  keepCurrentReason,
+  selectReason,
+} from "@/lib/prototype/workflow-actions";
+import { readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
+import {
   deriveAircraftCards,
   deriveBenchmarkPanel,
   deriveCurrentBoard,
   deriveDailyScorecard,
+  type GroundAircraftState,
 } from "@/lib/read-models";
 
 import { CommandBar } from "./command-bar";
 import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
 import { AircraftBoard } from "./aircraft-board";
 import { GroundAircraftTable } from "./ground-aircraft-table";
+import type { ReasonPickerSelection } from "./reason-picker";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -27,6 +43,34 @@ const boardSettings = {
   reasonTaxonomy: reasonTaxonomySettings.payload.snapshot,
   fuelBurnAssumptions: fuelBurnAssumptionSettings,
 };
+
+const workflowActorId = "senior-engineer-bne";
+
+type WorkflowActionContext = {
+  port: "BNE";
+  tail: string;
+  apuEventId: string;
+  occurredAt: string;
+};
+
+const workflowContextFor = (
+  aircraft: GroundAircraftState,
+  occurredAt: string,
+): WorkflowActionContext | undefined =>
+  aircraft.apuEvent
+    ? {
+        port: "BNE",
+        tail: aircraft.tail,
+        apuEventId: aircraft.apuEvent.apuEventId,
+        occurredAt,
+      }
+    : undefined;
+
+const workflowIdentity = (context: WorkflowActionContext) => ({
+  port: context.port,
+  tail: context.tail,
+  apuEventId: context.apuEventId,
+});
 
 const formatBneLocalTime = (iso: string) =>
   `${new Intl.DateTimeFormat("en-AU", {
@@ -50,7 +94,13 @@ const sourceFreshnessLabel = (board: ReturnType<typeof deriveCurrentBoard>) => {
 };
 
 export function BneCommandBoard() {
-  const board = deriveCurrentBoard(bneBaselineScenario.events, boardSettings, boardNowIso);
+  const [workflowEvents, setWorkflowEvents] = useState<DomainEvent[]>([]);
+  const refreshWorkflowEvents = () => setWorkflowEvents(readWorkflowEvents());
+  const boardEvents = useMemo(
+    () => [...bneBaselineScenario.events, ...workflowEvents],
+    [workflowEvents],
+  );
+  const board = deriveCurrentBoard(boardEvents, boardSettings, boardNowIso);
   const scorecard = deriveDailyScorecard(board);
   const aircraftCards = deriveAircraftCards(board);
   const benchmarkPanel = deriveBenchmarkPanel(
@@ -62,6 +112,100 @@ export function BneCommandBoard() {
     "similar_temperature",
     benchmarkBaselines,
   );
+  const runWorkflowAction = (
+    aircraft: GroundAircraftState,
+    action: (context: WorkflowActionContext) => void,
+  ) => {
+    const context = workflowContextFor(aircraft, board.nowIso);
+    if (!context) {
+      return;
+    }
+
+    action(context);
+    refreshWorkflowEvents();
+  };
+
+  useEffect(() => {
+    refreshWorkflowEvents();
+  }, []);
+
+  const handleSelectReason = (
+    aircraft: GroundAircraftState,
+    selection: ReasonPickerSelection,
+  ) => {
+    runWorkflowAction(aircraft, (context) => selectReason({
+      ...workflowIdentity(context),
+      ...selection,
+      selectedBy: workflowActorId,
+      selectedAt: context.occurredAt,
+    }));
+  };
+
+  const handleChangeReason = (
+    aircraft: GroundAircraftState,
+    currentReason: ReasonSegment,
+    selection: ReasonPickerSelection,
+  ) => {
+    runWorkflowAction(aircraft, (context) => changeReason({
+      ...workflowIdentity(context),
+      previousReasonSegmentId: currentReason.reasonSegmentId,
+      previousCategoryId: currentReason.categoryId,
+      previousDetailId: currentReason.detailId,
+      ...selection,
+      selectedBy: workflowActorId,
+      selectedAt: context.occurredAt,
+    }));
+  };
+
+  const handleKeepCurrentReason = (
+    aircraft: GroundAircraftState,
+    currentReason: ReasonSegment,
+  ) => {
+    const reviewDueAt = aircraft.reasonChain.reviewDueAt;
+    if (!reviewDueAt) {
+      return;
+    }
+
+    runWorkflowAction(aircraft, (context) => keepCurrentReason({
+      ...workflowIdentity(context),
+      reasonSegmentId: currentReason.reasonSegmentId,
+      categoryId: currentReason.categoryId,
+      detailId: currentReason.detailId,
+      keptBy: workflowActorId,
+      keptAt: context.occurredAt,
+      reviewDueAt,
+    }));
+  };
+
+  const handleAddReasonNote = (
+    aircraft: GroundAircraftState,
+    currentReason: ReasonSegment,
+    note: string,
+  ) => {
+    runWorkflowAction(aircraft, (context) => addReasonNote({
+      ...workflowIdentity(context),
+      reasonSegmentId: currentReason.reasonSegmentId,
+      note,
+      addedBy: workflowActorId,
+      addedAt: context.occurredAt,
+    }));
+  };
+
+  const handleCorrectReason = (
+    aircraft: GroundAircraftState,
+    previousReason: ReasonSegment,
+    selection: ReasonPickerSelection,
+  ) => {
+    runWorkflowAction(aircraft, (context) => correctPreviousReason({
+      ...workflowIdentity(context),
+      previousReasonSegmentId: previousReason.reasonSegmentId,
+      previousCategoryId: previousReason.categoryId,
+      previousDetailId: previousReason.detailId,
+      ...selection,
+      selectedBy: workflowActorId,
+      selectedAt: context.occurredAt,
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
@@ -75,7 +219,16 @@ export function BneCommandBoard() {
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
         <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <AircraftBoard aircraft={aircraftCards} />
+          <AircraftBoard
+            aircraft={aircraftCards}
+            groundAircraft={board.groundAircraft}
+            onAddReasonNote={handleAddReasonNote}
+            onChangeReason={handleChangeReason}
+            onCorrectReason={handleCorrectReason}
+            onKeepCurrentReason={handleKeepCurrentReason}
+            onSelectReason={handleSelectReason}
+            taxonomy={boardSettings.reasonTaxonomy}
+          />
           <GroundAircraftTable aircraft={board.groundAircraft} />
         </div>
       </main>
