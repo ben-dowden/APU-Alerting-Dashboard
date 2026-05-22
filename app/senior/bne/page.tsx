@@ -1,5 +1,5 @@
-import { RouteStubPage } from "@/components/app/route-stub";
+import { BneCommandBoard } from "@/components/senior/bne-command-board";
 
 export default function SeniorBnePage() {
-  return <RouteStubPage routeId="senior-bne" />;
+  return <BneCommandBoard />;
 }
