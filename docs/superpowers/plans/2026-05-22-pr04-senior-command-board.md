@@ -12,6 +12,14 @@
 
 ---
 
+## PR 03 Clean-Code Carry-Forward
+
+- Import board, card, scorecard, benchmark, burn, and diagnostics data from `lib/read-models/index.ts`; do not rebuild event replay or derived APU/reason state inside React components.
+- Use PR 03 read-model fields for elapsed minutes, fuel kg, benchmark deltas, source freshness, manual-off pending state, and reason review state. If a display needs a new derived fact, extend the read model and its tests first.
+- Keep component logic at the presentation boundary: mapping read-model fields to compact labels, icons, layout, and accessible tooltips is fine; sorting operational events, comparing source timestamps, and matching legacy APU ids belongs in `lib/domain` or `lib/read-models`.
+
+---
+
 ## File Structure
 
 - Create: `components/senior/command-bar.tsx`, `scorecard-benchmark-band.tsx`, `aircraft-board.tsx`, `aircraft-card-content.tsx`, `ground-aircraft-table.tsx`.

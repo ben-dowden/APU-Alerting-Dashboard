@@ -10,6 +10,14 @@
 
 ---
 
+## PR 03 Clean-Code Carry-Forward
+
+- Workflow actions should emit canonical APU event ids from the read model whenever possible. Use `matchesApuEventId` only at adapter or merge boundaries where PR 02 legacy fixture compatibility is required.
+- Prototype workflow code should call shared time helpers from `lib/domain/time.ts` for elapsed-minute or ISO minute calculations instead of creating local date math.
+- After each local workflow mutation, re-derive through PR 03 read models; card components should not interpret reason chains, replay domain events, or decide whether an APU event is locked.
+
+---
+
 ## File Structure
 
 - Create: `lib/prototype/workflow-event-store.ts`, `lib/prototype/workflow-actions.ts`.
