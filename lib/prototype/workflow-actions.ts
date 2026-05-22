@@ -40,6 +40,8 @@ type ChangeReasonInput = SelectReasonInput & {
   previousDetailId: string;
 };
 
+type ReasonChangeSourceAction = "change_reason" | "correct_reason";
+
 type KeepCurrentReasonInput = BaseWorkflowInput & {
   reasonSegmentId: string;
   categoryId: string;
@@ -151,6 +153,13 @@ export const selectReason = (input: SelectReasonInput): ReasonSelectedEvent => {
 };
 
 export const changeReason = (input: ChangeReasonInput): ReasonChangedEvent => {
+  return createReasonChangedEvent(input, "change_reason");
+};
+
+const createReasonChangedEvent = (
+  input: ChangeReasonInput,
+  sourceAction: ReasonChangeSourceAction,
+): ReasonChangedEvent => {
   const selectedAt = input.selectedAt ?? nowIso();
   const reasonSegmentId = input.reasonSegmentId ?? segmentIdFor(input.tail, selectedAt);
 
@@ -173,7 +182,7 @@ export const changeReason = (input: ChangeReasonInput): ReasonChangedEvent => {
         detailLabel: input.detailLabel,
         selectedBy: input.selectedBy,
         selectedAt,
-        sourceAction: "change_reason",
+        sourceAction,
       },
     }),
   );
@@ -226,30 +235,5 @@ export const addReasonNote = (input: AddReasonNoteInput): ReasonNoteAddedEvent =
 };
 
 export const correctPreviousReason = (input: ChangeReasonInput): ReasonChangedEvent => {
-  const selectedAt = input.selectedAt ?? nowIso();
-  const reasonSegmentId = input.reasonSegmentId ?? segmentIdFor(input.tail, selectedAt);
-
-  return appendAndReturn(
-    workflowEnvelope({
-      ...input,
-      eventType: "reason_changed",
-      occurredAt: selectedAt,
-      reasonSegmentId,
-      entityId: reasonSegmentId,
-      payload: {
-        apuEventId: input.apuEventId,
-        previousReasonSegmentId: input.previousReasonSegmentId,
-        previousCategoryId: input.previousCategoryId,
-        previousDetailId: input.previousDetailId,
-        reasonSegmentId,
-        categoryId: input.categoryId,
-        categoryLabel: input.categoryLabel,
-        detailId: input.detailId,
-        detailLabel: input.detailLabel,
-        selectedBy: input.selectedBy,
-        selectedAt,
-        sourceAction: "correct_reason",
-      },
-    }),
-  );
+  return createReasonChangedEvent(input, "correct_reason");
 };

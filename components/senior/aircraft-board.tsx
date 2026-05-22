@@ -1,28 +1,13 @@
-import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { ReasonTaxonomySnapshot } from "@/lib/events";
 import type { AircraftCardReadModel, GroundAircraftState } from "@/lib/read-models";
 
-import { DesktopAircraftCard } from "./desktop-aircraft-card";
-import type { ReasonPickerSelection } from "./reason-picker";
+import { DesktopAircraftCard, type ReasonWorkflowHandlers } from "./desktop-aircraft-card";
 
 type AircraftBoardProps = {
   aircraft: AircraftCardReadModel[];
   groundAircraft: GroundAircraftState[];
   taxonomy: ReasonTaxonomySnapshot;
-  onSelectReason: (aircraft: GroundAircraftState, selection: ReasonPickerSelection) => void;
-  onChangeReason: (
-    aircraft: GroundAircraftState,
-    currentReason: ReasonSegment,
-    selection: ReasonPickerSelection,
-  ) => void;
-  onKeepCurrentReason: (aircraft: GroundAircraftState, currentReason: ReasonSegment) => void;
-  onAddReasonNote: (aircraft: GroundAircraftState, currentReason: ReasonSegment, note: string) => void;
-  onCorrectReason: (
-    aircraft: GroundAircraftState,
-    previousReason: ReasonSegment,
-    selection: ReasonPickerSelection,
-  ) => void;
-};
+} & ReasonWorkflowHandlers;
 
 export function AircraftBoard({
   aircraft,

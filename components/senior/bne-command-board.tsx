@@ -46,6 +46,32 @@ const boardSettings = {
 
 const workflowActorId = "senior-engineer-bne";
 
+type WorkflowActionContext = {
+  port: "BNE";
+  tail: string;
+  apuEventId: string;
+  occurredAt: string;
+};
+
+const workflowContextFor = (
+  aircraft: GroundAircraftState,
+  occurredAt: string,
+): WorkflowActionContext | undefined =>
+  aircraft.apuEvent
+    ? {
+        port: "BNE",
+        tail: aircraft.tail,
+        apuEventId: aircraft.apuEvent.apuEventId,
+        occurredAt,
+      }
+    : undefined;
+
+const workflowIdentity = (context: WorkflowActionContext) => ({
+  port: context.port,
+  tail: context.tail,
+  apuEventId: context.apuEventId,
+});
+
 const formatBneLocalTime = (iso: string) =>
   `${new Intl.DateTimeFormat("en-AU", {
     hour: "2-digit",
@@ -86,6 +112,18 @@ export function BneCommandBoard() {
     "similar_temperature",
     benchmarkBaselines,
   );
+  const runWorkflowAction = (
+    aircraft: GroundAircraftState,
+    action: (context: WorkflowActionContext) => void,
+  ) => {
+    const context = workflowContextFor(aircraft, board.nowIso);
+    if (!context) {
+      return;
+    }
+
+    action(context);
+    refreshWorkflowEvents();
+  };
 
   useEffect(() => {
     refreshWorkflowEvents();
@@ -95,19 +133,12 @@ export function BneCommandBoard() {
     aircraft: GroundAircraftState,
     selection: ReasonPickerSelection,
   ) => {
-    if (!aircraft.apuEvent) {
-      return;
-    }
-
-    selectReason({
-      port: "BNE",
-      tail: aircraft.tail,
-      apuEventId: aircraft.apuEvent.apuEventId,
+    runWorkflowAction(aircraft, (context) => selectReason({
+      ...workflowIdentity(context),
       ...selection,
       selectedBy: workflowActorId,
-      selectedAt: board.nowIso,
-    });
-    refreshWorkflowEvents();
+      selectedAt: context.occurredAt,
+    }));
   };
 
   const handleChangeReason = (
@@ -115,44 +146,35 @@ export function BneCommandBoard() {
     currentReason: ReasonSegment,
     selection: ReasonPickerSelection,
   ) => {
-    if (!aircraft.apuEvent) {
-      return;
-    }
-
-    changeReason({
-      port: "BNE",
-      tail: aircraft.tail,
-      apuEventId: aircraft.apuEvent.apuEventId,
+    runWorkflowAction(aircraft, (context) => changeReason({
+      ...workflowIdentity(context),
       previousReasonSegmentId: currentReason.reasonSegmentId,
       previousCategoryId: currentReason.categoryId,
       previousDetailId: currentReason.detailId,
       ...selection,
       selectedBy: workflowActorId,
-      selectedAt: board.nowIso,
-    });
-    refreshWorkflowEvents();
+      selectedAt: context.occurredAt,
+    }));
   };
 
   const handleKeepCurrentReason = (
     aircraft: GroundAircraftState,
     currentReason: ReasonSegment,
   ) => {
-    if (!aircraft.apuEvent || !aircraft.reasonChain.reviewDueAt) {
+    const reviewDueAt = aircraft.reasonChain.reviewDueAt;
+    if (!reviewDueAt) {
       return;
     }
 
-    keepCurrentReason({
-      port: "BNE",
-      tail: aircraft.tail,
-      apuEventId: aircraft.apuEvent.apuEventId,
+    runWorkflowAction(aircraft, (context) => keepCurrentReason({
+      ...workflowIdentity(context),
       reasonSegmentId: currentReason.reasonSegmentId,
       categoryId: currentReason.categoryId,
       detailId: currentReason.detailId,
       keptBy: workflowActorId,
-      keptAt: board.nowIso,
-      reviewDueAt: aircraft.reasonChain.reviewDueAt,
-    });
-    refreshWorkflowEvents();
+      keptAt: context.occurredAt,
+      reviewDueAt,
+    }));
   };
 
   const handleAddReasonNote = (
@@ -160,20 +182,13 @@ export function BneCommandBoard() {
     currentReason: ReasonSegment,
     note: string,
   ) => {
-    if (!aircraft.apuEvent) {
-      return;
-    }
-
-    addReasonNote({
-      port: "BNE",
-      tail: aircraft.tail,
-      apuEventId: aircraft.apuEvent.apuEventId,
+    runWorkflowAction(aircraft, (context) => addReasonNote({
+      ...workflowIdentity(context),
       reasonSegmentId: currentReason.reasonSegmentId,
       note,
       addedBy: workflowActorId,
-      addedAt: board.nowIso,
-    });
-    refreshWorkflowEvents();
+      addedAt: context.occurredAt,
+    }));
   };
 
   const handleCorrectReason = (
@@ -181,22 +196,15 @@ export function BneCommandBoard() {
     previousReason: ReasonSegment,
     selection: ReasonPickerSelection,
   ) => {
-    if (!aircraft.apuEvent) {
-      return;
-    }
-
-    correctPreviousReason({
-      port: "BNE",
-      tail: aircraft.tail,
-      apuEventId: aircraft.apuEvent.apuEventId,
+    runWorkflowAction(aircraft, (context) => correctPreviousReason({
+      ...workflowIdentity(context),
       previousReasonSegmentId: previousReason.reasonSegmentId,
       previousCategoryId: previousReason.categoryId,
       previousDetailId: previousReason.detailId,
       ...selection,
       selectedBy: workflowActorId,
-      selectedAt: board.nowIso,
-    });
-    refreshWorkflowEvents();
+      selectedAt: context.occurredAt,
+    }));
   };
 
   return (
