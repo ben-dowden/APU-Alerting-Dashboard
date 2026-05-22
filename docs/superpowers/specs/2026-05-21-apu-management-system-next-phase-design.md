@@ -1039,6 +1039,8 @@ The minimum reason-tagged burn dataset should include:
 
 - APU event id
 - Reason segment id
+- Source event ids used to derive the row
+- Reason-chain event ids used to derive the row
 - Tail
 - Flight number when available
 - Port
@@ -1059,6 +1061,13 @@ The minimum reason-tagged burn dataset should include:
 - Official APU-off timestamp source, such as ACMS, inferred closure, or another trusted source
 
 Manual APU-off observations should be excluded from official reason-tagged burn closure until confirmed. They may appear in operational telemetry, but reporting should not treat them as official APU-off timestamps.
+
+MVP reconciliation and lineage:
+
+- Each reason-tagged burn row should be traceable to the source event ids and reason-chain event ids that produced it.
+- Published/exported totals should reconcile with HQ app totals for the same filters, source assumptions, and fuel-burn calculation version.
+- The MVP does not need a full audit lineage UI for every number.
+- Lineage fields should exist in the data model/export so IT, EDP, or product diagnostics can investigate mismatches.
 
 Not required for MVP:
 
