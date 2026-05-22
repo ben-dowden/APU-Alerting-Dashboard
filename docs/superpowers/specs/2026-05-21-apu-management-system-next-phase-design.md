@@ -236,10 +236,15 @@ Each aircraft card should have a stable, scannable structure:
 │ Cleaning in progress · cleaner aboard│
 │ 00:24                                │
 │ [↻] [ Change reason ]        [chain] │
-├──────────────────────────────────────┤
 │ Review due in 00:06                  │
 └──────────────────────────────────────┘
 ```
+
+Desktop card layout should prioritize three clear bands:
+
+1. Header: tail, equipment, bay/stand, and state badges.
+2. Aircraft facts: APU runtime, ground time, estimated kg fuel, support availability, proximity, and source charms.
+3. Current-reason workflow: current reason, elapsed `HH:MM` timer, review due state, reason actions, and drawer trigger.
 
 Desktop and wallboard cards should use shared aircraft-card content and a shared card read model, but separate wrappers:
 
@@ -254,7 +259,7 @@ Aircraft card shadcn composition:
 - Body: `CardContent` with a compact fact grid: APU runtime, total ground time, estimated kg fuel, ground support availability, closest tail/distance, and source freshness charms where allowed.
 - Proximity: closest-tail row uses `HoverCard` when there are nearby APU-running aircraft within 100 metres, listing tail, bay, and distance from the selected aircraft. If no richer detail is needed, use `Tooltip`.
 - Current reason block: a product subcomponent inside `CardContent`, visually separated with a light divider or soft neutral band. It shows only current category/detail and elapsed timer in `HH:MM`.
-- Reason action cluster: placed inside the current-reason block, aligned with the current reason and timer. It contains the primary reason action, keep-current icon action when relevant, change reason action, and the reason-chain `Sheet` trigger.
+- Reason action cluster: placed inside the current-reason block, aligned with the current reason and timer. It contains the primary reason action, keep-current icon action when relevant, change reason action, and the card-attached reason-drawer trigger.
 - Footer: do not use `CardFooter` for reason actions. If a footer is used at all, keep it for quiet utility actions and make sure the card still reads as an aircraft status surface, not a form.
 
 The wallboard card should keep nearly all desktop aircraft facts visible, but render them larger and non-interactive. It should include tail, equipment type, bay/stand context, APU state, APU runtime, total ground time, estimated kg fuel, ground service availability when known, closest tail and distance, current reason and `HH:MM` timer, review due state, and compact source/freshness charms where useful. The main difference from the desktop card is interaction, not information: remove reason action buttons, drawer triggers, manual APU-off action, data issue action, editable notes, QR/deep links, and other workflow affordances. Drawer-only detail, such as the full reason timeline and fallback fuel-assumption explanation, remains out of the wallboard card.
@@ -277,7 +282,7 @@ Card controls:
 - Change reason: show a secondary shadcn `Button` labelled `Change reason`, using `outline` or `secondary` styling. It opens the same anchored reason `Popover`.
 - Current reason valid: still allow `Change reason`, but keep it quieter than the missing/review-due actions.
 - Manual APU-off observation: show a restrained secondary or ghost shadcn `Button` labelled `Mark APU off`. Tooltip: `Mark as off pending source confirmation`. Keep this near APU state context rather than the main reason action group where possible.
-- Reason chain drawer: show a light ghost icon shadcn `Button`, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`. It opens the right-side shadcn `Sheet`.
+- Reason chain drawer: show a light ghost icon shadcn `Button`, preferably `PanelRightOpen`, `History`, or `ListTree`. Tooltip: `View reason chain`. It opens the card-attached reason drawer.
 - Side table focus action: use a ghost button with an arrow or target-style icon. Tooltip: `Show aircraft card`.
 
 Reason actions should sit inside the current-reason block, aligned with the current reason and chain icon. They should not sit as a dominant global footer that makes the whole aircraft card feel like it exists only to collect a reason. The card hierarchy is aircraft state first, current reason second, actions third.
@@ -391,7 +396,19 @@ Cleaning in progress · cleaner aboard
 
 The collapsed card does not show prior reason segments, history pills, or timeline fragments. Keeping prior reasons out of the card prevents the reason-chain feature from dominating the whole aircraft card. The full chain appears only in the drawer.
 
-The drawer opens from the right side of the screen. It should be around 420-520px wide on desktop. On smaller screens it can become a full-height sheet. Opening the drawer should not navigate away from the board.
+The desktop drawer is not the stock shadcn full-screen `Sheet` pattern. It is a custom `CardReasonDrawer`: an anchored overlay that expands from the selected aircraft card and sits over neighbouring board content. It should feel attached to the card that opened it.
+
+Desktop drawer behaviour:
+
+- Opens from the card's reason-chain icon, normally to the card's right side with an 8-12px offset.
+- Width should be around 420-520px where space allows, clamped to the viewport.
+- If there is not enough space on the right, it can flip to the left or align over the card while preserving the visual relationship to the selected card.
+- It should not dim the whole screen, take over the full viewport, or feel like a separate modal workflow.
+- It collapses on outside click, Escape, or focus leaving the drawer/trigger region.
+- Clicking or tabbing inside the drawer keeps it open.
+- Closing returns focus to the drawer trigger button.
+- It should float above the board content with a clear border, subtle shadow, and white surface.
+- On narrow screens only, the same content may fall back to a full-width drawer/sheet pattern for usability.
 
 Drawer closed state:
 
@@ -1570,7 +1587,8 @@ Primitive usage rules:
 - `Badge` is for compact state labels, source/fallback charms, and metric qualifiers. Use restrained outline or soft treatments for normal states, red treatment for missing/urgent states, and purple treatment for active selected workflow states.
 - `Tooltip` is the default disclosure primitive for icon buttons, source/freshness charms, fallback burn-rate markers, and nearby-APU context. `HoverCard` is reserved for richer hover content such as the nearby APU-running aircraft list.
 - `Popover` is the fast workflow primitive. The reason picker should be a small anchored popover with category buttons in the first pane and detail buttons in the second pane. It should complete the common path in two clicks, without scrolling.
-- `Sheet` is the heavier inspection primitive. The reason-chain drawer uses `Sheet` so the card can remain visible behind the workflow and the user can inspect the chain without losing board context.
+- `CardReasonDrawer` is a product component rather than a stock shadcn primitive. It should reuse shadcn/Radix overlay, focus, and outside-click behaviours where useful, but it must render as a card-attached drawer rather than a full-screen side `Sheet`.
+- `Sheet` is only a narrow-screen fallback for the reason-chain drawer, not the default desktop interaction.
 - `Table` is for compact operational inventory and admin configuration. It should use dense row height, sticky headers where useful, and ghost buttons for row actions such as focusing an aircraft card.
 - `ToggleGroup` is for benchmark mode selection, with auto-rotation on wallboard. It should make the current benchmark obvious without looking like a segmented marketing control.
 - `Alert` is for validation, data-quality warnings, and admin save feedback. It should not be used as the normal Senior Engineer prompting pattern.
@@ -1604,7 +1622,7 @@ Reason-chain workflow:
 
 - `ReasonPicker`: shadcn `Popover` anchored to the card action button.
 - Category/detail selection: custom two-pane popover using `Button`, `Command` or simple list rows, `Separator`, and Tailwind grid. Do not use a modal for the fast path.
-- `ReasonChainDrawer`: shadcn `Sheet` from the right side, with `ScrollArea`, `Separator`, `Badge`, `Textarea`, and action `Button`s.
+- `CardReasonDrawer`: custom card-attached drawer with `ScrollArea`, `Separator`, `Badge`, `Textarea`, and action `Button`s. It opens from the aircraft card, floats over nearby board content, and collapses on outside click, Escape, or focus leaving the drawer/trigger region.
 - Optional note field: `Textarea` in the drawer only.
 - Current-reason quick action: icon `Button` with `Tooltip`.
 
@@ -1691,7 +1709,7 @@ First slice acceptance target:
 - `/senior/bne/wallboard` keeps carousel timing steady when urgency changes; the side index shows the immediate subtle urgency cue.
 - `/senior/bne/wallboard` animates side-index order changes with a restrained row movement/highlight treatment.
 - Reason capture uses the shadcn popover two-click category/detail flow.
-- On `/senior/bne`, the reason-chain drawer opens from the card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
+- On `/senior/bne`, the card-attached `CardReasonDrawer` opens from the aircraft card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
 - On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
 - Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
 - On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card.
@@ -1700,7 +1718,7 @@ First slice acceptance target:
 First-slice layout checks:
 
 - `/senior/bne/wallboard` at a 16:9 viewport keeps command bar, enlarged scorecard/benchmark band, two-card carousel stage, and enlarged side index visible without awkward crowding.
-- `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, drawer use, reason popover selection, and side-table focus.
+- `/senior/bne` at desktop/laptop viewport remains comfortable for pointer interaction, card-attached drawer use, reason popover selection, and side-table focus.
 - The wallboard route can prioritize scanability with reduced chrome; the side index preserves full aircraft context while the carousel stages two large cards at a time.
 - Wallboard aircraft card typography, spacing, and content parity must be verified visually so the cards read as deliberate TV cards, not cramped or merely enlarged desktop cards.
 - Both routes must preserve stable card dimensions so timers, status badges, tooltips, and reason text do not reflow the board unexpectedly.
@@ -1714,7 +1732,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` open/closed states, outside-click/Escape/focus-leave collapse behaviour, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
