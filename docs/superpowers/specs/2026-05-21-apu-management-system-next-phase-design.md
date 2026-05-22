@@ -903,6 +903,15 @@ Reason-tagged burn allocation:
 - When the APU-off event arrives, the current segment closes and the APU event is finalized.
 - Estimated fuel kg should be calculated at segment level so reporting can show APU burn by reason category/detail.
 
+Unattributed burn is a first-class reporting bucket. Reporting should not hide unattributed APU burn or exclude it from totals. The system should also show attribution coverage as a headline quality metric:
+
+```text
+Attributed runtime % = attributed APU runtime / total APU runtime
+Unattributed runtime % = unattributed APU runtime / total APU runtime
+```
+
+Senior Engineer surfaces use attribution coverage to support card cleanliness and operational follow-up. HQ surfaces can show unattributed burn as a reason bucket and as a data-quality/process metric.
+
 Minimum reporting output:
 
 The MVP must make reason-tagged burn data available for reporting, but the delivery mechanism is flexible. Acceptable early outputs include:
