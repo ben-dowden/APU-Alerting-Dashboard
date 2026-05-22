@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ type CardReasonDrawerProps = {
   onClose: () => void;
   onAddNote: (note: string) => void;
   onCorrectSegment?: (segment: ReasonSegment) => void;
+  correctionControls?: ReactNode;
 };
 
 export function CardReasonDrawer({
@@ -25,6 +26,7 @@ export function CardReasonDrawer({
   onClose,
   onAddNote,
   onCorrectSegment,
+  correctionControls,
 }: CardReasonDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const [note, setNote] = useState("");
@@ -81,6 +83,7 @@ export function CardReasonDrawer({
             )}
           </div>
           <ReasonTimelineStrip onCorrectSegment={onCorrectSegment} segments={segments} />
+          {correctionControls}
         </div>
 
         <form

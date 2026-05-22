@@ -1,10 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { clearWorkflowEvents, readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import { BneCommandBoard } from "./bne-command-board";
 
 describe("BneCommandBoard", () => {
+  beforeEach(() => {
+    clearWorkflowEvents();
+    localStorage.clear();
+  });
+
   it("renders the compact command bar", () => {
     render(<BneCommandBoard />);
 
@@ -45,7 +51,7 @@ describe("BneCommandBoard", () => {
     expect(screen.queryByText(/AUD/i)).not.toBeInTheDocument();
   });
 
-  it("renders display-only aircraft cards from the read model", () => {
+  it("renders workflow-ready aircraft cards from the read model", () => {
     render(<BneCommandBoard />);
 
     const board = screen.getByRole("region", { name: "Aircraft work queue" });
@@ -62,7 +68,15 @@ describe("BneCommandBoard", () => {
     expect(within(card).getByText("Cleaner onboard")).toBeVisible();
     expect(within(card).getByText("Review due")).toBeVisible();
     expect(within(card).getByText("Closest tail pending")).toBeVisible();
-    expect(within(board).queryByRole("button", { name: /reason|manual|drawer/i })).not.toBeInTheDocument();
+
+    const currentReasonBlock = within(card).getByRole("group", { name: "Current reason for VH-8IA" });
+    expect(within(currentReasonBlock).getByRole("button", { name: "Change reason" })).toBeVisible();
+    expect(
+      within(currentReasonBlock).getByRole("button", { name: "Keep current reason for VH-8IA" }),
+    ).toHaveAttribute("title", "Keep current reason");
+    expect(
+      within(currentReasonBlock).getByRole("button", { name: "Open reason drawer for VH-8IA" }),
+    ).toHaveClass("text-neutral-800");
   });
 
   it("renders the ground aircraft side table", () => {
@@ -84,5 +98,19 @@ describe("BneCommandBoard", () => {
     expect(within(table).getByText("VH-YFX")).toBeVisible();
     expect(within(table).getByText("Off")).toBeVisible();
     expect(within(table).getByText("APU off")).toBeVisible();
+  });
+
+  it("keeps the current reason through the local workflow event stream", async () => {
+    render(<BneCommandBoard />);
+
+    const card = screen.getByRole("article", { name: "VH-8IA aircraft card" });
+    expect(within(card).getByText("Review due")).toBeVisible();
+
+    fireEvent.click(
+      within(card).getByRole("button", { name: "Keep current reason for VH-8IA" }),
+    );
+
+    expect(readWorkflowEvents()).toHaveLength(1);
+    expect(await within(card).findByText("Review set")).toBeVisible();
   });
 });

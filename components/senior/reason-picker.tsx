@@ -22,14 +22,14 @@ type ReasonPickerProps = {
 type ActiveCategory = ReasonTaxonomySnapshot["categories"][number];
 
 const sortedActiveCategories = (taxonomy: ReasonTaxonomySnapshot) =>
-  taxonomy.categories
+  [...taxonomy.categories]
     .filter((category) => category.active)
-    .toSorted((left, right) => left.sortOrder - right.sortOrder);
+    .sort((left, right) => left.sortOrder - right.sortOrder);
 
 const sortedActiveDetails = (category: ActiveCategory) =>
-  category.details
+  [...category.details]
     .filter((detail) => detail.active)
-    .toSorted((left, right) => left.sortOrder - right.sortOrder)
+    .sort((left, right) => left.sortOrder - right.sortOrder)
     .slice(0, 4);
 
 export function ReasonPicker({ mode, taxonomy, onSelect }: ReasonPickerProps) {

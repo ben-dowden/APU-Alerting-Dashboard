@@ -141,6 +141,70 @@ describe("deriveReasonChain", () => {
     ]);
   });
 
+  it("corrects a previous segment without changing its timestamps", () => {
+    const changedAt = "2026-05-22T09:05:00.000Z";
+    const correctionAt = "2026-05-22T09:20:00.000Z";
+    const reasonChanged = envelope<"reason_changed", ReasonChangedPayload>(
+      "reason_changed",
+      {
+        apuEventId: apuEvent.apuEventId,
+        previousReasonSegmentId: "reason:VH-8IA:001",
+        previousCategoryId: "cleaning-in-progress",
+        previousDetailId: "cleaner-onboard",
+        reasonSegmentId: "reason:VH-8IA:002",
+        categoryId: "engineering-requirement",
+        categoryLabel: "Engineering requirement",
+        detailId: "maintenance-task-in-progress",
+        detailLabel: "Maintenance task in progress",
+        selectedBy: "senior-engineer-bne",
+        selectedAt: changedAt,
+        sourceAction: "change_reason",
+      },
+      changedAt,
+    );
+    const correction = envelope<"reason_changed", ReasonChangedPayload>(
+      "reason_changed",
+      {
+        apuEventId: apuEvent.apuEventId,
+        previousReasonSegmentId: "reason:VH-8IA:001",
+        previousCategoryId: "cleaning-in-progress",
+        previousDetailId: "cleaner-onboard",
+        reasonSegmentId: "reason:VH-8IA:001-correction",
+        categoryId: "infrastructure-unavailable",
+        categoryLabel: "Infrastructure unavailable",
+        detailId: "pca-unavailable",
+        detailLabel: "PCA unavailable",
+        selectedBy: "senior-engineer-bne",
+        selectedAt: correctionAt,
+        sourceAction: "correct_reason",
+      },
+      correctionAt,
+    );
+
+    const chain = deriveReasonChain(
+      apuEvent,
+      [reasonSelected(), reasonChanged, correction],
+      settings,
+      "2026-05-22T09:25:00.000Z",
+    );
+
+    expect(chain.segments).toEqual([
+      expect.objectContaining({
+        reasonSegmentId: "reason:VH-8IA:001",
+        categoryId: "infrastructure-unavailable",
+        detailId: "pca-unavailable",
+        startedAt: "2026-05-22T08:45:00.000Z",
+        endedAt: changedAt,
+      }),
+      expect.objectContaining({
+        reasonSegmentId: "reason:VH-8IA:002",
+        categoryId: "engineering-requirement",
+        startedAt: changedAt,
+        endedAt: undefined,
+      }),
+    ]);
+  });
+
   it("records kept review telemetry without creating a visible segment", () => {
     const keptAt = "2026-05-22T09:15:00.000Z";
     const reasonKept = envelope<"reason_kept", ReasonKeptPayload>(

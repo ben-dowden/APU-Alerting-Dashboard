@@ -134,6 +134,24 @@ const changeReasonSegment = (
   state: ReasonChainAccumulator,
   event: ReasonChangedEvent,
 ): ReasonChainAccumulator => {
+  if (event.payload.sourceAction === "correct_reason") {
+    return {
+      ...state,
+      segments: state.segments.map((segment) =>
+        segment.reasonSegmentId === event.payload.previousReasonSegmentId
+          ? {
+              ...segment,
+              categoryId: event.payload.categoryId,
+              categoryLabel: event.payload.categoryLabel,
+              detailId: event.payload.detailId,
+              detailLabel: event.payload.detailLabel,
+              sourceEventIds: [...segment.sourceEventIds, event.eventId],
+            }
+          : segment,
+      ),
+    };
+  }
+
   const changedAt = eventTimestamp(event);
   const previousIndex = state.segments.findIndex(
     (segment) => segment.reasonSegmentId === event.payload.previousReasonSegmentId,
