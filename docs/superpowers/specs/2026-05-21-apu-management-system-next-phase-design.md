@@ -144,13 +144,33 @@ Metric helper text examples:
 
 On the wallboard route, these four scorecard metrics should be visually amplified: larger numbers, stronger status icons, and enough spacing that each metric can be read from across the room. The wallboard should not shrink the metrics to make room for more aircraft cards; the side index and carousel carry the aircraft density.
 
+The scorecard and benchmark band is a two-tier performance surface, not a collection of unrelated widgets. The parent region should be an unframed layout band. The four scorecard metric panels are the repeated framed elements; do not wrap them inside another card.
+
+Scorecard metric visual hierarchy:
+
+- Metric label at the top, compact and steady.
+- Large primary number with unit, such as `3`, `05:42`, `418kg`, or `86%`.
+- One helper line only, muted and operational rather than explanatory.
+- Small icon as secondary support, never competing with the number.
+
+The attributed-runtime metric should feel like board cleanliness and diagnostic coverage, not compliance scoring. Avoid phrasing that implies individual performance monitoring.
+
 The benchmark panel is a single horizontal band below the scorecard. It shows:
 
 ```text
 Similar-temp benchmark
-+42kg / +6.1% vs matched 3°C temperature bands
++42kg / +6.1% fuel
++00:38 / +8.4% runtime
+vs matched 3°C temperature bands
 [Similar temp] [Week] [Month] [Year]
 ```
+
+Benchmark visual hierarchy:
+
+- Fuel kg delta is the hero comparison.
+- Runtime delta is secondary, smaller, and close enough to be read as supporting context.
+- The benchmark label and comparator basis are muted.
+- Exact absolute and percentage deltas are shown for both fuel and runtime when space allows.
 
 On wallboard mode, the active benchmark segment changes every five seconds. The active segment should be indicated by the purple selected state and a subtle progress bar along the bottom edge of the selected chip. Manual benchmark selection and pause/resume behaviour belong to the desktop route only.
 
@@ -1642,8 +1662,11 @@ Senior Engineer command board:
 - `CommandBarContextCluster`: title, port badge, persona badge/menu, and optional wallboard mode badge.
 - `CommandBarStatusCluster`: temperature chip, local time, feed status, and source/freshness charms. Use `Tooltip` for the underlying source timestamp/detail rather than visible explanatory text.
 - `CommandBarControlCluster`: desktop-only light controls for wallboard route, prototype scenario selection, and manual refresh/mock-feed actions. Keep benchmark controls in `BenchmarkRotator`, not here.
-- `ScorecardStrip`: repeated shadcn `Card` or custom metric panels; use cards only for individual KPI panels.
-- `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection plus a client timer for 5-second auto-rotation.
+- `ScorecardBenchmarkBand`: unframed product layout region containing `ScorecardStrip` and `BenchmarkBand`.
+- `ScorecardStrip`: four fixed `ScorecardMetricPanel` instances in stable order. Use repeated shadcn `Card` or custom metric panels only for the individual KPI panels; do not wrap the strip in another card.
+- `ScorecardMetricPanel`: label, icon, primary value/unit, and one muted helper line for `APU on now`, `Runtime today`, `Fuel burned today`, and `Attributed runtime`.
+- `BenchmarkBand`: custom horizontal panel containing the active benchmark readout and `BenchmarkRotator`. Fuel kg delta is visually dominant; runtime delta is secondary.
+- `BenchmarkRotator`: shadcn `ToggleGroup` for manual benchmark selection on desktop plus a client timer for 5-second auto-rotation on wallboard. Use `Badge` for benchmark context such as a temperature band and `Tooltip` for methodology detail.
 - `AircraftBoard`: CSS grid with Tailwind responsive tracks and stable card dimensions.
 - `WallboardAircraftCarousel`: large-format carousel stage for `/senior/bne/wallboard`; one row, two aircraft cards per page, rotating through urgency-sorted aircraft while the side index remains visible. Urgency changes do not interrupt the current page interval.
 - `WallboardSideIndex`: enlarged passive aircraft index for `/senior/bne/wallboard`; sorted by the shared urgency ranking and animated lightly when row order changes.
@@ -1733,8 +1756,8 @@ First slice acceptance target:
 - The Senior Engineer board is designed and verified for both 16:9 wallboard display and desktop/laptop interaction from the first slice.
 - Event-shaped BNE fixtures derive the command board read model.
 - Top command bar shows BNE context, current temperature, persona/view context, feed/source freshness, and current time. Desktop includes light scenario/view controls; wallboard omits active controls.
-- Daily scorecard strip shows the agreed Senior Engineer metrics.
-- Benchmark panel auto-rotates comparison mode every 5 seconds.
+- Daily scorecard strip shows the four agreed Senior Engineer metrics in stable order.
+- Benchmark panel auto-rotates comparison mode every 5 seconds, with fuel kg as the hero delta and runtime as the secondary delta.
 - Aircraft cards show all BNE ground aircraft, with APU-off aircraft in calm neutral complete state.
 - Aircraft card implementation uses shared card content/read-model fields with separate desktop and wallboard wrappers.
 - Aircraft urgency ranking is derived in the read-model/domain layer using fixed buckets with weighted tiebreakers, and exposed to both desktop and wallboard components.
@@ -1768,7 +1791,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for command bar desktop context plus light controls, wallboard command bar context-only rendering, scorecard metric order, scorecard one-helper-line limit, benchmark fuel-kg hero delta with runtime secondary delta, reason picker two-click flow, no-scroll category/detail panes, distinct select/change/correct trigger modes, outside-click/Escape close without writing an event, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, horizontal timeline preview showing current plus previous two segments, timeline segment hierarchy with small muted time range and stronger black semi-bold reason detail, current segment highlighted with indigo top bar plus `Current` badge, previous-segment correction hidden by default and available only through tiny hover/focus edit icon, correction mode preserving timestamps, `Show all reasons` exposed as a ghost icon button with tooltip, enabling internal scrolling without resizing the drawer, and toggling back to compact preview with the same icon button, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
