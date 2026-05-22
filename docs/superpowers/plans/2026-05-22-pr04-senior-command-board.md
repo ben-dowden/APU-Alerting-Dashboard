@@ -6,6 +6,8 @@
 
 **Architecture:** Use read models from PR 03 as the only data source. Keep cards display-first in this PR; workflow mutations belong to PR 05 and PR 06. This PR is an interim shell and does not satisfy the first usable Senior Engineer slice until PR 05 adds the reason workflow and PR 06 adds urgency/proximity/manual-off behavior.
 
+**UX Correction From PR 01 Review:** The foundation left-hand sidebar is not the desired product navigation. PR 04 must remove the large sidebar from the Senior Engineer surface and replace page navigation with a far more discreet pattern, such as compact top-level links, a small route switcher, or contextual actions that do not dominate the command board.
+
 **Tech Stack:** Next.js App Router, React, Tailwind, lucide-react, Testing Library, Vitest.
 
 ---
@@ -33,7 +35,11 @@ Create a server component that loads `bne-baseline`, active settings/reference f
 
 Update `app/senior/bne/page.tsx` to render `BneCommandBoard` instead of `RouteStub`.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Remove foundation sidebar from the Senior Engineer surface**
+
+Do not wrap the command board in the PR 01 large left-hand `AppShell` sidebar. Use a discreet navigation treatment that keeps the command board dominant in the viewport.
+
+- [ ] **Step 4: Commit**
 
 Run:
 
