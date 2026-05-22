@@ -7,6 +7,7 @@ import type {
   ReasonTaxonomySnapshot,
 } from "@/lib/events";
 import type { DerivedApuEvent } from "./apu-reducer";
+import { matchesApuEventId } from "./ids";
 
 export type ReasonSegment = {
   reasonSegmentId: string;
@@ -54,8 +55,7 @@ const matchesApuEvent = (event: DomainEvent, apuEvent: DerivedApuEvent) => {
     return false;
   }
 
-  const legacyFixtureId = `apu:${apuEvent.tail}:${apuEvent.startedAt}`;
-  return event.payload.apuEventId === apuEvent.apuEventId || event.payload.apuEventId === legacyFixtureId;
+  return matchesApuEventId(event.payload.apuEventId, apuEvent);
 };
 
 const byEventTime = (left: DomainEvent, right: DomainEvent) =>
@@ -116,6 +116,15 @@ const findCurrentOpenSegment = (segments: ReasonSegment[]) => {
   return undefined;
 };
 
+const reviewResponseTypeByResolution: Record<
+  ReviewResolvedEvent["payload"]["resolutionType"],
+  ReviewResponseTelemetry["responseType"]
+> = {
+  kept_current_reason: "kept",
+  changed_reason: "changed",
+  dismissed: "dismissed",
+};
+
 export const deriveReasonChain = (
   apuEvent: DerivedApuEvent,
   domainEvents: readonly DomainEvent[],
@@ -167,12 +176,7 @@ export const deriveReasonChain = (
       const resolvedEvent = event as ReviewResolvedEvent;
       reviewResponseTelemetry.push({
         reasonSegmentId: resolvedEvent.payload.reasonSegmentId,
-        responseType:
-          resolvedEvent.payload.resolutionType === "kept_current_reason"
-            ? "kept"
-            : resolvedEvent.payload.resolutionType === "changed_reason"
-              ? "changed"
-              : "dismissed",
+        responseType: reviewResponseTypeByResolution[resolvedEvent.payload.resolutionType],
         reviewDueAt: resolvedEvent.payload.reviewDueAt,
         respondedAt: resolvedEvent.payload.reviewResolvedAt,
         respondedBy: resolvedEvent.payload.resolvedBy,

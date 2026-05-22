@@ -36,6 +36,14 @@ const bucketOrder: UrgencyBucket[] = [
   "apu_off",
 ];
 
+const statusLabels: Record<UrgencyBucket, string> = {
+  missing_reason: "Reason missing",
+  review_overdue: "Review due",
+  active_valid_reason: "Current reason",
+  manual_off_pending: "Manual off pending",
+  apu_off: "APU off",
+};
+
 const minutesBetween = (startIso: string, endIso: string) =>
   Math.max(0, Math.floor((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000));
 
@@ -59,26 +67,6 @@ const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket => {
   return "active_valid_reason";
 };
 
-const statusLabelFor = (aircraft: GroundAircraftState, urgencyBucket: UrgencyBucket) => {
-  if (urgencyBucket === "apu_off") {
-    return "APU off";
-  }
-
-  if (urgencyBucket === "manual_off_pending") {
-    return "Manual off pending";
-  }
-
-  if (urgencyBucket === "missing_reason") {
-    return "Reason missing";
-  }
-
-  if (urgencyBucket === "review_overdue") {
-    return "Review due";
-  }
-
-  return "Current reason";
-};
-
 const cardForAircraft = (
   aircraft: GroundAircraftState,
   nowIso: string,
@@ -93,7 +81,7 @@ const cardForAircraft = (
     bay: aircraft.bay,
     stand: aircraft.stand,
     apuState: aircraft.apuState,
-    statusLabel: statusLabelFor(aircraft, urgencyBucket),
+    statusLabel: statusLabels[urgencyBucket],
     urgencyBucket,
     urgencyRank,
     groundMinutes: aircraft.groundMinutes,
