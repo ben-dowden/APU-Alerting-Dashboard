@@ -1500,11 +1500,20 @@ Aircraft cards, side tables, and command-board panels should use stable dimensio
 
 ### Migration Plan At Design Level
 
-The implementation plan may replace the Vite shell with a Next.js app rather than migrate component-by-component. Until implementation starts, keep the current Vite app as a working reference.
+The implementation plan should replace the Vite shell in-place with a Next.js app rather than create a side-by-side application or separate repo. The current Vite app remains useful as a working reference before the rebuild starts, but the target codebase should become a single Next.js application.
+
+In-place replacement means:
+
+- Remove Vite-specific entry points and configuration once the Next.js scaffold is established.
+- Replace the tabbed `App.tsx` shell with route-based Next.js surfaces.
+- Replace custom CSS component styling with Tailwind and shadcn/ui composition.
+- Preserve and port useful domain calculations, report export logic, tests, and mock scenario learnings only where they still match the event-chain model.
+- Keep the existing docs/spec history in the same repo.
+- Avoid maintaining parallel Vite and Next.js apps after the rebuild begins.
 
 Migration sequence:
 
-1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme.
+1. Scaffold Next.js, Tailwind, shadcn/ui, and the design token theme in the existing app repo.
 2. Create event-shaped fixture contracts and read-model functions.
 3. Build the Senior Engineer BNE route first.
 4. Build the aircraft card, reason picker, and reason-chain drawer.
@@ -1512,6 +1521,7 @@ Migration sequence:
 6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
 7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
 8. Port or rewrite export/reporting logic against the new reason-tagged burn rows.
+9. Remove obsolete Vite files and any old UI modules that no longer map to the Next.js component architecture.
 
 The old Vite components should not constrain the new component hierarchy. Reuse domain calculations only when they still match the event-chain model.
 
