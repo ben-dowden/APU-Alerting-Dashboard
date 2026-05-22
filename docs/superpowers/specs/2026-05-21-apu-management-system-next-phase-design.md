@@ -181,7 +181,7 @@ Initial weighted tiebreaker factors:
 - Total ground time, as a low-weight context signal
 - Stable deterministic fallback, such as tail or APU event id, to avoid jitter when scores are tied
 
-For the prototype, these weights can live in a small read-model settings object with clear names and comments. They do not need an admin UI in the first slice. For real integration, the ranking should move into the backend or integration read model so every consuming surface receives the same rank, bucket, and explanation.
+For the prototype, these weights should be editable by HQ Admin through a simple urgency-ranking settings screen. The bucket order remains fixed in the product logic for MVP; HQ Admin edits only the weighted tiebreakers inside each bucket. The ranking settings should still be represented as a small read-model settings object with clear names, default values, and validation. The first Senior Engineer implementation slice may seed these defaults without building the admin editor immediately, but the prototype target includes the editable admin screen. For real integration, the ranking should move into the backend or integration read model so every consuming surface receives the same rank, bucket, and explanation.
 
 Urgency ranking should be calculated by the domain/read-model layer, not ad hoc in React components. Each aircraft card/table row should receive ranking fields such as:
 
@@ -515,6 +515,7 @@ HQ Admin settings manage:
 - Port applicability or port-specific override
 - Active/inactive status
 - Display ordering
+- Urgency-ranking tiebreaker weights
 
 The Senior Engineer workflow consumes this configuration. The taxonomy should not be hard-coded into backend logic.
 
@@ -526,7 +527,10 @@ Settings navigation should include:
 
 - Reason taxonomy
 - Port overrides
+- Urgency ranking
 - Fuel price
+- Fuel-burn assumptions
+- Reference data
 - Persona/role preview for the POC
 
 Reason taxonomy screen:
@@ -555,6 +559,23 @@ The detail editor for the selected category shows up to four detail rows per por
 If more than four active details are configured for a category, show an inline warning: `Fast capture allows a maximum of 4 active details`.
 
 Port overrides should inherit the global category/detail set by default. BNE can override labels, active details, review intervals, and ordering, but HQ/Admin owns the change.
+
+Urgency ranking screen:
+
+- Show the fixed bucket order as read-only: missing reason, overdue reason review, active APU with valid reason, manual APU-off pending source confirmation, then APU-off or OK.
+- Allow HQ Admin to edit the weighted tiebreaker factors used inside each bucket.
+- Editable factors should include overdue review minutes, APU runtime minutes, estimated kg fuel burned, proximity cluster signal, and total ground time.
+- Show a non-editable deterministic fallback tiebreaker, such as tail or APU event id, so users understand why tied rows remain stable.
+- Provide a small BNE preview table showing how current mock aircraft would rank under the configured weights.
+- Include reset-to-default behaviour for the prototype so ranking experiments can be safely undone.
+- Capture a ranking settings version label and last-updated metadata.
+
+Validation rules:
+
+- Weights must be numeric and non-negative.
+- At least one active tiebreaker weight must be greater than zero.
+- Bucket order is not editable in MVP.
+- The preview should flag when a change materially reorders current aircraft so HQ Admin understands the operational effect before saving.
 
 Fuel price screen:
 
@@ -600,7 +621,7 @@ Prototype roles:
 
 - Senior Engineer - BNE: primary operational command board, BNE aircraft cards, reason-chain capture, daily scorecard, proximity signals.
 - HQ Viewer: secondary reporting surface for cross-location scorecards, trends, annual and daily performance, dollar reporting, and monitoring. No write-back.
-- HQ Admin: HQ reporting plus admin settings for reason taxonomy, port-specific configuration, review intervals, fuel price assumptions, and fuel-burn calculation assumptions.
+- HQ Admin: HQ reporting plus admin settings for reason taxonomy, port-specific configuration, review intervals, fuel price assumptions, fuel-burn calculation assumptions, and urgency-ranking weights.
 - Apron Engineer: future role for iPad/mobile prompts, targeted aircraft actions, and reason entry from the line.
 
 Future enterprise mapping should allow Entra groups to map to app roles and port scopes.
@@ -788,6 +809,23 @@ For the prototype, this should be dummy reference data. For future integration, 
 - Unit, such as kg per minute
 - Fallback flag, if used for unknown equipment types
 - Fallback reason, such as unmatched equipment type
+- Source or note
+
+### Urgency Ranking Settings
+
+- Ranking settings id
+- Version label
+- Effective from date
+- Port applicability or override, such as global default or BNE override
+- Fixed bucket order identifier
+- Weight for overdue review minutes
+- Weight for APU runtime minutes
+- Weight for estimated kg fuel burned
+- Weight for proximity cluster signal
+- Weight for total ground time
+- Deterministic fallback field, such as tail or APU event id
+- Last updated by/persona in POC
+- Last updated timestamp
 - Source or note
 
 ## Real API Feasibility Discovery
@@ -1350,6 +1388,7 @@ app/
       page.tsx
       reasons/page.tsx
       fuel/page.tsx
+      urgency/page.tsx
       reference-data/page.tsx
     future/
       apron-engineer/page.tsx
@@ -1382,6 +1421,7 @@ Primary routes:
 - `/hq/data-quality`: source/freshness/mismatch/data-quality telemetry.
 - `/admin/reasons`: governed reason taxonomy and review intervals.
 - `/admin/fuel`: fuel price and equipment-type burn assumptions.
+- `/admin/urgency`: urgency-ranking tiebreaker weights and ranking preview.
 - `/admin/reference-data`: tail/equipment reference data and stand-coordinate reference data.
 - `/future/apron-engineer`: non-primary preview surface only if useful for stakeholder storytelling.
 
@@ -1436,13 +1476,14 @@ Fixture event families:
 - `standCoordinateReference`
 - `reasonTaxonomyReference`
 - `fuelAssumptionReference`
+- `urgencyRankingSettingsReference`
 
 Read-model functions:
 
 - `deriveCurrentBoard(events, settings)`
 - `deriveAircraftCards(boardState)`
 - `deriveGroundAircraftTable(boardState)`
-- `deriveAircraftUrgencyRanking(boardState, settings)`
+- `deriveAircraftUrgencyRanking(boardState, urgencyRankingSettings)`
 - `deriveReasonChain(apuEventId, events)`
 - `deriveDailyScorecard(events, settings)`
 - `deriveBenchmarkPanel(events, historicalBaseline, activeBenchmark)`
@@ -1561,6 +1602,7 @@ Admin settings:
 
 - Reason taxonomy: shadcn `Table` or `Data Table` pattern for categories, with a side editor using `Input`, `Switch`, `Select`, `Button`, and `Alert` for validation.
 - Fuel assumptions: shadcn `Table` for equipment-type burn assumptions; `Input` for kg/min and fuel price; `Switch` for active state; `Badge` for fallback/default rows.
+- Urgency ranking: shadcn `Table` for editable tiebreaker weights; `Input` or `Slider` for weight values; `Alert` for validation; `Button` for reset defaults; preview table using the current BNE mock aircraft order.
 - Reference data: shadcn `Table` for tail/equipment and stand coordinates; keep it simple for prototype.
 - Forms should use a validation approach such as React Hook Form plus schema validation when the implementation needs robust admin validation.
 
@@ -1597,7 +1639,7 @@ Migration sequence:
 4. Build the desktop aircraft-card workflow, reason picker, and reason-chain drawer as part of that first usable screen; keep the wallboard card variant large-format, passive, and scan-first.
 5. Add scorecard strip, benchmark rotator, and ground-aircraft side table to complete the first Senior Engineer slice.
 6. Add HQ viewer, HQ data-quality diagnostics, and lightweight reports.
-7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, and reference data.
+7. Add HQ admin settings for reasons, review intervals, fuel price, burn assumptions, urgency ranking weights, and reference data.
 8. Port or rewrite export/reporting logic against the new reason-tagged burn rows.
 9. Remove obsolete Vite files and any old UI modules that no longer map to the Next.js component architecture.
 
@@ -1647,6 +1689,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
+- Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
 - Component tests or Playwright checks for reason picker two-click flow, desktop drawer open/closed states, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
