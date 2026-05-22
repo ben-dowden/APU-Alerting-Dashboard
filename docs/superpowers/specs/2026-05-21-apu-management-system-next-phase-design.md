@@ -421,7 +421,7 @@ Aircraft card
 - Ghost icon: View reason chain
 ```
 
-Drawer open state:
+Drawer open state should be compact by default. The visible tray content before scrolling should show only the workflow-critical items:
 
 ```text
 Header
@@ -435,25 +435,16 @@ Current reason section
 - Change reason action
 - Optional note field
 
-Fuel estimate section
-- Estimated kg fuel burned
-- Equipment type
-- Burn assumption version
-- Tiny fallback charm only when the estimate uses the configured fallback rate
-
-Timeline section
-- Segment 1: category/detail, start-end, duration
-- Segment 2: category/detail, start-end, duration
+Recent timeline preview
 - Current segment highlighted
-
-Telemetry section, admin/HQ only if shown
-- Review due/resolved timestamps
-- Response time
+- Previous two or three segments, if they exist
 ```
 
-Normal Senior Engineer users can see the chain and add a note to the current segment. They can correct the category/detail on a previous segment only through a restrained `Correct reason` action. They cannot edit start/end times.
+The full timeline should remain available lower in the tray through internal scroll or a restrained `Show full chain` disclosure. Fuel-estimate detail, equipment type, burn assumption version, fallback explanation, and admin/HQ telemetry should stay below the compact workflow content or inside quiet collapsed sections. The first visible drawer view should not feel like a report.
 
-If the fuel estimate uses a fallback rate because the equipment type did not match an active burn assumption, show a tiny charm beside the drawer's kg estimate. The charm should be visually quiet, support hover/focus, and use a tooltip such as `Fuel estimate uses fallback burn rate because no active equipment-type assumption matched this aircraft`. Do not show this charm on the collapsed card.
+Normal Senior Engineer users can see the chain and add a note to the current segment. They can correct the category/detail on a previous segment only through a restrained `Correct reason` action on a visible timeline row. They cannot edit start/end times.
+
+If the fuel estimate uses a fallback rate because the equipment type did not match an active burn assumption, show a tiny charm in the drawer's lower fuel-detail section or collapsed detail header. The charm should be visually quiet, support hover/focus, and use a tooltip such as `Fuel estimate uses fallback burn rate because no active equipment-type assumption matched this aircraft`. Do not show this charm on the collapsed card or in the default top of the drawer.
 
 Closed APU events show the drawer in read-only mode for normal users. The reason chain is locked when the APU-off message arrives.
 
@@ -1710,7 +1701,7 @@ First slice acceptance target:
 - `/senior/bne/wallboard` keeps carousel timing steady when urgency changes; the side index shows the immediate subtle urgency cue.
 - `/senior/bne/wallboard` animates side-index order changes with a restrained row movement/highlight treatment.
 - Reason capture uses the shadcn popover two-click category/detail flow.
-- On `/senior/bne`, the card-attached `CardReasonDrawer` opens below the aircraft card and shows current reason, fuel estimate detail, chain timeline, note field, and tiny fallback charms where applicable.
+- On `/senior/bne`, the card-attached `CardReasonDrawer` opens below the aircraft card and shows a compact default view: current reason, note field, and recent timeline preview. Full chain, fuel estimate detail, assumption version, and fallback charms remain available lower in the tray or through quiet disclosure.
 - On `/senior/bne/wallboard`, large-format passive aircraft cards show only passive reason/review/manual-off/source state; no drawer, overlay, or expansion is available.
 - Manual APU-off pending confirmation state is represented in the desktop card/drawer workflow and displayed passively on the wallboard where relevant.
 - On `/senior/bne`, the ground-aircraft side table can focus the selected aircraft card.
@@ -1733,7 +1724,7 @@ Testing should focus on the event/read-model layer and the high-risk UI workflow
 - Unit tests for event reducers, reason-chain segmentation, review due logic, equipment-type precedence, fallback burn-rate handling, and reason-tagged burn row generation.
 - Unit tests for benchmark calculations, especially temperature-banded comparisons.
 - Unit tests for urgency-ranking settings validation, fixed bucket-order enforcement, and editable tiebreaker weights.
-- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
+- Component tests or Playwright checks for reason picker two-click flow, desktop `CardReasonDrawer` below-card positioning, compact default content before scrolling, open/closed states, outside-click/Escape/focus-leave collapse behaviour, no grid reflow while open, manual APU-off pending flow, benchmark auto-rotation, urgency ranking bucket precedence, weighted tiebreaker ordering, admin urgency preview using only the current BNE board, wallboard carousel rotation, steady carousel timing during urgency changes, side-index urgency sorting/reorder animation, side-index urgency cues, and absence of drawer/action controls, workflow prompts, QR codes, or deep links on `/senior/bne/wallboard`.
 - Screenshot checks for the Senior Engineer wallboard at widescreen desktop, normal desktop, and narrow viewports, including card readability and desktop-fact parity checks.
 - Export tests confirming HQ app totals reconcile with exported reason-tagged burn rows.
 
