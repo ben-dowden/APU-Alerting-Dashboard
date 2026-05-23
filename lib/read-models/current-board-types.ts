@@ -9,6 +9,13 @@ import type {
   WeatherObservationEvent,
 } from "@/lib/events";
 
+export type SourceQualityFlag =
+  | "stale"
+  | "unknown"
+  | "conflicting"
+  | "low_confidence"
+  | "fallback_assumption";
+
 export type SourceCharm = {
   sourceSystem: string;
   sourceEventId: string;
@@ -17,6 +24,7 @@ export type SourceCharm = {
   isStale?: boolean;
   isPlanned?: boolean;
   sourceLatencyMinutes?: number;
+  qualityFlags?: SourceQualityFlag[];
 };
 
 export type CurrentBoardSettings = {

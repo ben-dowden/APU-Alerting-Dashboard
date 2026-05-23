@@ -1,6 +1,7 @@
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { Badge } from "@/components/ui/badge";
 import { ProximityHoverCard } from "./proximity-hover-card";
+import { SourceQualityCharm } from "./source-quality-charm";
 
 type AircraftCardContentProps = {
   aircraft: AircraftCardReadModel;
@@ -33,6 +34,7 @@ export function AircraftCardContent({ aircraft }: AircraftCardContentProps) {
             {aircraft.aircraftType ? <span>{aircraft.aircraftType}</span> : null}
             {aircraft.bay ? <span>{aircraft.bay}</span> : null}
           </div>
+          <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
         </div>
         <Badge
           variant={aircraft.apuState === "on" ? "red" : "outline"}

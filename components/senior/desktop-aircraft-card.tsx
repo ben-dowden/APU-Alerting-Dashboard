@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { CardReasonDrawer } from "./card-reason-drawer";
 import { ProximityHoverCard } from "./proximity-hover-card";
 import { ReasonPicker, type ReasonPickerSelection } from "./reason-picker";
+import { SourceQualityCharm } from "./source-quality-charm";
 
 export type ReasonWorkflowHandlers = {
   onSelectReason: (aircraft: GroundAircraftState, selection: ReasonPickerSelection) => void;
@@ -139,6 +140,7 @@ function AircraftCardHeader({ aircraft }: { aircraft: AircraftCardReadModel }) {
           {aircraft.aircraftType ? <span>{aircraft.aircraftType}</span> : null}
           {aircraft.bay ? <span>{aircraft.bay}</span> : null}
         </div>
+        <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
       </div>
       <Badge
         variant={aircraft.apuState === "on" ? "red" : "outline"}
