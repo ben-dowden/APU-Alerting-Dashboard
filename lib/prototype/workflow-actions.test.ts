@@ -4,6 +4,7 @@ import { clearWorkflowEvents, readWorkflowEvents } from "./workflow-event-store"
 import {
   addReasonNote,
   changeReason,
+  createDataQualityFlag,
   correctPreviousReason,
   keepCurrentReason,
   selectReason,
@@ -166,6 +167,62 @@ describe("workflow actions", () => {
         selectedBy: "senior-engineer-bne",
         selectedAt: "2026-05-22T09:20:00.000Z",
         sourceAction: "correct_reason",
+      }),
+    );
+    expect(readWorkflowEvents()).toEqual([event]);
+  });
+
+  it("createDataQualityFlag emits operational context for data-quality triage", () => {
+    const event = createDataQualityFlag({
+      ...baseInput,
+      aircraftGroundEventId: "flight-state:VH-8IA",
+      bay: "Bay 20",
+      createdAt: "2026-05-22T09:05:00.000Z",
+      createdBy: "senior-engineer-bne",
+      derivedState: {
+        apuState: "on",
+        manualOffPending: false,
+        statusLabel: "Review due",
+        urgencyBucket: "review_overdue",
+      },
+      issueType: "source_stale",
+      note: "AODB source looks stale against bay display.",
+      persona: "senior-engineer-bne",
+      relatedEventIds: ["flight-state:VH-8IA", "stand:VH-8IA"],
+      sourceFreshness: {
+        latestReceivedAt: "2026-05-22T08:41:00.000Z",
+        latencyMinutes: 24,
+        sourceSystems: ["AODB", "ACMS"],
+      },
+      summary: "AODB source looks stale against bay display.",
+    });
+
+    expect(event.eventType).toBe("data_quality_flag_created");
+    expect(event.payload).toEqual(
+      expect.objectContaining({
+        tail: "VH-8IA",
+        port: "BNE",
+        bay: "Bay 20",
+        apuEventId: baseInput.apuEventId,
+        aircraftGroundEventId: "flight-state:VH-8IA",
+        category: "source_stale",
+        issueType: "source_stale",
+        severity: "warning",
+        note: "AODB source looks stale against bay display.",
+        createdBy: "senior-engineer-bne",
+        persona: "senior-engineer-bne",
+        createdAt: "2026-05-22T09:05:00.000Z",
+        derivedState: {
+          apuState: "on",
+          manualOffPending: false,
+          statusLabel: "Review due",
+          urgencyBucket: "review_overdue",
+        },
+        sourceFreshness: {
+          latestReceivedAt: "2026-05-22T08:41:00.000Z",
+          latencyMinutes: 24,
+          sourceSystems: ["AODB", "ACMS"],
+        },
       }),
     );
     expect(readWorkflowEvents()).toEqual([event]);

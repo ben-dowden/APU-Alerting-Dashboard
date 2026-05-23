@@ -113,6 +113,7 @@ const noopHandlers = {
   onAddReasonNote: vi.fn(),
   onChangeReason: vi.fn(),
   onCorrectReason: vi.fn(),
+  onCreateDataQualityFlag: vi.fn(),
   onKeepCurrentReason: vi.fn(),
   onSelectReason: vi.fn(),
 };

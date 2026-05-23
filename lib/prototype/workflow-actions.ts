@@ -1,4 +1,5 @@
 import type {
+  DataQualityFlagCreatedEvent,
   ReasonChangedEvent,
   ReasonKeptEvent,
   ReasonNoteAddedEvent,
@@ -9,10 +10,12 @@ import {
   buildAddReasonNoteEvent,
   buildChangeReasonEvent,
   buildCorrectPreviousReasonEvent,
+  buildDataQualityFlagCreatedEvent,
   buildKeepCurrentReasonEvent,
   buildSelectReasonEvent,
   type AddReasonNoteInput,
   type ChangeReasonInput,
+  type DataQualityFlagInput,
   type KeepCurrentReasonInput,
   type SelectReasonInput,
 } from "./workflow-event-builders";
@@ -39,3 +42,7 @@ export const addReasonNote = (input: AddReasonNoteInput): ReasonNoteAddedEvent =
 
 export const correctPreviousReason = (input: ChangeReasonInput): ReasonChangedEvent =>
   appendAndReturn(buildCorrectPreviousReasonEvent(input));
+
+export const createDataQualityFlag = (
+  input: DataQualityFlagInput,
+): DataQualityFlagCreatedEvent => appendAndReturn(buildDataQualityFlagCreatedEvent(input));

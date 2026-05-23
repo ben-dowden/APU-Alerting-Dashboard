@@ -13,6 +13,7 @@ import {
   addReasonNote,
   changeReason,
   correctPreviousReason,
+  createDataQualityFlag,
   keepCurrentReason,
   selectReason,
 } from "@/lib/prototype/workflow-actions";
@@ -29,6 +30,7 @@ import { CommandBar } from "./command-bar";
 import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
 import { AircraftBoard } from "./aircraft-board";
 import { GroundAircraftTable } from "./ground-aircraft-table";
+import type { DataQualityFlagActionInput } from "./data-quality-flag-action";
 import type { ReasonPickerSelection } from "./reason-picker";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
@@ -93,6 +95,19 @@ const sourceFreshnessLabel = (board: ReturnType<typeof deriveCurrentBoard>) => {
   return latestReceivedAt
     ? `Feed fresh ${minutesBetweenIso(latestReceivedAt, board.nowIso)}m ago`
     : "Feed pending";
+};
+
+const sourceFreshnessForAircraft = (aircraft: GroundAircraftState, nowIso: string) => {
+  const latestReceivedAt = aircraft.sourceCharms
+    .map((source) => source.receivedAt)
+    .sort()
+    .at(-1);
+
+  return {
+    latestReceivedAt,
+    latencyMinutes: latestReceivedAt ? minutesBetweenIso(latestReceivedAt, nowIso) : undefined,
+    sourceSystems: [...new Set(aircraft.sourceCharms.map((source) => source.sourceSystem))],
+  };
 };
 
 export function BneCommandBoard() {
@@ -209,6 +224,35 @@ export function BneCommandBoard() {
     }));
   };
 
+  const handleCreateDataQualityFlag = (
+    aircraft: GroundAircraftState,
+    card: ReturnType<typeof deriveAircraftCards>[number],
+    input: DataQualityFlagActionInput,
+  ) => {
+    createDataQualityFlag({
+      port: "BNE",
+      tail: aircraft.tail,
+      apuEventId: aircraft.apuEvent?.apuEventId,
+      aircraftGroundEventId: aircraft.sourceEventIds[0],
+      bay: aircraft.bay,
+      issueType: input.issueType,
+      note: input.note,
+      summary: input.note ?? `Data quality flag for ${aircraft.tail}`,
+      createdBy: workflowActorId,
+      persona: "senior-engineer-bne",
+      createdAt: board.nowIso,
+      relatedEventIds: aircraft.sourceEventIds,
+      derivedState: {
+        apuState: card.apuState,
+        urgencyBucket: card.urgencyBucket,
+        statusLabel: card.statusLabel,
+        manualOffPending: card.manualOffPending,
+      },
+      sourceFreshness: sourceFreshnessForAircraft(aircraft, board.nowIso),
+    });
+    refreshWorkflowEvents();
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
@@ -227,6 +271,7 @@ export function BneCommandBoard() {
             onAddReasonNote={handleAddReasonNote}
             onChangeReason={handleChangeReason}
             onCorrectReason={handleCorrectReason}
+            onCreateDataQualityFlag={handleCreateDataQualityFlag}
             onKeepCurrentReason={handleKeepCurrentReason}
             onSelectReason={handleSelectReason}
             taxonomy={boardSettings.reasonTaxonomy}

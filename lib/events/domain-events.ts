@@ -1,5 +1,5 @@
 import type { EventEnvelope } from "./envelope";
-import type { SettingsChangedEvent, SettingsChangedPayload } from "./settings-events";
+import type { SettingsChangedEvent, SettingsChangedPayload, UrgencyBucket } from "./settings-events";
 
 export type ReasonSelection = {
   apuEventId: string;
@@ -51,21 +51,39 @@ export type ManualApuOffObservedPayload = {
   observationNote?: string;
 };
 
+export type DataQualityFlagCategory =
+  | "source_stale"
+  | "equipment_mismatch"
+  | "missing_reference_data"
+  | "manual_user_flag"
+  | "state_conflict";
+
 export type DataQualityFlagCreatedPayload = {
   flagId: string;
+  port?: string;
   tail?: string;
+  bay?: string;
   apuEventId?: string;
   aircraftGroundEventId?: string;
-  category:
-    | "source_stale"
-    | "equipment_mismatch"
-    | "missing_reference_data"
-    | "manual_user_flag"
-    | "state_conflict";
+  category: DataQualityFlagCategory;
+  issueType?: DataQualityFlagCategory;
   severity: "info" | "warning" | "critical";
   summary: string;
+  note?: string;
   createdBy: string;
+  persona?: string;
   createdAt: string;
+  derivedState?: {
+    apuState: "on" | "off";
+    urgencyBucket?: UrgencyBucket;
+    statusLabel?: string;
+    manualOffPending: boolean;
+  };
+  sourceFreshness?: {
+    latestReceivedAt?: string;
+    latencyMinutes?: number;
+    sourceSystems: string[];
+  };
   relatedEventIds: string[];
 };
 

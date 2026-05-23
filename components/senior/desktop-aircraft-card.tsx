@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, History } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { ReasonTaxonomySnapshot } from "@/lib/events";
@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import { CardReasonDrawer } from "./card-reason-drawer";
+import {
+  DataQualityFlagAction,
+  type DataQualityFlagActionInput,
+} from "./data-quality-flag-action";
 import { ProximityHoverCard } from "./proximity-hover-card";
 import { ReasonPicker, type ReasonPickerSelection } from "./reason-picker";
 import { SourceQualityCharm } from "./source-quality-charm";
@@ -28,6 +32,11 @@ export type ReasonWorkflowHandlers = {
     aircraft: GroundAircraftState,
     previousReason: ReasonSegment,
     selection: ReasonPickerSelection,
+  ) => void;
+  onCreateDataQualityFlag: (
+    aircraft: GroundAircraftState,
+    card: AircraftCardReadModel,
+    input: DataQualityFlagActionInput,
   ) => void;
 };
 
@@ -68,6 +77,7 @@ export function DesktopAircraftCard({
   onKeepCurrentReason,
   onAddReasonNote,
   onCorrectReason,
+  onCreateDataQualityFlag,
 }: DesktopAircraftCardProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [correctingSegment, setCorrectingSegment] = useState<ReasonSegment>();
@@ -85,7 +95,15 @@ export function DesktopAircraftCard({
       role="article"
     >
       <div className="flex h-full flex-col gap-4 p-4">
-        <AircraftCardHeader aircraft={aircraft} />
+        <AircraftCardHeader
+          aircraft={aircraft}
+          dataQualityFlagControl={
+            <DataQualityFlagAction
+              onCreateFlag={(input) => onCreateDataQualityFlag(groundAircraft, aircraft, input)}
+              tail={aircraft.tail}
+            />
+          }
+        />
         <AircraftMetricGrid aircraft={aircraft} />
 
         <div className="grid gap-3 border-t border-neutral-200 pt-3 sm:grid-cols-3">
@@ -131,7 +149,13 @@ export function DesktopAircraftCard({
   );
 }
 
-function AircraftCardHeader({ aircraft }: { aircraft: AircraftCardReadModel }) {
+function AircraftCardHeader({
+  aircraft,
+  dataQualityFlagControl,
+}: {
+  aircraft: AircraftCardReadModel;
+  dataQualityFlagControl: ReactNode;
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
@@ -142,12 +166,17 @@ function AircraftCardHeader({ aircraft }: { aircraft: AircraftCardReadModel }) {
         </div>
         <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
       </div>
-      <Badge
-        variant={aircraft.apuState === "on" ? "red" : "outline"}
-        className={aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined}
-      >
-        {apuStateLabel(aircraft.apuState)}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant={aircraft.apuState === "on" ? "red" : "outline"}
+          className={
+            aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined
+          }
+        >
+          {apuStateLabel(aircraft.apuState)}
+        </Badge>
+        {dataQualityFlagControl}
+      </div>
     </div>
   );
 }
