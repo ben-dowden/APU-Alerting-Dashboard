@@ -8,13 +8,21 @@
 
 **Tech Stack:** React client components, TypeScript, Tailwind, Testing Library, Vitest.
 
-**Status:** Complete on branch `pr05-aircraft-reason-workflow`; pending PR integration.
+**Status:** Complete; ready for PR integration.
 
 **Completion Notes (updated 2026-05-23):**
 - Prototype workflow event store/actions, reason picker, card-attached drawer/timeline, and desktop aircraft-card workflow wiring are implemented and tested.
 - Clean-code follow-up split reason-chain behavior into focused type, segment, replay, and review modules while keeping `deriveReasonChain(...)` and exported read-model types stable.
 - Workflow action builders are separated from append/persistence, and store hydration now ignores malformed/non-array JSON through guarded parsing.
 - Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
+
+---
+
+## Handoff Resolution
+
+- PR 05 has no remaining implementation blockers for PR 06 beyond branch/PR integration.
+- The targeted PR 05 suite passed on 2026-05-23 with 9 files and 45 tests, covering reason-chain replay/review behavior, prototype workflow event storage/actions/builders, reason picker, drawer/timeline, desktop card controls, and command-board workflow wiring.
+- PR 06 should start from the cleaned domain/read-model/prototype workflow boundaries and should not absorb additional PR 05 reason-workflow cleanup.
 
 ---
 
