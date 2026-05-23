@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { HqReport } from "@/lib/read-models";
 
+import { formatCurrency, formatFuelPrice } from "./format";
+
 type HqKpiRowProps = {
   report: HqReport;
 };
-
-const formatCurrency = (currency: string, value: number) => `${currency} ${value.toFixed(2)}`;
 
 export function HqKpiRow({ report }: HqKpiRowProps) {
   const metrics = [
@@ -22,7 +22,7 @@ export function HqKpiRow({ report }: HqKpiRowProps) {
     {
       label: "Dollar impact",
       value: formatCurrency(report.assumptionMetadata.fuelPriceCurrency, report.totalDollarImpact),
-      detail: `${report.assumptionMetadata.fuelPriceCurrency} ${report.assumptionMetadata.fuelPricePerKg}/kg`,
+      detail: formatFuelPrice(report),
     },
     {
       label: "Attribution",

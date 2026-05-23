@@ -6,6 +6,7 @@ import { HqFilterBar } from "./hq-filter-bar";
 import { HqKpiRow } from "./hq-kpi-row";
 import { LocationPerformanceTable } from "./location-performance-table";
 import { ReasonBreakdownTable } from "./reason-breakdown-table";
+import { formatFuelPrice } from "./format";
 
 type HQReportsOverviewProps = {
   report: HqReport;
@@ -14,9 +15,6 @@ type HQReportsOverviewProps = {
   eyebrow?: string;
   description?: string;
 };
-
-const formatFuelPrice = (report: HqReport) =>
-  `${report.assumptionMetadata.fuelPriceCurrency} ${report.assumptionMetadata.fuelPricePerKg}/kg`;
 
 function AssumptionMetadata({ report }: { report: HqReport }) {
   const metadata = report.assumptionMetadata;

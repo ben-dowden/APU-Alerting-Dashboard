@@ -2,20 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { HqReport } from "@/lib/read-models";
 
+import { formatBrisbaneDateTime } from "./format";
+
 type HqFilterBarProps = {
   report: HqReport;
 };
-
-const formatBrisbaneDateTime = (iso: string) =>
-  new Intl.DateTimeFormat("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Australia/Brisbane",
-  }).format(new Date(iso));
 
 export function HqFilterBar({ report }: HqFilterBarProps) {
   const ports = report.filters.ports?.length ? report.filters.ports : ["All ports"];

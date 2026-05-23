@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { HqReport } from "@/lib/read-models";
 
+import { formatCurrency } from "./format";
+
 type ReasonBreakdownTableProps = {
   report: HqReport;
 };
-
-const formatCurrency = (currency: string, value: number) => `${currency} ${value.toFixed(2)}`;
 
 export function ReasonBreakdownTable({ report }: ReasonBreakdownTableProps) {
   return (

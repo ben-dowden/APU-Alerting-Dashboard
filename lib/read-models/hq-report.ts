@@ -127,6 +127,10 @@ type EventWithLineage = {
   sourceEventId: string;
 };
 
+type GroundAircraftWithApuEvent = GroundAircraftState & {
+  apuEvent: DerivedApuEvent;
+};
+
 const roundOne = (value: number) => Math.round(value * 10) / 10;
 const roundTwo = (value: number) => Math.round(value * 100) / 100;
 const maxIso = (left: string, right: string) => (left >= right ? left : right);
@@ -138,9 +142,13 @@ const groupBy = <TValue, TKey extends string>(
 ) =>
   values.reduce((groups, value) => {
     const key = keyFor(value);
-    const existing = groups.get(key) ?? [];
+    const existing = groups.get(key);
 
-    groups.set(key, [...existing, value]);
+    if (existing) {
+      existing.push(value);
+    } else {
+      groups.set(key, [value]);
+    }
 
     return groups;
   }, new Map<TKey, TValue[]>());
@@ -300,25 +308,24 @@ const clampRowToFilters = (
 const includePort = (ports: readonly string[] | undefined, port: string) =>
   !ports || ports.length === 0 || ports.includes(port);
 
+const hasApuEvent = (aircraft: GroundAircraftState): aircraft is GroundAircraftWithApuEvent =>
+  Boolean(aircraft.apuEvent);
+
 const aircraftByApuEventId = (aircraft: readonly GroundAircraftState[]) =>
   new Map(
     aircraft
-      .filter((state) => state.apuEvent)
-      .map((state) => [state.apuEvent?.apuEventId, state] as const),
+      .filter(hasApuEvent)
+      .map((state) => [state.apuEvent.apuEventId, state] as const),
   );
 
 const createExportRow = (
   row: ReasonTaggedBurnRow,
-  aircraft: GroundAircraftState,
+  aircraft: GroundAircraftWithApuEvent,
   settings: HqReportAssumptionMetadata,
   sourceIdsByEventId: ReadonlyMap<string, string>,
   events: readonly unknown[],
 ): HqReportExportRow => {
   const apuEvent = aircraft.apuEvent;
-
-  if (!apuEvent) {
-    throw new Error("HQ export rows require an APU event");
-  }
 
   const sourceEventIds = externalSourceIdsFor(row.sourceEventIds, sourceIdsByEventId);
 
@@ -360,7 +367,7 @@ const createExportRow = (
 
 const createExportRows = (
   rows: readonly ReasonTaggedBurnRow[],
-  aircraftByApuId: ReadonlyMap<string | undefined, GroundAircraftState>,
+  aircraftByApuId: ReadonlyMap<string, GroundAircraftWithApuEvent>,
   settings: HqReportAssumptionMetadata,
   sourceIdsByEventId: ReadonlyMap<string, string>,
   filters: HqReportFilters,
@@ -390,6 +397,9 @@ const attributedRuntimePercent = (rows: readonly Pick<HqReportExportRow, "runtim
 
 const uniqueCount = (values: readonly string[]) => new Set(values).size;
 
+const runtimeTotal = (rows: readonly Pick<HqReportExportRow, "runtimeMinutes">[]) =>
+  rows.reduce((total, row) => total + row.runtimeMinutes, 0);
+
 const createLocationRows = (rows: readonly HqReportExportRow[]): HqLocationPerformanceRow[] =>
   [...groupBy(rows, (row) => row.port).entries()]
     .map(([port, portRows]) => ({
@@ -404,11 +414,13 @@ const createLocationRows = (rows: readonly HqReportExportRow[]): HqLocationPerfo
     }))
     .sort((left, right) => left.port.localeCompare(right.port));
 
-const createReasonRows = (rows: readonly HqReportExportRow[]): HqReasonBreakdownRow[] =>
-  [...groupBy(rows, (row) => `${row.reasonCategoryId}:${row.reasonDetailId}`).values()]
+const createReasonRows = (rows: readonly HqReportExportRow[]): HqReasonBreakdownRow[] => {
+  const reportRuntimeMinutes = runtimeTotal(rows);
+
+  return [...groupBy(rows, (row) => `${row.reasonCategoryId}:${row.reasonDetailId}`).values()]
     .map((reasonRows) => {
       const first = reasonRows[0];
-      const runtimeMinutes = reasonRows.reduce((total, row) => total + row.runtimeMinutes, 0);
+      const runtimeMinutes = runtimeTotal(reasonRows);
 
       return {
         reasonCategoryId: first.reasonCategoryId,
@@ -419,9 +431,9 @@ const createReasonRows = (rows: readonly HqReportExportRow[]): HqReasonBreakdown
         fuelKg: roundOne(reasonRows.reduce((total, row) => total + row.fuelKg, 0)),
         dollarImpact: roundTwo(reasonRows.reduce((total, row) => total + row.dollarImpact, 0)),
         runtimePercentOfReport:
-          rows.length === 0
+          reportRuntimeMinutes === 0
             ? 0
-            : roundOne((runtimeMinutes / rows.reduce((total, row) => total + row.runtimeMinutes, 0)) * 100),
+            : roundOne((runtimeMinutes / reportRuntimeMinutes) * 100),
         rowCount: reasonRows.length,
         isUnattributed: first.reasonCategoryId === "unattributed",
       };
@@ -433,6 +445,7 @@ const createReasonRows = (rows: readonly HqReportExportRow[]): HqReasonBreakdown
 
       return right.runtimeMinutes - left.runtimeMinutes;
     });
+};
 
 export const deriveHqReport = (
   events: readonly unknown[],
