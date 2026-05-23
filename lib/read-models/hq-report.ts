@@ -6,8 +6,10 @@ import type { StandCoordinatesInput } from "@/lib/domain/proximity";
 import type {
   ApuStateEvent,
   FuelPriceSnapshot,
+  ManualApuOffObservedEvent,
   ReasonTaxonomySnapshot,
   SettingsChangedEvent,
+  SettingsSnapshot,
 } from "@/lib/events";
 import { isDomainEvent, isSourceEvent } from "@/lib/events";
 
@@ -143,20 +145,20 @@ const groupBy = <TValue, TKey extends string>(
     return groups;
   }, new Map<TKey, TValue[]>());
 
-const isSettingsEvent = <TSnapshot,>(
+const isSettingsEvent = <TSnapshot extends SettingsSnapshot>(
   value: TSnapshot | SettingsChangedEvent<TSnapshot>,
 ): value is SettingsChangedEvent<TSnapshot> =>
   typeof value === "object" && value !== null && "payload" in value;
 
-const snapshotFromSettings = <TSnapshot,>(
+const snapshotFromSettings = <TSnapshot extends SettingsSnapshot>(
   value: TSnapshot | SettingsChangedEvent<TSnapshot>,
 ) => (isSettingsEvent(value) ? value.payload.snapshot : value);
 
-const settingsVersionFrom = <TSnapshot,>(
+const settingsVersionFrom = <TSnapshot extends SettingsSnapshot>(
   value: TSnapshot | SettingsChangedEvent<TSnapshot>,
 ) => (isSettingsEvent(value) ? value.payload.settingsVersion : undefined);
 
-const settingsSourceEventIdFrom = <TSnapshot,>(
+const settingsSourceEventIdFrom = <TSnapshot extends SettingsSnapshot>(
   value: TSnapshot | SettingsChangedEvent<TSnapshot>,
 ) => (isSettingsEvent(value) ? value.eventId : undefined);
 
@@ -218,7 +220,8 @@ const externalSourceIdsFor = (
 
 const isManualOffObservedEvent = (
   event: unknown,
-) => isDomainEvent(event) && event.eventType === "manual_apu_off_observed";
+): event is ManualApuOffObservedEvent =>
+  isDomainEvent(event) && event.eventType === "manual_apu_off_observed";
 
 const isApuSourceEvent = (event: unknown): event is ApuStateEvent =>
   isSourceEvent(event) && event.eventType === "apu_state_event";
@@ -254,7 +257,10 @@ const manualOffStatusFor = (
     return "not_observed";
   }
 
-  if (apuEvent.closureType === "source_off" && apuEvent.endedAt >= latestManualOff.payload.observedAt) {
+  if (
+    apuEvent.closureType === "source_off" &&
+    Boolean(apuEvent.endedAt && apuEvent.endedAt >= latestManualOff.payload.observedAt)
+  ) {
     return "confirmed_by_source";
   }
 

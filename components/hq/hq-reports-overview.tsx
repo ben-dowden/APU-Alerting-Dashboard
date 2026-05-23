@@ -10,6 +10,9 @@ import { ReasonBreakdownTable } from "./reason-breakdown-table";
 type HQReportsOverviewProps = {
   report: HqReport;
   variant?: "overview" | "export";
+  title?: string;
+  eyebrow?: string;
+  description?: string;
 };
 
 const formatFuelPrice = (report: HqReport) =>
@@ -46,8 +49,15 @@ function AssumptionMetadata({ report }: { report: HqReport }) {
   );
 }
 
-export function HQReportsOverview({ report, variant = "overview" }: HQReportsOverviewProps) {
+export function HQReportsOverview({
+  report,
+  variant = "overview",
+  title,
+  eyebrow = "HQ reporting",
+  description = "Event-derived runtime, estimated fuel, dollar conversion, and reason attribution for headquarters review.",
+}: HQReportsOverviewProps) {
   const isExport = variant === "export";
+  const heading = title ?? (isExport ? "Reason-tagged burn export" : "HQ reporting overview");
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
@@ -55,13 +65,13 @@ export function HQReportsOverview({ report, variant = "overview" }: HQReportsOve
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-normal text-virgin-purple">
-              HQ reporting
+              {eyebrow}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-neutral-950">
-              {isExport ? "Reason-tagged burn export" : "HQ reporting overview"}
+              {heading}
             </h1>
             <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-neutral-600">
-              Event-derived runtime, estimated fuel, dollar conversion, and reason attribution for headquarters review.
+              {description}
             </p>
           </div>
           <ExportButton report={report} />

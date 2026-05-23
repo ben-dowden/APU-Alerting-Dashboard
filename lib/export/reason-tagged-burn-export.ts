@@ -13,7 +13,7 @@ const appendSheet = (
   sheetName: string,
   rows: readonly WorksheetRow[],
 ) => {
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const worksheet = XLSX.utils.json_to_sheet([...rows]);
 
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 };
