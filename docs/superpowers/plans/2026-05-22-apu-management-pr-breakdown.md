@@ -6,7 +6,7 @@
 
 **Primary Fidelity Rule:** Optimize first for the Brisbane Senior Engineer workflow. HQ reporting and Admin are secondary; early HQ/Admin routes are navigation stubs only until the Senior Engineer command board, reason workflow, urgency/proximity/manual-off layer, and wallboard route are working from the event-derived read model.
 
-**Progress Snapshot (updated 2026-05-23 on `pr05-aircraft-reason-workflow`):** PR 01-03 are merged, PR 04 is complete and pending integration, PR 05 is implemented and clean-code hardened on this branch, and selected PR 06/PR 10 foundations were pulled forward while preserving behavior. PR 07-09 remain feature PRs. Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
+**Progress Snapshot (updated 2026-05-23 on `pr05-aircraft-reason-workflow`):** PR 01-03 are merged, PR 04 is complete and pending integration, PR 05 is complete and ready for PR integration with no PR 06 implementation blockers beyond branch/PR integration, and selected PR 06/PR 10 foundations were pulled forward while preserving behavior. PR 07-09 remain feature PRs. Latest full branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
 
 ---
 
@@ -44,15 +44,17 @@
    - PR 04 carry-forward to PR 05/06/07: preserve `AircraftCardContent` as the shared display body, wrap it for workflow behavior in PR 05 rather than rebuilding the card contents, replace `Closest tail pending` only when PR 06 wires derived proximity fields, and keep the wallboard passive by reusing read-model data without bringing over desktop workflow actions.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` passed after elevated execution; if `next build` hits `.next` `EPERM` cleanup or rename errors, remove the ignored `.next` output and rerun with elevated file-write permission.
 
-5. **PR 05: Aircraft Card Reason Workflow** - **Complete on branch `pr05-aircraft-reason-workflow`; pending PR integration**
+5. **PR 05: Aircraft Card Reason Workflow** - **Complete and ready for PR integration; no PR 06 implementation blockers remain**
    - Adds the core reason-chain interaction on desktop cards.
    - Gate: two-click reason selection and card-attached drawer work.
    - PR 05 implementation notes for later PRs: local workflow event persistence/actions, reason picker, card-attached drawer/timeline, and desktop card re-derivation are implemented. Clean-code hardening split reason-chain replay/review/segment logic and separated workflow event construction from persistence/hydration.
+   - PR 05 handoff resolution: reason workflow surfaces are implemented, reason-chain/workflow clean-code hardening is complete, and the targeted PR 05 suite passed on 2026-05-23 with 9 files and 45 tests. PR 06 may start from the cleaned read-model/domain boundaries once PR 05 is integrated.
 
 6. **PR 06: Urgency, Proximity, Source Quality, And Manual-Off** - **Partially advanced on PR 05 branch; remaining feature UI still pending**
    - Adds priority sorting, nearby aircraft context, compact quality charms, data-quality flags, and manual-off pending state.
    - Gate: Senior Engineer desktop surface is operationally meaningful.
    - PR 06 progress notes from PR 05 cleanup: `lib/read-models/aircraft-card.ts` now has named urgency policies and a tested manual-off pending bucket; `lib/read-models/current-board-context.ts` centralizes manual-off event indexing; future PR 06 work should add the dedicated proximity/source-quality/data-quality UI without re-replaying events in React.
+   - Remaining PR 06 scope after PR 05: proximity display/hover card, source-quality charms, data-quality flag action, manual APU-off action UI, and continued enforcement that React components consume derived read-model fields instead of replaying source/domain events.
 
 7. **PR 07: Wallboard Route** - **Pending after PR 06 completion**
    - Creates the fixed-frame, read-only TV surface from the same BNE read model.
