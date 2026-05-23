@@ -22,6 +22,9 @@ export type RankableAircraftCard = {
   groundMinutes: number;
   apuRuntimeMinutes: number;
   estimatedFuelKg: number;
+  proximity?: {
+    nearbyApuAircraft?: readonly unknown[];
+  };
   nearbyApuAircraft?: readonly unknown[];
   sourceCharms?: readonly {
     isStale?: boolean;
@@ -101,7 +104,7 @@ const breakdownFor = (
   overdueMinutes: overdueMinutesFor(card, nowIso),
   runtimeMinutes: card.apuRuntimeMinutes,
   estimatedFuelKg: card.estimatedFuelKg,
-  proximityCount: card.nearbyApuAircraft?.length ?? 0,
+  proximityCount: card.proximity?.nearbyApuAircraft?.length ?? card.nearbyApuAircraft?.length ?? 0,
   groundMinutes: card.groundMinutes,
   sourceStalenessMinutes: sourceStalenessMinutesFor(card),
 });

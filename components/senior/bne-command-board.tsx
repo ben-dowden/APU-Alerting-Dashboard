@@ -6,6 +6,7 @@ import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { DomainEvent } from "@/lib/events";
 import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
 import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
+import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-coordinates";
 import { bneBaselineScenario } from "@/lib/fixtures/scenarios";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import {
@@ -42,6 +43,7 @@ const benchmarkBaselines = {
 const boardSettings = {
   reasonTaxonomy: reasonTaxonomySettings.payload.snapshot,
   fuelBurnAssumptions: fuelBurnAssumptionSettings,
+  standCoordinates: standCoordinateReferenceEvents,
 };
 
 const workflowActorId = "senior-engineer-bne";

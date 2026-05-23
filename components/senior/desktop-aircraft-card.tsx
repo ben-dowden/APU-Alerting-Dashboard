@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import { CardReasonDrawer } from "./card-reason-drawer";
+import { ProximityHoverCard } from "./proximity-hover-card";
 import { ReasonPicker, type ReasonPickerSelection } from "./reason-picker";
 
 export type ReasonWorkflowHandlers = {
@@ -96,7 +97,7 @@ export function DesktopAircraftCard({
             taxonomy={taxonomy}
           />
           <ReviewSummary aircraft={aircraft} />
-          <NearbySummary />
+          <NearbySummary aircraft={aircraft} />
         </div>
       </div>
 
@@ -269,11 +270,11 @@ function ReviewSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
   );
 }
 
-function NearbySummary() {
+function NearbySummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Nearby</p>
-      <p className="mt-1 text-sm font-semibold text-neutral-600">Closest tail pending</p>
+      <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
     </div>
   );
 }

@@ -27,6 +27,16 @@ const baseCard: AircraftCardReadModel = {
   statusLabel: "Review due",
   urgencyBucket: "review_overdue",
   urgencyRank: 1,
+  urgencyScore: 122.5,
+  urgencyReason: "Review overdue",
+  urgencyTiebreakerBreakdown: {
+    overdueMinutes: 0,
+    runtimeMinutes: 46,
+    estimatedFuelKg: 85.9,
+    proximityCount: 0,
+    groundMinutes: 55,
+    sourceStalenessMinutes: 0,
+  },
   groundMinutes: 55,
   apuRuntimeMinutes: 46,
   estimatedFuelKg: 85.9,
@@ -42,6 +52,16 @@ const baseCard: AircraftCardReadModel = {
     isReviewDue: true,
   },
   manualOffPending: false,
+  proximity: {
+    closestAircraft: {
+      tail: "VH-YFX",
+      stand: "21",
+      bay: "Bay 21",
+      apuState: "off",
+      distanceMeters: 33,
+    },
+    nearbyApuAircraft: [],
+  },
   sourceCharms: [],
 };
 

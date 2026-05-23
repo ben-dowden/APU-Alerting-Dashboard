@@ -1,5 +1,6 @@
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { Badge } from "@/components/ui/badge";
+import { ProximityHoverCard } from "./proximity-hover-card";
 
 type AircraftCardContentProps = {
   aircraft: AircraftCardReadModel;
@@ -87,7 +88,7 @@ export function AircraftCardContent({ aircraft }: AircraftCardContentProps) {
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Nearby</p>
-          <p className="mt-1 text-sm font-semibold text-neutral-600">Closest tail pending</p>
+          <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
         </div>
       </div>
     </div>

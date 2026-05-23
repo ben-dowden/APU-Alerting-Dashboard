@@ -1,4 +1,5 @@
 import type { FuelBurnSettingsInput, FuelEstimate } from "@/lib/domain/fuel";
+import type { StandCoordinatesInput } from "@/lib/domain/proximity";
 import type { DerivedApuEvent } from "@/lib/domain/apu-reducer";
 import type { ReasonChainState } from "@/lib/domain/reason-chain-reducer";
 import type {
@@ -21,6 +22,7 @@ export type SourceCharm = {
 export type CurrentBoardSettings = {
   reasonTaxonomy: ReasonTaxonomySnapshot;
   fuelBurnAssumptions: FuelBurnSettingsInput;
+  standCoordinates?: StandCoordinatesInput;
 };
 
 export type GroundAircraftState = {
@@ -47,6 +49,7 @@ export type GroundAircraftState = {
 export type CurrentBoardState = {
   port: string;
   nowIso: string;
+  standCoordinates?: StandCoordinatesInput;
   weather?: WeatherObservationEvent["payload"];
   groundAircraft: GroundAircraftState[];
 };

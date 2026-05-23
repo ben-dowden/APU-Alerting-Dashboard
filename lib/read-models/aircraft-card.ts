@@ -3,6 +3,11 @@ import {
   rankAircraftCards,
   type UrgencyTiebreakerBreakdown,
 } from "@/lib/domain/urgency-ranking";
+import {
+  calculateAircraftProximityContext,
+  type AircraftProximityContext,
+  type AircraftStandPosition,
+} from "@/lib/domain/proximity";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import type { GroundAircraftState, SourceCharm, CurrentBoardState } from "./current-board";
 
@@ -33,6 +38,7 @@ export type AircraftCardReadModel = {
     isReviewDue: boolean;
   };
   manualOffPending: boolean;
+  proximity: AircraftProximityContext;
   sourceCharms: SourceCharm[];
 };
 
@@ -80,9 +86,38 @@ const urgencyPolicyFor = (aircraft: GroundAircraftState) =>
   urgencyPolicies.find((policy) => policy.matches(aircraft)) ??
   urgencyPolicies[urgencyPolicies.length - 1];
 
+const emptyProximityContext = (): AircraftProximityContext => ({
+  nearbyApuAircraft: [],
+});
+
+const standPositionForAircraft = (
+  aircraft: GroundAircraftState,
+): AircraftStandPosition | undefined =>
+  aircraft.stand
+    ? {
+        tail: aircraft.tail,
+        stand: aircraft.stand,
+        bay: aircraft.bay,
+        apuState: aircraft.apuState,
+      }
+    : undefined;
+
+const proximityContextFor = (
+  aircraft: GroundAircraftState,
+  positions: readonly AircraftStandPosition[],
+  boardState: CurrentBoardState,
+) => {
+  const target = standPositionForAircraft(aircraft);
+
+  return target && boardState.standCoordinates
+    ? calculateAircraftProximityContext(target, positions, boardState.standCoordinates)
+    : emptyProximityContext();
+};
+
 const cardForAircraft = (
   aircraft: GroundAircraftState,
   nowIso: string,
+  proximity: AircraftProximityContext,
 ): Omit<
   AircraftCardReadModel,
   "urgencyRank" | "urgencyScore" | "urgencyReason" | "urgencyTiebreakerBreakdown"
@@ -115,12 +150,24 @@ const cardForAircraft = (
       isReviewDue: aircraft.reasonChain.isReviewDue,
     },
     manualOffPending: aircraft.manualOffPending,
+    proximity,
     sourceCharms: aircraft.sourceCharms,
   };
 };
 
-export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCardReadModel[] =>
-  rankAircraftCards(
-    boardState.groundAircraft.map((aircraft) => cardForAircraft(aircraft, boardState.nowIso)),
+export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCardReadModel[] => {
+  const standPositions = boardState.groundAircraft
+    .map(standPositionForAircraft)
+    .filter((position): position is AircraftStandPosition => Boolean(position));
+
+  return rankAircraftCards(
+    boardState.groundAircraft.map((aircraft) =>
+      cardForAircraft(
+        aircraft,
+        boardState.nowIso,
+        proximityContextFor(aircraft, standPositions, boardState),
+      ),
+    ),
     { nowIso: boardState.nowIso },
   );
+};
