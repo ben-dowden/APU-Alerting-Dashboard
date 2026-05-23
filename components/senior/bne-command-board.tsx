@@ -24,6 +24,7 @@ import {
   deriveBenchmarkPanel,
   deriveCurrentBoard,
   deriveDailyScorecard,
+  type AircraftCardReadModel,
   type GroundAircraftState,
 } from "@/lib/read-models";
 
@@ -227,7 +228,7 @@ export function BneCommandBoard() {
 
   const handleCreateDataQualityFlag = (
     aircraft: GroundAircraftState,
-    card: ReturnType<typeof deriveAircraftCards>[number],
+    card: AircraftCardReadModel,
     input: DataQualityFlagActionInput,
   ) => {
     createDataQualityFlag({

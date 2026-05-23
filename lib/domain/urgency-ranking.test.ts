@@ -16,7 +16,9 @@ const card = (
   groundMinutes: 30,
   apuRuntimeMinutes: 30,
   estimatedFuelKg: 50,
-  nearbyApuAircraft: [],
+  proximity: {
+    nearbyApuAircraft: [],
+  },
   sourceCharms: [],
   ...overrides,
 });
@@ -79,17 +81,23 @@ describe("rankAircraftCards", () => {
         card("VH-AAA", { estimatedFuelKg: 50, groundMinutes: 20 }),
         card("VH-BBB", {
           estimatedFuelKg: 100,
-          nearbyApuAircraft: [card("VH-N1"), card("VH-N2")],
+          proximity: {
+            nearbyApuAircraft: [card("VH-N1"), card("VH-N2")],
+          },
           groundMinutes: 20,
         }),
         card("VH-CCC", {
           estimatedFuelKg: 100,
-          nearbyApuAircraft: [card("VH-N3")],
+          proximity: {
+            nearbyApuAircraft: [card("VH-N3")],
+          },
           groundMinutes: 90,
         }),
         card("VH-DDD", {
           estimatedFuelKg: 100,
-          nearbyApuAircraft: [card("VH-N4")],
+          proximity: {
+            nearbyApuAircraft: [card("VH-N4")],
+          },
           groundMinutes: 90,
         }),
       ],

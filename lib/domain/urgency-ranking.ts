@@ -25,7 +25,6 @@ export type RankableAircraftCard = {
   proximity?: {
     nearbyApuAircraft?: readonly unknown[];
   };
-  nearbyApuAircraft?: readonly unknown[];
   sourceCharms?: readonly {
     isStale?: boolean;
     sourceLatencyMinutes?: number;
@@ -61,6 +60,15 @@ const defaultWeights: UrgencyTiebreakerWeights = {
   groundMinutes: 0.1,
   sourceStalenessMinutes: 0.5,
 };
+
+const tiebreakerKeys: Array<keyof UrgencyTiebreakerBreakdown> = [
+  "overdueMinutes",
+  "runtimeMinutes",
+  "estimatedFuelKg",
+  "proximityCount",
+  "groundMinutes",
+  "sourceStalenessMinutes",
+];
 
 const urgencyReasonLabels: Record<UrgencyBucket, string> = {
   missing_reason: "Missing reason",
@@ -104,7 +112,7 @@ const breakdownFor = (
   overdueMinutes: overdueMinutesFor(card, nowIso),
   runtimeMinutes: card.apuRuntimeMinutes,
   estimatedFuelKg: card.estimatedFuelKg,
-  proximityCount: card.proximity?.nearbyApuAircraft?.length ?? card.nearbyApuAircraft?.length ?? 0,
+  proximityCount: card.proximity?.nearbyApuAircraft?.length ?? 0,
   groundMinutes: card.groundMinutes,
   sourceStalenessMinutes: sourceStalenessMinutesFor(card),
 });
@@ -112,32 +120,21 @@ const breakdownFor = (
 const weightedScore = (
   breakdown: UrgencyTiebreakerBreakdown,
   weights: UrgencyTiebreakerWeights,
-) =>
-  Math.round(
-    (breakdown.overdueMinutes * weights.overdueMinutes +
-      breakdown.runtimeMinutes * weights.runtimeMinutes +
-      breakdown.estimatedFuelKg * weights.estimatedFuelKg +
-      breakdown.proximityCount * weights.proximityCount +
-      breakdown.groundMinutes * weights.groundMinutes +
-      breakdown.sourceStalenessMinutes * weights.sourceStalenessMinutes) *
-      10,
-  ) / 10;
+) => {
+  const score = tiebreakerKeys.reduce(
+    (total, key) => total + breakdown[key] * weights[key],
+    0,
+  );
+
+  return Math.round(score * 10) / 10;
+};
 
 const compareWeightedBreakdown = (
   left: UrgencyTiebreakerBreakdown,
   right: UrgencyTiebreakerBreakdown,
   weights: UrgencyTiebreakerWeights,
 ) => {
-  const keys: Array<keyof UrgencyTiebreakerBreakdown> = [
-    "overdueMinutes",
-    "runtimeMinutes",
-    "estimatedFuelKg",
-    "proximityCount",
-    "groundMinutes",
-    "sourceStalenessMinutes",
-  ];
-
-  for (const key of keys) {
+  for (const key of tiebreakerKeys) {
     if (weights[key] === 0) {
       continue;
     }
