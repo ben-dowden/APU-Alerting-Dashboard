@@ -210,7 +210,8 @@ export const latestSettingsEventFor = <TFamily extends SettingsFamily>(
 export const currentSettingsEventFor = <TFamily extends SettingsFamily>(
   family: TFamily,
 ): SettingsEventByFamily<TFamily> =>
-  latestSettingsEventFor(family) ?? defaultSettingsEvents[family];
+  latestSettingsEventFor(family) ??
+  (defaultSettingsEvents[family] as SettingsEventByFamily<TFamily>);
 
 export const buildSettingsChangedEvent = <TFamily extends SettingsFamily>({
   family,

@@ -40,8 +40,13 @@ const draftFromSavedEvent = <TFamily extends SettingsFamily>(
 
 export const createSettingsDraft = <TFamily extends SettingsFamily>(
   family: TFamily,
-  defaultEvent: SettingsEventByFamily<TFamily> = defaultSettingsEvents[family],
-): SettingsDraft<TFamily> => draftFromSavedEvent(family, defaultEvent, currentSettingsEventFor(family));
+  defaultEvent?: SettingsEventByFamily<TFamily>,
+): SettingsDraft<TFamily> => {
+  const resolvedDefaultEvent =
+    defaultEvent ?? (defaultSettingsEvents[family] as SettingsEventByFamily<TFamily>);
+
+  return draftFromSavedEvent(family, resolvedDefaultEvent, currentSettingsEventFor(family));
+};
 
 export const stageSettingsDraft = <TFamily extends SettingsFamily>(
   draft: SettingsDraft<TFamily>,

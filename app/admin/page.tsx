@@ -11,7 +11,7 @@ export default function AdminPage() {
       description="Settings governance for APU reason capture, fuel assumptions, urgency ranking, reference data, and persona-aware previews."
       lastUpdatedAt={reasonTaxonomySettings.payload.changedAt}
       scopeLabel="Global defaults"
-      title="HQ/Admin Workbench"
+      title="Admin Workbench"
     >
       <AdminOverviewStatusList />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(360px,0.55fr)]">
