@@ -1,5 +1,7 @@
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { Badge } from "@/components/ui/badge";
+import { ProximityHoverCard } from "./proximity-hover-card";
+import { SourceQualityCharm } from "./source-quality-charm";
 
 type AircraftCardContentProps = {
   aircraft: AircraftCardReadModel;
@@ -15,6 +17,10 @@ const apuStateLabel = (state: AircraftCardReadModel["apuState"]) =>
   state === "on" ? "APU On" : "APU Off";
 
 const reviewLabel = (aircraft: AircraftCardReadModel) => {
+  if (aircraft.manualOffPending) {
+    return "Paused pending off";
+  }
+
   if (aircraft.reviewState.isReviewDue) {
     return "Review due";
   }
@@ -32,6 +38,7 @@ export function AircraftCardContent({ aircraft }: AircraftCardContentProps) {
             {aircraft.aircraftType ? <span>{aircraft.aircraftType}</span> : null}
             {aircraft.bay ? <span>{aircraft.bay}</span> : null}
           </div>
+          <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
         </div>
         <Badge
           variant={aircraft.apuState === "on" ? "red" : "outline"}
@@ -87,7 +94,7 @@ export function AircraftCardContent({ aircraft }: AircraftCardContentProps) {
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Nearby</p>
-          <p className="mt-1 text-sm font-semibold text-neutral-600">Closest tail pending</p>
+          <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
         </div>
       </div>
     </div>

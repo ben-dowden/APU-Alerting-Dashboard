@@ -13,6 +13,7 @@ export type {
   CurrentBoardState,
   GroundAircraftState,
   SourceCharm,
+  SourceQualityFlag,
 } from "./current-board-types";
 
 export const deriveCurrentBoard = (
@@ -30,6 +31,7 @@ export const deriveCurrentBoard = (
   return {
     port: CURRENT_BOARD_PORT,
     nowIso,
+    standCoordinates: settings.standCoordinates,
     weather: context.weather,
     groundAircraft,
   };

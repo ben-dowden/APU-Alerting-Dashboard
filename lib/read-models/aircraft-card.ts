@@ -1,5 +1,14 @@
 import type { UrgencyBucket } from "@/lib/events";
-import { compareIsoStrings, minutesBetweenIso } from "@/lib/domain/time";
+import {
+  rankAircraftCards,
+  type UrgencyTiebreakerBreakdown,
+} from "@/lib/domain/urgency-ranking";
+import {
+  calculateAircraftProximityContext,
+  type AircraftProximityContext,
+  type AircraftStandPosition,
+} from "@/lib/domain/proximity";
+import { minutesBetweenIso } from "@/lib/domain/time";
 import type { GroundAircraftState, SourceCharm, CurrentBoardState } from "./current-board";
 
 export type AircraftCardReadModel = {
@@ -11,6 +20,9 @@ export type AircraftCardReadModel = {
   statusLabel: string;
   urgencyBucket: UrgencyBucket;
   urgencyRank: number;
+  urgencyScore: number;
+  urgencyReason: string;
+  urgencyTiebreakerBreakdown: UrgencyTiebreakerBreakdown;
   groundMinutes: number;
   apuRuntimeMinutes: number;
   estimatedFuelKg: number;
@@ -26,6 +38,7 @@ export type AircraftCardReadModel = {
     isReviewDue: boolean;
   };
   manualOffPending: boolean;
+  proximity: AircraftProximityContext;
   sourceCharms: SourceCharm[];
 };
 
@@ -73,17 +86,42 @@ const urgencyPolicyFor = (aircraft: GroundAircraftState) =>
   urgencyPolicies.find((policy) => policy.matches(aircraft)) ??
   urgencyPolicies[urgencyPolicies.length - 1];
 
-const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket =>
-  urgencyPolicyFor(aircraft).bucket;
+const emptyProximityContext = (): AircraftProximityContext => ({
+  nearbyApuAircraft: [],
+});
 
-const urgencyPriority = (bucket: UrgencyBucket) =>
-  urgencyPolicies.findIndex((policy) => policy.bucket === bucket);
+const standPositionForAircraft = (
+  aircraft: GroundAircraftState,
+): AircraftStandPosition | undefined =>
+  aircraft.stand
+    ? {
+        tail: aircraft.tail,
+        stand: aircraft.stand,
+        bay: aircraft.bay,
+        apuState: aircraft.apuState,
+      }
+    : undefined;
+
+const proximityContextFor = (
+  aircraft: GroundAircraftState,
+  positions: readonly AircraftStandPosition[],
+  boardState: CurrentBoardState,
+) => {
+  const target = standPositionForAircraft(aircraft);
+
+  return target && boardState.standCoordinates
+    ? calculateAircraftProximityContext(target, positions, boardState.standCoordinates)
+    : emptyProximityContext();
+};
 
 const cardForAircraft = (
   aircraft: GroundAircraftState,
   nowIso: string,
-  urgencyRank: number,
-): AircraftCardReadModel => {
+  proximity: AircraftProximityContext,
+): Omit<
+  AircraftCardReadModel,
+  "urgencyRank" | "urgencyScore" | "urgencyReason" | "urgencyTiebreakerBreakdown"
+> => {
   const urgencyPolicy = urgencyPolicyFor(aircraft);
   const currentReason = aircraft.reasonChain.currentReason;
 
@@ -95,7 +133,6 @@ const cardForAircraft = (
     apuState: aircraft.apuState,
     statusLabel: urgencyPolicy.statusLabel,
     urgencyBucket: urgencyPolicy.bucket,
-    urgencyRank,
     groundMinutes: aircraft.groundMinutes,
     apuRuntimeMinutes: aircraft.apuRuntimeMinutes,
     estimatedFuelKg: aircraft.fuelEstimate?.estimatedKg ?? 0,
@@ -113,20 +150,24 @@ const cardForAircraft = (
       isReviewDue: aircraft.reasonChain.isReviewDue,
     },
     manualOffPending: aircraft.manualOffPending,
+    proximity,
     sourceCharms: aircraft.sourceCharms,
   };
 };
 
-export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCardReadModel[] =>
-  boardState.groundAircraft
-    .map((aircraft) => ({
-      aircraft,
-      urgencyBucket: urgencyBucketFor(aircraft),
-    }))
-    .sort(
-      (left, right) =>
-        urgencyPriority(left.urgencyBucket) - urgencyPriority(right.urgencyBucket) ||
-        right.aircraft.apuRuntimeMinutes - left.aircraft.apuRuntimeMinutes ||
-        compareIsoStrings(left.aircraft.tail, right.aircraft.tail),
-    )
-    .map(({ aircraft }, index) => cardForAircraft(aircraft, boardState.nowIso, index + 1));
+export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCardReadModel[] => {
+  const standPositions = boardState.groundAircraft
+    .map(standPositionForAircraft)
+    .filter((position): position is AircraftStandPosition => Boolean(position));
+
+  return rankAircraftCards(
+    boardState.groundAircraft.map((aircraft) =>
+      cardForAircraft(
+        aircraft,
+        boardState.nowIso,
+        proximityContextFor(aircraft, standPositions, boardState),
+      ),
+    ),
+    { nowIso: boardState.nowIso },
+  );
+};

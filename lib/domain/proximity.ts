@@ -11,6 +11,11 @@ export type AircraftDistance = AircraftStandPosition & {
   distanceMeters: number;
 };
 
+export type AircraftProximityContext = {
+  closestAircraft?: AircraftDistance;
+  nearbyApuAircraft: AircraftDistance[];
+};
+
 export type StandCoordinatesInput =
   | readonly StandCoordinateReferenceEvent[]
   | StandCoordinatesSnapshot;
@@ -100,3 +105,18 @@ export const calculateNearbyApuAircraft = (
   withDistances(target, candidates, standCoordinates).filter(
     (candidate) => candidate.apuState === "on" && candidate.distanceMeters <= thresholdMeters,
   );
+
+export const calculateAircraftProximityContext = (
+  target: AircraftStandPosition,
+  candidates: readonly AircraftStandPosition[],
+  standCoordinates: StandCoordinatesInput,
+  thresholdMeters = 100,
+): AircraftProximityContext => ({
+  closestAircraft: calculateClosestAircraft(target, candidates, standCoordinates),
+  nearbyApuAircraft: calculateNearbyApuAircraft(
+    target,
+    candidates,
+    standCoordinates,
+    thresholdMeters,
+  ),
+});

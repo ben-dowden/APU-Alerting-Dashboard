@@ -8,15 +8,16 @@
 
 **Tech Stack:** TypeScript, React, Tailwind, lucide-react, Vitest, Testing Library.
 
-**Status:** Pending as a dedicated feature PR after PR 05 integration; no PR 05 implementation blockers remain.
+**Status:** Complete on branch `pr06-urgency-proximity-quality-manual-off`; ready for PR integration.
 
 **Progress Notes (updated 2026-05-23):**
-- Aircraft-card urgency is now organized as named policy entries in `lib/read-models/aircraft-card.ts`, including the manual-off pending bucket and deterministic sorting boundary.
-- Manual-off source events are indexed in `lib/read-models/current-board-context.ts`; components should continue to consume `manualOffPending` as a derived read-model field.
-- PR 05 cleanup did not implement the dedicated PR 06 proximity display/hover card, source-quality charm, data-quality flag action, or manual-off action UI. Those remain the next PR 06 deliverables.
-- PR 06 should continue the read-model boundary: React components must consume derived fields and must not replay source/domain events.
-- The visible `Closest tail pending` text remains a PR 06 feature gap, not a PR 05 blocker.
-- Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
+- Urgency ranking is implemented in `lib/domain/urgency-ranking.ts` and projected through `lib/read-models/aircraft-card.ts` as `urgencyRank`, `urgencyBucket`, `urgencyScore`, `urgencyReason`, and `urgencyTiebreakerBreakdown`.
+- Proximity context is implemented from stand-coordinate reference data. Cards now show closest-tail distance and expose nearby APU-running aircraft within 100m through `components/senior/proximity-hover-card.tsx`.
+- Source-quality charms render compact stale, unknown, conflicting, and low-confidence markers with tooltip detail. Fallback fuel-assumption markers remain out of collapsed aircraft cards.
+- Data-quality flagging is implemented as a quiet card/drawer utility action that emits `data_quality_flag_created` with tail, port, bay, related event ids, derived state, source freshness, actor/persona, issue type, optional note, and timestamp.
+- Manual APU-off observation is implemented as a pending workflow action. `manual_apu_off_observed` pauses review prompting without closing official burn durations; trusted source off confirms the state, while trusted running telemetry reopens the card and resumes review logic.
+- Clean-code review found no need for a larger decomposition pass. The PR keeps ranking/proximity/source-quality/manual-off facts derived in domain/read-model code, and the follow-up cleanup removed a duplicate proximity input shape from ranking plus clarified the BNE board data-quality handler type.
+- Latest branch verification passed with `npm run test` (161 tests) and `npm run build`; the clean-code follow-up targeted tests passed for urgency ranking and BNE command-board integration.
 
 ---
 
@@ -29,7 +30,7 @@
 ## PR 04 Command-Board Carry-Forward
 
 - Extend the PR 04 aircraft card display body rather than replacing it; PR 06 should add urgency, proximity, source-quality, and manual-off affordances around the established card metrics and current-reason layout.
-- Replace `Closest tail pending` with derived proximity text only after read-model fields exist and are tested.
+- `Closest tail pending` is replaced by tested derived proximity text and hover/focus nearby-aircraft context.
 - Keep fallback fuel-assumption lineage out of collapsed aircraft cards; the PR 04 Senior surface intentionally shows runtime and estimated kg fuel only.
 - Preserve the compact command-board layout and avoid reintroducing the foundation left sidebar.
 
@@ -52,7 +53,7 @@
 - Create: `lib/domain/urgency-ranking.test.ts`
 - Modify: read-model files.
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Cover fixed bucket order:
 
@@ -66,11 +67,11 @@ APU off or OK
 
 Cover weighted tiebreakers: overdue minutes, runtime minutes, fuel kg, nearby APU cluster, total ground time, deterministic tail fallback.
 
-- [ ] **Step 2: Implement ranking**
+- [x] **Step 2: Implement ranking**
 
 Export `rankAircraftCards(cards, settings)` and add `urgencyRank`, `urgencyBucket`, `urgencyScore`, `urgencyReason`, and `urgencyTiebreakerBreakdown` to aircraft card read models.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -89,15 +90,15 @@ git commit -m feat-add-aircraft-urgency-ranking
 - Create: `components/senior/proximity-hover-card.tsx`
 - Modify: `components/senior/aircraft-card-content.tsx`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Assert closest tail distance is calculated from stand coordinates and nearby APU-running list includes aircraft within 100m from the selected aircraft.
 
-- [ ] **Step 2: Implement UI**
+- [x] **Step 2: Implement UI**
 
 Show `Closest tail: VH-XXX · Xm` on cards. On hover/focus, show nearby APU-running aircraft with tail, bay, and distance from selected aircraft.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -115,15 +116,15 @@ git commit -m feat-add-aircraft-proximity-context
 - Create: `components/senior/source-quality-charm.tsx`
 - Modify: `components/senior/aircraft-card-content.tsx`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Assert stale, unknown, conflicting, and low-confidence source markers render as compact charms with accessible tooltip text. Assert fallback fuel-assumption markers are not rendered on the collapsed aircraft card and are available only in drawer/detail or reporting/export contexts.
 
-- [ ] **Step 2: Implement charms**
+- [x] **Step 2: Implement charms**
 
 Use tiny badges or icon buttons. Keep visible text compact and put source timestamp/meaning in tooltip content. Do not create a collapsed-card charm for fallback burn-rate assumptions; the collapsed card should avoid noisy data-lineage markers unless they affect immediate operational confidence.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -142,15 +143,15 @@ git commit -m feat-add-source-quality-charms
 - Modify: `lib/prototype/workflow-actions.ts`
 - Modify: `components/senior/desktop-aircraft-card.tsx`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Assert flag action creates `data_quality_flag_created` with tail, port, bay, derived state, source freshness, issue type, optional note, user/persona, and timestamp.
 
-- [ ] **Step 2: Implement action**
+- [x] **Step 2: Implement action**
 
 Place a small ghost action in card source details or drawer utility area. Do not make it a dominant card action.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -170,7 +171,7 @@ git commit -m feat-add-data-quality-flag-action
 - Modify: `components/senior/desktop-aircraft-card.tsx`, `ground-aircraft-table.tsx`
 - Update tests.
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Cover:
 
@@ -183,11 +184,11 @@ trusted running event reopens as APU-running
 reason chain burn durations do not close on manual observation alone
 ```
 
-- [ ] **Step 2: Implement workflow**
+- [x] **Step 2: Implement workflow**
 
 Render `Mark APU off` near APU state context. Use neutral pending styling and tooltip `Source confirmation outstanding`.
 
-- [ ] **Step 3: Full verification and commit**
+- [x] **Step 3: Full verification and commit**
 
 Run:
 
@@ -205,3 +206,4 @@ git commit -m feat-add-manual-apu-off-and-quality-signals
 - Spec coverage: urgency ranking, proximity, data quality, compact source charms, drawer/reporting-only fallback markers, data issue flags, and manual-off pending state are covered.
 - Public interfaces: UI consumes derived urgency/proximity/quality fields from read models.
 - Handoff checks: full tests and build pass before wallboard PR.
+- Clean-code outcome: no broad component split is needed before PR 07. `DesktopAircraftCard` and workflow event builders are larger than early PR files, but the split between event construction, read-model projection, compact actions, and card presentation is still readable and test-covered.

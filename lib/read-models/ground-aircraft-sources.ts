@@ -5,8 +5,17 @@ import type {
   StandAssignmentEvent,
 } from "@/lib/events";
 
-import type { SourceCharm } from "./current-board-types";
+import type { SourceCharm, SourceQualityFlag } from "./current-board-types";
 import type { DerivedApuEvent } from "@/lib/domain/apu-reducer";
+
+const compactFlags = (values: Array<SourceQualityFlag | undefined>) =>
+  values.filter((value): value is SourceQualityFlag => Boolean(value));
+
+const sourceQualityFlags = (event: SourceEvent): SourceQualityFlag[] =>
+  compactFlags([
+    event.quality.isStale ? "stale" : undefined,
+    event.quality.confidence === "low" ? "low_confidence" : undefined,
+  ]);
 
 const sourceCharm = (event: SourceEvent): SourceCharm => ({
   sourceSystem: event.sourceSystem,
@@ -16,6 +25,7 @@ const sourceCharm = (event: SourceEvent): SourceCharm => ({
   isStale: event.quality.isStale,
   isPlanned: event.quality.isPlanned,
   sourceLatencyMinutes: event.quality.sourceLatencyMinutes,
+  qualityFlags: sourceQualityFlags(event),
 });
 
 const compactStrings = (values: Array<string | undefined>) =>
