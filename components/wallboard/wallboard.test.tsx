@@ -2,6 +2,62 @@ import { act, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import SeniorBneWallboardPage from "@/app/senior/bne/wallboard/page";
+import type { AircraftCardReadModel } from "@/lib/read-models";
+import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
+
+const aircraftCard = (tail: string, urgencyRank: number): AircraftCardReadModel => ({
+  tail,
+  aircraftType: "B738",
+  bay: `Bay ${20 + urgencyRank}`,
+  stand: `${20 + urgencyRank}`,
+  apuState: "on",
+  statusLabel: "Review due",
+  urgencyBucket: "review_overdue",
+  urgencyRank,
+  urgencyScore: 100 - urgencyRank,
+  urgencyReason: "Review overdue",
+  urgencyTiebreakerBreakdown: {
+    overdueMinutes: 1,
+    runtimeMinutes: 46,
+    estimatedFuelKg: 85.9,
+    proximityCount: 0,
+    groundMinutes: 55,
+    sourceStalenessMinutes: 0,
+  },
+  groundMinutes: 55,
+  apuRuntimeMinutes: 46,
+  estimatedFuelKg: 85.9,
+  currentReason: {
+    categoryId: "cleaning-in-progress",
+    categoryLabel: "Cleaning in progress",
+    detailId: "cleaner-onboard",
+    detailLabel: "Cleaner onboard",
+    elapsedMinutes: 35,
+  },
+  reviewState: {
+    reviewDueAt: "2026-05-22T09:15:00.000Z",
+    isReviewDue: true,
+  },
+  manualOffPending: false,
+  proximity: {
+    closestAircraft: {
+      tail: "VH-YFX",
+      stand: "21",
+      bay: "Bay 21",
+      apuState: "off",
+      distanceMeters: 33,
+    },
+    nearbyApuAircraft: [],
+  },
+  sourceCharms: [
+    {
+      sourceSystem: "ACMS",
+      sourceEventId: `${tail}-ACMS`,
+      confidence: "high",
+      receivedAt: "2026-05-22T08:10:00.000Z",
+    },
+  ],
+});
 
 describe("SeniorBneWallboardPage", () => {
   afterEach(() => {
@@ -83,5 +139,68 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(card).queryByRole("button", { name: /reason drawer/i })).not.toBeInTheDocument();
     expect(within(card).queryByRole("button", { name: /qr/i })).not.toBeInTheDocument();
     expect(within(card).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("shows two aircraft per carousel page and a marker for multiple pages", () => {
+    render(
+      <WallboardAircraftCarousel
+        aircraft={[
+          aircraftCard("VH-AAA", 1),
+          aircraftCard("VH-BBB", 2),
+          aircraftCard("VH-CCC", 3),
+        ]}
+      />,
+    );
+
+    const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
+    expect(within(stage).getAllByRole("article")).toHaveLength(2);
+    expect(screen.getByText("[1 of 2]")).toBeVisible();
+    expect(within(stage).getByText("VH-AAA")).toBeVisible();
+    expect(within(stage).getByText("VH-BBB")).toBeVisible();
+    expect(within(stage).queryByText("VH-CCC")).not.toBeInTheDocument();
+  });
+
+  it("hides the carousel marker when there is only one page", () => {
+    render(
+      <WallboardAircraftCarousel
+        aircraft={[aircraftCard("VH-AAA", 1), aircraftCard("VH-BBB", 2)]}
+      />,
+    );
+
+    expect(screen.queryByText(/\[\d+ of \d+\]/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the current carousel page steady until the interval completes", () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <WallboardAircraftCarousel
+        aircraft={[
+          aircraftCard("VH-AAA", 1),
+          aircraftCard("VH-BBB", 2),
+          aircraftCard("VH-CCC", 3),
+        ]}
+      />,
+    );
+
+    rerender(
+      <WallboardAircraftCarousel
+        aircraft={[
+          aircraftCard("VH-CCC", 1),
+          aircraftCard("VH-AAA", 2),
+          aircraftCard("VH-BBB", 3),
+        ]}
+      />,
+    );
+
+    const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
+    expect(within(stage).getByText("VH-AAA")).toBeVisible();
+    expect(within(stage).getByText("VH-BBB")).toBeVisible();
+    expect(within(stage).queryByText("VH-CCC")).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+
+    expect(screen.getByText("[2 of 2]")).toBeVisible();
   });
 });

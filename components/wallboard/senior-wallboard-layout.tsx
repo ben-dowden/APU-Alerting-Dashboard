@@ -9,7 +9,7 @@ import {
   deriveCurrentBoard,
   deriveDailyScorecard,
 } from "@/lib/read-models";
-import { WallboardAircraftCard } from "./wallboard-aircraft-card";
+import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
 import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
 
@@ -59,7 +59,6 @@ export function SeniorWallboardLayout() {
     fuelKg: scorecard.estimatedFuelKgToday,
     temperatureC: board.weather?.temperatureC ?? 0,
   };
-  const stagedAircraft = aircraftCards.slice(0, 2);
 
   return (
     <main className="min-h-screen bg-neutral-950 p-4 text-white">
@@ -78,14 +77,7 @@ export function SeniorWallboardLayout() {
         />
 
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-4 px-6 pb-6">
-          <section
-            aria-label="Wallboard carousel stage"
-            className="grid min-h-0 grid-cols-2 gap-4"
-          >
-            {stagedAircraft.map((aircraft) => (
-              <WallboardAircraftCard aircraft={aircraft} key={aircraft.tail} />
-            ))}
-          </section>
+          <WallboardAircraftCarousel aircraft={aircraftCards} />
 
           <section
             aria-label="Wallboard side index"
