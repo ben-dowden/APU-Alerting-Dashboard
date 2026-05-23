@@ -6,10 +6,11 @@ import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-c
 import { bneBaselineScenario } from "@/lib/fixtures/scenarios";
 import {
   deriveAircraftCards,
-  deriveBenchmarkPanel,
   deriveCurrentBoard,
   deriveDailyScorecard,
 } from "@/lib/read-models";
+import { WallboardCommandBar } from "./wallboard-command-bar";
+import { WallboardScorecardBand } from "./wallboard-scorecard-band";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -59,67 +60,28 @@ export function SeniorWallboardLayout() {
   const board = deriveCurrentBoard(bneBaselineScenario.events, boardSettings, boardNowIso);
   const scorecard = deriveDailyScorecard(board);
   const aircraftCards = deriveAircraftCards(board);
-  const benchmark = deriveBenchmarkPanel(
-    {
-      runtimeMinutes: scorecard.runtimeMinutesToday,
-      fuelKg: scorecard.estimatedFuelKgToday,
-      temperatureC: board.weather?.temperatureC ?? 0,
-    },
-    "similar_temperature",
-    benchmarkBaselines,
-  );
+  const benchmarkCurrent = {
+    runtimeMinutes: scorecard.runtimeMinutesToday,
+    fuelKg: scorecard.estimatedFuelKgToday,
+    temperatureC: board.weather?.temperatureC ?? 0,
+  };
   const stagedAircraft = aircraftCards.slice(0, 2);
 
   return (
     <main className="min-h-screen bg-neutral-950 p-4 text-white">
       <div className="mx-auto flex aspect-video max-h-[calc(100vh-2rem)] min-h-[720px] w-full max-w-[1600px] flex-col overflow-hidden rounded-product border border-neutral-800 bg-neutral-100 text-neutral-950 shadow-2xl">
-        <header className="flex items-center justify-between gap-5 border-b border-neutral-200 bg-white px-6 py-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <Badge variant="red" className="px-3 py-1 text-sm">
-              {board.port}
-            </Badge>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase tracking-normal text-neutral-500">
-                Senior Engineer Wallboard
-              </p>
-              <h1 className="text-3xl font-semibold tracking-normal text-neutral-950">
-                BNE Wallboard
-              </h1>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 text-sm font-semibold text-neutral-700">
-            <span>{board.weather?.temperatureC ?? "--"}°C</span>
-            <span>{sourceFreshnessLabel(board)}</span>
-            <span>{formatBneLocalTime(board.nowIso)}</span>
-          </div>
-        </header>
+        <WallboardCommandBar
+          localTimeLabel={formatBneLocalTime(board.nowIso)}
+          port={board.port}
+          sourceFreshnessLabel={sourceFreshnessLabel(board)}
+          temperatureLabel={`${board.weather?.temperatureC ?? "--"}°C`}
+        />
 
-        <section aria-label="Wallboard scorecard" className="grid grid-cols-4 gap-3 px-6 py-4">
-          {[
-            { label: "APU on now", value: `${scorecard.activeApuCount}`, detail: "active aircraft" },
-            { label: "Runtime today", value: `${scorecard.runtimeMinutesToday} min`, detail: "event-derived" },
-            {
-              label: "Fuel burned today",
-              value: `${scorecard.estimatedFuelKgToday} kg`,
-              detail: "estimated fuel",
-            },
-            {
-              label: "Benchmark",
-              value: benchmark.activeComparison.basisLabel,
-              detail: benchmark.activeComparison.temperatureBandLabel ?? "auto-selected",
-            },
-          ].map((metric) => (
-            <div className="rounded-product border border-neutral-200 bg-white p-4" key={metric.label}>
-              <p className="text-sm font-semibold uppercase tracking-normal text-neutral-500">
-                {metric.label}
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-normal text-neutral-950">
-                {metric.value}
-              </p>
-              <p className="mt-1 text-sm font-medium text-neutral-500">{metric.detail}</p>
-            </div>
-          ))}
-        </section>
+        <WallboardScorecardBand
+          benchmarkBaselines={benchmarkBaselines}
+          benchmarkCurrent={benchmarkCurrent}
+          scorecard={scorecard}
+        />
 
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-4 px-6 pb-6">
           <section
