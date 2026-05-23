@@ -67,7 +67,8 @@ describe("BneCommandBoard", () => {
     expect(within(card).getByText("Cleaning in progress")).toBeVisible();
     expect(within(card).getByText("Cleaner onboard")).toBeVisible();
     expect(within(card).getByText("Review due")).toBeVisible();
-    expect(within(card).getByText("Closest tail pending")).toBeVisible();
+    expect(within(card).getByText(/Closest tail: VH-YFX/)).toBeVisible();
+    expect(within(card).getByRole("button", { name: "Nearby aircraft for VH-8IA" })).toBeVisible();
 
     const currentReasonBlock = within(card).getByRole("group", { name: "Current reason for VH-8IA" });
     expect(within(currentReasonBlock).getByRole("button", { name: "Change reason" })).toBeVisible();

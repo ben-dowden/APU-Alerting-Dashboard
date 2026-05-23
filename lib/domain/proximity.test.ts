@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-coordinates";
-import { calculateClosestAircraft, calculateNearbyApuAircraft } from "./proximity";
+import {
+  calculateAircraftProximityContext,
+  calculateClosestAircraft,
+  calculateNearbyApuAircraft,
+} from "./proximity";
 
 const aircraft = [
   { tail: "VH-8IA", stand: "20", bay: "Bay 20", apuState: "on" as const },
@@ -30,5 +34,27 @@ describe("proximity helpers", () => {
 
     expect(nearby.map((entry) => entry.tail)).toEqual(["VH-8NB"]);
     expect(nearby[0].distanceMeters).toBeLessThanOrEqual(100);
+  });
+
+  it("builds the card-ready closest tail and APU-running proximity context", () => {
+    const context = calculateAircraftProximityContext(
+      aircraft[0],
+      aircraft.slice(1),
+      standCoordinateReferenceEvents,
+    );
+
+    expect(context.closestAircraft).toEqual(
+      expect.objectContaining({
+        tail: "VH-YFX",
+        stand: "21",
+        distanceMeters: expect.any(Number),
+      }),
+    );
+    expect(context.nearbyApuAircraft).toEqual([
+      expect.objectContaining({
+        tail: "VH-8NB",
+        bay: "Bay 23",
+      }),
+    ]);
   });
 });

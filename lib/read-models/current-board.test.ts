@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
 import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
 import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-coordinates";
-import { bneBaselineScenario, bneManualOffConfirmedScenario } from "@/lib/fixtures/scenarios";
+import {
+  bneBaselineScenario,
+  bneManualOffConfirmedScenario,
+  bneManualOffContradictedScenario,
+} from "@/lib/fixtures/scenarios";
 import { flightStateEvent } from "@/lib/fixtures/scenarios/builders";
 import type { FlightStateEvent } from "@/lib/events";
 import { deriveAircraftCards } from "./aircraft-card";
@@ -185,6 +189,71 @@ describe("deriveCurrentBoard", () => {
         manualOffPending: true,
         urgencyBucket: "manual_off_pending",
         statusLabel: "Manual off pending",
+      }),
+    );
+    expect(board.groundAircraft.find((aircraft) => aircraft.tail === "VH-8NJ")).toEqual(
+      expect.objectContaining({
+        apuRuntimeMinutes: 33,
+        apuEvent: expect.objectContaining({
+          state: "open",
+        }),
+        reasonChain: expect.objectContaining({
+          currentReason: expect.objectContaining({
+            endedAt: undefined,
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("uses trusted ACMS off confirmation to close manual pending state officially", () => {
+    const board = deriveCurrentBoard(
+      bneManualOffConfirmedScenario.events,
+      settings,
+      "2026-05-22T10:56:00.000Z",
+    );
+    const cards = deriveAircraftCards(board);
+
+    expect(cards.find((card) => card.tail === "VH-8NJ")).toEqual(
+      expect.objectContaining({
+        apuState: "off",
+        manualOffPending: false,
+        urgencyBucket: "apu_off",
+        statusLabel: "APU off",
+      }),
+    );
+    expect(board.groundAircraft.find((aircraft) => aircraft.tail === "VH-8NJ")?.apuEvent).toEqual(
+      expect.objectContaining({
+        endedAt: "2026-05-22T10:37:00.000Z",
+        state: "closed",
+        closureType: "source_off",
+      }),
+    );
+  });
+
+  it("clears manual pending state when trusted running telemetry contradicts the observation", () => {
+    const board = deriveCurrentBoard(
+      bneManualOffContradictedScenario.events,
+      settings,
+      "2026-05-22T11:30:00.000Z",
+    );
+    const cards = deriveAircraftCards(board);
+
+    expect(cards.find((card) => card.tail === "VH-8XA")).toEqual(
+      expect.objectContaining({
+        apuState: "on",
+        manualOffPending: false,
+        urgencyBucket: "active_valid_reason",
+        statusLabel: "Current reason",
+      }),
+    );
+    expect(board.groundAircraft.find((aircraft) => aircraft.tail === "VH-8XA")).toEqual(
+      expect.objectContaining({
+        reasonChain: expect.objectContaining({
+          currentReason: expect.objectContaining({
+            endedAt: undefined,
+          }),
+        }),
       }),
     );
   });

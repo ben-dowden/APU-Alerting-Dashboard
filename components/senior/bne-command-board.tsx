@@ -6,13 +6,16 @@ import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { DomainEvent } from "@/lib/events";
 import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
 import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
+import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-coordinates";
 import { bneBaselineScenario } from "@/lib/fixtures/scenarios";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import {
   addReasonNote,
   changeReason,
   correctPreviousReason,
+  createDataQualityFlag,
   keepCurrentReason,
+  markManualApuOff,
   selectReason,
 } from "@/lib/prototype/workflow-actions";
 import { readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
@@ -21,6 +24,7 @@ import {
   deriveBenchmarkPanel,
   deriveCurrentBoard,
   deriveDailyScorecard,
+  type AircraftCardReadModel,
   type GroundAircraftState,
 } from "@/lib/read-models";
 
@@ -28,6 +32,7 @@ import { CommandBar } from "./command-bar";
 import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
 import { AircraftBoard } from "./aircraft-board";
 import { GroundAircraftTable } from "./ground-aircraft-table";
+import type { DataQualityFlagActionInput } from "./data-quality-flag-action";
 import type { ReasonPickerSelection } from "./reason-picker";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
@@ -42,6 +47,7 @@ const benchmarkBaselines = {
 const boardSettings = {
   reasonTaxonomy: reasonTaxonomySettings.payload.snapshot,
   fuelBurnAssumptions: fuelBurnAssumptionSettings,
+  standCoordinates: standCoordinateReferenceEvents,
 };
 
 const workflowActorId = "senior-engineer-bne";
@@ -91,6 +97,19 @@ const sourceFreshnessLabel = (board: ReturnType<typeof deriveCurrentBoard>) => {
   return latestReceivedAt
     ? `Feed fresh ${minutesBetweenIso(latestReceivedAt, board.nowIso)}m ago`
     : "Feed pending";
+};
+
+const sourceFreshnessForAircraft = (aircraft: GroundAircraftState, nowIso: string) => {
+  const latestReceivedAt = aircraft.sourceCharms
+    .map((source) => source.receivedAt)
+    .sort()
+    .at(-1);
+
+  return {
+    latestReceivedAt,
+    latencyMinutes: latestReceivedAt ? minutesBetweenIso(latestReceivedAt, nowIso) : undefined,
+    sourceSystems: [...new Set(aircraft.sourceCharms.map((source) => source.sourceSystem))],
+  };
 };
 
 export function BneCommandBoard() {
@@ -207,6 +226,43 @@ export function BneCommandBoard() {
     }));
   };
 
+  const handleCreateDataQualityFlag = (
+    aircraft: GroundAircraftState,
+    card: AircraftCardReadModel,
+    input: DataQualityFlagActionInput,
+  ) => {
+    createDataQualityFlag({
+      port: "BNE",
+      tail: aircraft.tail,
+      apuEventId: aircraft.apuEvent?.apuEventId,
+      aircraftGroundEventId: aircraft.sourceEventIds[0],
+      bay: aircraft.bay,
+      issueType: input.issueType,
+      note: input.note,
+      summary: input.note ?? `Data quality flag for ${aircraft.tail}`,
+      createdBy: workflowActorId,
+      persona: "senior-engineer-bne",
+      createdAt: board.nowIso,
+      relatedEventIds: aircraft.sourceEventIds,
+      derivedState: {
+        apuState: card.apuState,
+        urgencyBucket: card.urgencyBucket,
+        statusLabel: card.statusLabel,
+        manualOffPending: card.manualOffPending,
+      },
+      sourceFreshness: sourceFreshnessForAircraft(aircraft, board.nowIso),
+    });
+    refreshWorkflowEvents();
+  };
+
+  const handleMarkManualApuOff = (aircraft: GroundAircraftState) => {
+    runWorkflowAction(aircraft, (context) => markManualApuOff({
+      ...workflowIdentity(context),
+      observedBy: workflowActorId,
+      observedAt: context.occurredAt,
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
@@ -225,7 +281,9 @@ export function BneCommandBoard() {
             onAddReasonNote={handleAddReasonNote}
             onChangeReason={handleChangeReason}
             onCorrectReason={handleCorrectReason}
+            onCreateDataQualityFlag={handleCreateDataQualityFlag}
             onKeepCurrentReason={handleKeepCurrentReason}
+            onMarkManualApuOff={handleMarkManualApuOff}
             onSelectReason={handleSelectReason}
             taxonomy={boardSettings.reasonTaxonomy}
           />

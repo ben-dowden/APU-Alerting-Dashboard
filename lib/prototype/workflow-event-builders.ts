@@ -4,6 +4,9 @@ import {
   type EventCorrelation,
   type EventEnvelope,
   type EventQuality,
+  type DataQualityFlagCreatedEvent,
+  type DataQualityFlagCreatedPayload,
+  type ManualApuOffObservedEvent,
   type ReasonChangedEvent,
   type ReasonKeptEvent,
   type ReasonNoteAddedEvent,
@@ -17,6 +20,15 @@ type BaseWorkflowInput = {
   port?: WorkflowPort;
   tail: string;
   apuEventId: string;
+};
+
+type WorkflowEnvelopeBaseInput = {
+  port?: WorkflowPort;
+  tail: string;
+  apuEventId?: string;
+  bay?: string;
+  aircraftGroundEventId?: string;
+  relatedEventIds?: string[];
 };
 
 type ReasonInput = {
@@ -56,7 +68,26 @@ export type AddReasonNoteInput = BaseWorkflowInput & {
   addedAt?: string;
 };
 
-type WorkflowEnvelopeInput<TEventType extends string, TPayload> = BaseWorkflowInput & {
+export type ManualApuOffInput = BaseWorkflowInput & {
+  observedBy: string;
+  observedAt?: string;
+  observationNote?: string;
+};
+
+export type DataQualityFlagInput = WorkflowEnvelopeBaseInput & {
+  flagId?: string;
+  issueType: DataQualityFlagCreatedPayload["category"];
+  severity?: DataQualityFlagCreatedPayload["severity"];
+  summary?: string;
+  note?: string;
+  createdBy: string;
+  createdAt?: string;
+  persona?: string;
+  derivedState: NonNullable<DataQualityFlagCreatedPayload["derivedState"]>;
+  sourceFreshness: NonNullable<DataQualityFlagCreatedPayload["sourceFreshness"]>;
+};
+
+type WorkflowEnvelopeInput<TEventType extends string, TPayload> = WorkflowEnvelopeBaseInput & {
   eventType: TEventType;
   occurredAt: string;
   reasonSegmentId?: string;
@@ -74,6 +105,12 @@ const segmentIdFor = (tail: string, occurredAt: string) => `reason:${tail}:${occ
 
 const noteIdFor = (tail: string, occurredAt: string) => `note:${tail}:${occurredAt}`;
 
+const dataQualityFlagIdFor = (
+  tail: string,
+  issueType: DataQualityFlagCreatedPayload["category"],
+  occurredAt: string,
+) => `dq:${tail}:${issueType}:${occurredAt}`;
+
 const workflowSourceEventId = (eventType: string, entityId: string, occurredAt: string) =>
   `workflow:${eventType}:${entityId}:${occurredAt}`;
 
@@ -82,6 +119,9 @@ const workflowEnvelope = <TEventType extends string, TPayload>({
   port,
   tail,
   apuEventId,
+  bay,
+  aircraftGroundEventId,
+  relatedEventIds,
   occurredAt,
   reasonSegmentId,
   entityId,
@@ -95,8 +135,11 @@ const workflowEnvelope = <TEventType extends string, TPayload>({
   const correlation: EventCorrelation = {
     port: eventPort,
     tail,
+    bay,
+    aircraftGroundEventId,
     apuEventId,
     reasonSegmentId,
+    relatedSourceEventIds: relatedEventIds,
     idempotencyKey,
   };
   const quality: EventQuality = {
@@ -210,6 +253,28 @@ export const buildKeepCurrentReasonEvent = (
   });
 };
 
+export const buildManualApuOffObservedEvent = (
+  input: ManualApuOffInput,
+  nowIso: WorkflowClock = systemNowIso,
+): ManualApuOffObservedEvent => {
+  const observedAt = input.observedAt ?? nowIso();
+
+  return workflowEnvelope({
+    ...input,
+    eventType: "manual_apu_off_observed",
+    occurredAt: observedAt,
+    entityId: input.tail,
+    payload: {
+      apuEventId: input.apuEventId,
+      tail: input.tail,
+      observedBy: input.observedBy,
+      observedAt,
+      pendingSourceConfirmation: true,
+      observationNote: input.observationNote,
+    },
+  });
+};
+
 export const buildAddReasonNoteEvent = (
   input: AddReasonNoteInput,
   nowIso: WorkflowClock = systemNowIso,
@@ -230,6 +295,41 @@ export const buildAddReasonNoteEvent = (
       note: input.note,
       addedBy: input.addedBy,
       addedAt,
+    },
+  });
+};
+
+export const buildDataQualityFlagCreatedEvent = (
+  input: DataQualityFlagInput,
+  nowIso: WorkflowClock = systemNowIso,
+): DataQualityFlagCreatedEvent => {
+  const createdAt = input.createdAt ?? nowIso();
+  const flagId = input.flagId ?? dataQualityFlagIdFor(input.tail, input.issueType, createdAt);
+  const port = defaultPort(input.port);
+
+  return workflowEnvelope({
+    ...input,
+    eventType: "data_quality_flag_created",
+    occurredAt: createdAt,
+    entityId: flagId,
+    payload: {
+      flagId,
+      port,
+      tail: input.tail,
+      bay: input.bay,
+      apuEventId: input.apuEventId,
+      aircraftGroundEventId: input.aircraftGroundEventId,
+      category: input.issueType,
+      issueType: input.issueType,
+      severity: input.severity ?? "warning",
+      summary: input.summary ?? input.note ?? `Data quality flag for ${input.tail}`,
+      note: input.note,
+      createdBy: input.createdBy,
+      persona: input.persona,
+      createdAt,
+      derivedState: input.derivedState,
+      sourceFreshness: input.sourceFreshness,
+      relatedEventIds: input.relatedEventIds ?? [],
     },
   });
 };

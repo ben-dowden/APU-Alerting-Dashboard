@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, History } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { ReasonTaxonomySnapshot } from "@/lib/events";
@@ -11,7 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import { CardReasonDrawer } from "./card-reason-drawer";
+import {
+  DataQualityFlagAction,
+  type DataQualityFlagActionInput,
+} from "./data-quality-flag-action";
+import { ManualApuOffAction } from "./manual-apu-off-action";
+import { ProximityHoverCard } from "./proximity-hover-card";
 import { ReasonPicker, type ReasonPickerSelection } from "./reason-picker";
+import { SourceQualityCharm } from "./source-quality-charm";
 
 export type ReasonWorkflowHandlers = {
   onSelectReason: (aircraft: GroundAircraftState, selection: ReasonPickerSelection) => void;
@@ -27,6 +34,12 @@ export type ReasonWorkflowHandlers = {
     previousReason: ReasonSegment,
     selection: ReasonPickerSelection,
   ) => void;
+  onCreateDataQualityFlag: (
+    aircraft: GroundAircraftState,
+    card: AircraftCardReadModel,
+    input: DataQualityFlagActionInput,
+  ) => void;
+  onMarkManualApuOff: (aircraft: GroundAircraftState) => void;
 };
 
 type ReasonCaptureHandlers = Pick<
@@ -50,6 +63,10 @@ const apuStateLabel = (state: AircraftCardReadModel["apuState"]) =>
   state === "on" ? "APU On" : "APU Off";
 
 const reviewLabel = (aircraft: AircraftCardReadModel) => {
+  if (aircraft.manualOffPending) {
+    return "Paused pending off";
+  }
+
   if (aircraft.reviewState.isReviewDue) {
     return "Review due";
   }
@@ -66,6 +83,8 @@ export function DesktopAircraftCard({
   onKeepCurrentReason,
   onAddReasonNote,
   onCorrectReason,
+  onCreateDataQualityFlag,
+  onMarkManualApuOff,
 }: DesktopAircraftCardProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [correctingSegment, setCorrectingSegment] = useState<ReasonSegment>();
@@ -83,7 +102,24 @@ export function DesktopAircraftCard({
       role="article"
     >
       <div className="flex h-full flex-col gap-4 p-4">
-        <AircraftCardHeader aircraft={aircraft} />
+        <AircraftCardHeader
+          aircraft={aircraft}
+          dataQualityFlagControl={
+            <DataQualityFlagAction
+              onCreateFlag={(input) => onCreateDataQualityFlag(groundAircraft, aircraft, input)}
+              tail={aircraft.tail}
+            />
+          }
+          manualOffControl={
+            aircraft.apuState === "on" && groundAircraft.apuEvent ? (
+              <ManualApuOffAction
+                isPending={aircraft.manualOffPending}
+                onMarkOff={() => onMarkManualApuOff(groundAircraft)}
+                tail={aircraft.tail}
+              />
+            ) : null
+          }
+        />
         <AircraftMetricGrid aircraft={aircraft} />
 
         <div className="grid gap-3 border-t border-neutral-200 pt-3 sm:grid-cols-3">
@@ -96,7 +132,7 @@ export function DesktopAircraftCard({
             taxonomy={taxonomy}
           />
           <ReviewSummary aircraft={aircraft} />
-          <NearbySummary />
+          <NearbySummary aircraft={aircraft} />
         </div>
       </div>
 
@@ -129,7 +165,15 @@ export function DesktopAircraftCard({
   );
 }
 
-function AircraftCardHeader({ aircraft }: { aircraft: AircraftCardReadModel }) {
+function AircraftCardHeader({
+  aircraft,
+  dataQualityFlagControl,
+  manualOffControl,
+}: {
+  aircraft: AircraftCardReadModel;
+  dataQualityFlagControl: ReactNode;
+  manualOffControl: ReactNode;
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
@@ -138,13 +182,20 @@ function AircraftCardHeader({ aircraft }: { aircraft: AircraftCardReadModel }) {
           {aircraft.aircraftType ? <span>{aircraft.aircraftType}</span> : null}
           {aircraft.bay ? <span>{aircraft.bay}</span> : null}
         </div>
+        <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
       </div>
-      <Badge
-        variant={aircraft.apuState === "on" ? "red" : "outline"}
-        className={aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined}
-      >
-        {apuStateLabel(aircraft.apuState)}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant={aircraft.apuState === "on" ? "red" : "outline"}
+          className={
+            aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined
+          }
+        >
+          {apuStateLabel(aircraft.apuState)}
+        </Badge>
+        {manualOffControl}
+        {dataQualityFlagControl}
+      </div>
     </div>
   );
 }
@@ -210,7 +261,7 @@ function CurrentReasonGroup({
           />
         ) : null}
 
-        {currentReason && aircraft.reviewState.isReviewDue ? (
+        {currentReason && aircraft.reviewState.isReviewDue && !aircraft.manualOffPending ? (
           <Button
             aria-label={`Keep current reason for ${aircraft.tail}`}
             onClick={() => reasonCaptureHandlers.onKeepCurrentReason(groundAircraft, currentReason)}
@@ -269,11 +320,11 @@ function ReviewSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
   );
 }
 
-function NearbySummary() {
+function NearbySummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Nearby</p>
-      <p className="mt-1 text-sm font-semibold text-neutral-600">Closest tail pending</p>
+      <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
     </div>
   );
 }

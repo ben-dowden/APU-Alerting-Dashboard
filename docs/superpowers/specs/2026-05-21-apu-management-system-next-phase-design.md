@@ -226,6 +226,8 @@ The `urgencyReason` should be human-readable enough for debugging and future tel
 
 For the prototype, this ranking can be derived from event-shaped fixtures. For real integration, the same ranking should come from the backend or integration read model so the desktop board, wallboard carousel, side index, and exports all agree on why an aircraft is being prioritized.
 
+PR 06 implementation checkpoint: the prototype now exposes ranking through `rankAircraftCards` and `AircraftCardReadModel`, with fixed bucket ordering, weighted tiebreaker breakdowns, and deterministic tail fallback. Components consume the derived rank fields rather than sorting or replaying source/domain events in React.
+
 On the desktop board, cards may move as urgency changes. Movement should use very light and quick animation suitable for an operational display.
 
 On the wallboard route, urgency changes should not interrupt the current carousel page. Use the enlarged side index to show the urgency change immediately, then let the carousel order update on the next scheduled page turn.
@@ -375,6 +377,8 @@ Spatial data is an invisible calculation layer. BNE bay or stand coordinates are
 - APU-running aircraft within 100 metres
 
 The UI must not imply live aircraft position, live towing, or digital twin accuracy. Stand assignment data should be presented as stand or bay context, not live location telemetry.
+
+PR 06 implementation checkpoint: proximity is derived from static stand-coordinate reference events and rendered as closest-tail distance plus a hover/focus list of nearby APU-running aircraft within 100 metres. The implementation deliberately keeps this as stand/bay context rather than live movement tracking.
 
 ## APU Event Model
 
@@ -1102,6 +1106,8 @@ Each data issue flag should capture:
 - Optional note
 - Related source event ids or derived read-model version when available
 
+PR 06 implementation checkpoint: source-quality charms render compact stale, unknown, conflicting, and low-confidence states with tooltip detail; fallback fuel-assumption markers remain out of collapsed aircraft cards. The desktop data-quality action emits `data_quality_flag_created` with derived card state, source freshness, related event ids, actor/persona, issue type, optional note, and timestamp so HQ diagnostics can later reuse the event payload.
+
 HQ dashboard should include a data-quality flags section. This section shows flagged issues with telemetry explaining the situation that triggered or surrounded the flag:
 
 - Flag count by issue type
@@ -1163,6 +1169,8 @@ Manual APU-off observation behaviour:
 - If ACMS or another trusted source later indicates the APU is still running, the card reopens as APU-running, preserves the manual observation in telemetry, and resumes reason review logic based on the active reason state.
 - Pending manual-off cards should include a compact charm/tooltip explaining that source confirmation is still outstanding.
 - Manual APU-off observations affect the operational UI only. They do not close reason-tagged burn reporting and do not change official segment durations until confirmed by a trusted source or governed inference rule.
+
+PR 06 implementation checkpoint: the desktop card now provides `Mark APU off`, projects `manual_apu_off_observed` as a neutral pending state, pauses review prompting while pending, confirms on later trusted source off, and reopens/resumes review when later trusted running telemetry contradicts the manual observation. The ground table mirrors this state as `Pending off`.
 
 The prototype should model these differences using dummy source timestamps and freshness charms, so stakeholders understand how the real board will behave under imperfect data.
 
