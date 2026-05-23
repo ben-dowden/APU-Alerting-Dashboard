@@ -8,7 +8,13 @@
 
 **Tech Stack:** React client components, TypeScript, Tailwind, Testing Library, Vitest.
 
-**Status:** Pending after PR 04 integration.
+**Status:** Complete on branch `pr05-aircraft-reason-workflow`; pending PR integration.
+
+**Completion Notes (updated 2026-05-23):**
+- Prototype workflow event store/actions, reason picker, card-attached drawer/timeline, and desktop aircraft-card workflow wiring are implemented and tested.
+- Clean-code follow-up split reason-chain behavior into focused type, segment, replay, and review modules while keeping `deriveReasonChain(...)` and exported read-model types stable.
+- Workflow action builders are separated from append/persistence, and store hydration now ignores malformed/non-array JSON through guarded parsing.
+- Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
 
 ---
 
@@ -42,15 +48,15 @@
 - Create: `lib/prototype/workflow-event-store.ts`
 - Create: `lib/prototype/workflow-event-store.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Cover append, list, clear, localStorage hydration, and ignored malformed JSON.
 
-- [ ] **Step 2: Implement store**
+- [x] **Step 2: Implement store**
 
 Export `readWorkflowEvents`, `appendWorkflowEvent`, `clearWorkflowEvents`, and `WORKFLOW_EVENT_STORAGE_KEY`. Use browser localStorage when available and an in-memory fallback when not.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -68,15 +74,15 @@ git commit -m feat-add-prototype-workflow-event-store
 - Create: `lib/prototype/workflow-actions.ts`
 - Create: `lib/prototype/workflow-actions.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Cover `selectReason`, `changeReason`, `keepCurrentReason`, `addReasonNote`, and `correctPreviousReason`. Assert each emits the correct domain event type, `apuEventId`, user/persona fields, and timestamps.
 
-- [ ] **Step 2: Implement actions**
+- [x] **Step 2: Implement actions**
 
 Each action should create an event using the common envelope from PR 02 and append it through `appendWorkflowEvent`.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -94,7 +100,7 @@ git commit -m feat-add-reason-workflow-actions
 - Create: `components/senior/reason-picker.tsx`
 - Create: `components/senior/reason-picker.test.tsx`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Assert:
 
@@ -108,11 +114,11 @@ No category renders more than four active details
 Category/detail selection is visible without scrolling in the popover
 ```
 
-- [ ] **Step 2: Implement picker**
+- [x] **Step 2: Implement picker**
 
 Use a client component with a button trigger and absolute positioned two-pane popover anchored to the reason action on the card. The first pane lists categories; the second pane opens to the right for up to four details. Use the reason taxonomy settings from fixtures. No free-text input or scroll-dependent selection in this component.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -131,15 +137,15 @@ git commit -m feat-add-two-click-reason-picker
 - Create: `components/senior/reason-timeline-strip.tsx`
 - Create tests.
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Assert drawer opens below card, closes on Escape/outside click, shows current reason, note field, current plus previous two segments by default, show-all icon toggles internal scroll, and previous-segment correction icon appears on hover/focus.
 
-- [ ] **Step 2: Implement drawer**
+- [x] **Step 2: Implement drawer**
 
 Use a card-attached tray, not a full-screen `Sheet`. Keep note field in drawer only. Correction changes category/detail only and never edits timestamps.
 
-- [ ] **Step 3: Verify and commit**
+- [x] **Step 3: Verify and commit**
 
 Run:
 
@@ -159,15 +165,15 @@ git commit -m feat-add-card-reason-drawer
 - Modify: `components/senior/bne-command-board.tsx`
 - Update tests.
 
-- [ ] **Step 1: Add integration tests**
+- [x] **Step 1: Add integration tests**
 
 Assert missing reason cards show `Select reason`, review-due cards show icon-only keep-current action with tooltip, change reason is secondary, drawer icon is a light action, and reason actions sit inside the current-reason block.
 
-- [ ] **Step 2: Implement workflow wiring**
+- [x] **Step 2: Implement workflow wiring**
 
 Convert `/senior/bne` aircraft board to render `DesktopAircraftCard`. Re-read local workflow events after each action and re-derive board state.
 
-- [ ] **Step 3: Full verification and commit**
+- [x] **Step 3: Full verification and commit**
 
 Run:
 

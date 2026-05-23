@@ -10,6 +10,10 @@
 
 **Status:** Pending after PR 07 integration.
 
+**Progress Notes (updated 2026-05-23):**
+- PR 05 cleanup hardened `deriveReasonTaggedBurnRows` by separating timeline slicing, row projection, attribution gaps, and final-row reconciliation.
+- HQ/export work should build on the existing reason-tagged burn read-model boundary and preserve the tested behavior that unattributed runtime remains its own bucket and review telemetry does not become visible timeline segments.
+
 ---
 
 ## File Structure

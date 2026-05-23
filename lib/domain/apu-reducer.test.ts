@@ -144,4 +144,112 @@ describe("deriveApuEvents", () => {
       }),
     );
   });
+
+  it("does not infer departed closure when the option is disabled", () => {
+    const events = [
+      apuStateEvent({
+        tail: "VH-8IA",
+        state: "on",
+        occurredAt: "2026-05-22T08:37:00.000Z",
+        receivedAt: "2026-05-22T08:37:30.000Z",
+        sourceEventId: "ACMS-VH8IA-ON-0837",
+      }),
+      flightStateEvent({
+        tail: "VH-8IA",
+        aircraftType: "B738",
+        flightNumber: "VA327",
+        gateState: "departed",
+        onGroundAt: "2026-05-22T08:14:00.000Z",
+        offGroundAt: "2026-05-22T09:18:00.000Z",
+        occurredAt: "2026-05-22T09:18:00.000Z",
+        receivedAt: "2026-05-22T09:18:15.000Z",
+        sourceEventId: "AIMS-VH8IA-DEPARTED-0918",
+      }),
+    ];
+
+    expect(deriveApuEvents(events, { inferClosureFromFlightState: false })[0]).toEqual(
+      expect.objectContaining({
+        endedAt: undefined,
+        state: "open",
+        closureType: "open",
+      }),
+    );
+  });
+
+  it("keeps trusted source-off closure when departed flight state is also present", () => {
+    const events = [
+      apuStateEvent({
+        tail: "VH-8IA",
+        state: "on",
+        occurredAt: "2026-05-22T08:37:00.000Z",
+        receivedAt: "2026-05-22T08:37:30.000Z",
+        sourceEventId: "ACMS-VH8IA-ON-0837",
+      }),
+      flightStateEvent({
+        tail: "VH-8IA",
+        aircraftType: "B738",
+        flightNumber: "VA327",
+        gateState: "departed",
+        onGroundAt: "2026-05-22T08:14:00.000Z",
+        offGroundAt: "2026-05-22T09:18:00.000Z",
+        occurredAt: "2026-05-22T09:18:00.000Z",
+        receivedAt: "2026-05-22T09:18:15.000Z",
+        sourceEventId: "AIMS-VH8IA-DEPARTED-0918",
+      }),
+      apuStateEvent({
+        tail: "VH-8IA",
+        state: "off",
+        occurredAt: "2026-05-22T09:02:00.000Z",
+        receivedAt: "2026-05-22T09:03:00.000Z",
+        sourceEventId: "ACMS-VH8IA-OFF-0902",
+      }),
+    ];
+
+    expect(deriveApuEvents(events)[0]).toEqual(
+      expect.objectContaining({
+        endedAt: "2026-05-22T09:02:00.000Z",
+        closureType: "source_off",
+        closureConfidence: "high",
+      }),
+    );
+  });
+
+  it("tracks open events independently by normalized tail", () => {
+    const events = [
+      apuStateEvent({
+        tail: "vh-8ia",
+        state: "on",
+        occurredAt: "2026-05-22T08:37:00.000Z",
+        receivedAt: "2026-05-22T08:37:30.000Z",
+        sourceEventId: "ACMS-VH8IA-ON-0837",
+      }),
+      apuStateEvent({
+        tail: "VH-YFX",
+        state: "on",
+        occurredAt: "2026-05-22T08:45:00.000Z",
+        receivedAt: "2026-05-22T08:45:30.000Z",
+        sourceEventId: "ACMS-VHYFX-ON-0845",
+      }),
+      apuStateEvent({
+        tail: "VH-8IA",
+        state: "off",
+        occurredAt: "2026-05-22T09:02:00.000Z",
+        receivedAt: "2026-05-22T09:03:00.000Z",
+        sourceEventId: "ACMS-VH8IA-OFF-0902",
+      }),
+    ];
+
+    expect(deriveApuEvents(events)).toEqual([
+      expect.objectContaining({
+        tail: "VH-8IA",
+        state: "closed",
+        endedAt: "2026-05-22T09:02:00.000Z",
+      }),
+      expect.objectContaining({
+        tail: "VH-YFX",
+        state: "open",
+        endedAt: undefined,
+      }),
+    ]);
+  });
 });

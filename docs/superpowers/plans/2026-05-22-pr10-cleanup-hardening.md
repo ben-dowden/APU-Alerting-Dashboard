@@ -8,7 +8,12 @@
 
 **Tech Stack:** Next.js, TypeScript, Vitest, Testing Library.
 
-**Status:** Final hardening remains sequenced after PR 09; revalidate this checklist against the then-current app state before executing PR 10.
+**Status:** Partially accelerated on `pr05-aircraft-reason-workflow`; final hardening remains sequenced after PR 09 and should be revalidated against the then-current app state.
+
+**Progress Notes (updated 2026-05-23):**
+- Clean-code hardening completed in this branch for the highest-value logic targets: reason-chain reducer split, reason-tagged burn slicing/reconciliation, APU reducer closure helpers, workflow event builders/store hydration, board event indexing, and aircraft-card urgency policy.
+- Remaining PR 10 work is the final post-PR09 sweep for any new feature artifacts, docs/scripts drift, generated outputs, and dependency cleanup.
+- Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
 
 ---
 
@@ -64,6 +69,6 @@
 
 ## Self-Review
 
-- Spec coverage: inactive legacy app removed, docs/scripts consolidated, direct unused dependencies removed, reducer mutation reduced.
+- Spec coverage: inactive legacy app removed, docs/scripts consolidated, direct unused dependencies removed, reducer mutation reduced, and PR 05 domain/read-model cleanup targets hardened.
 - Public interfaces: Next.js routes and package scripts remain stable.
-- Handoff checks: full tests and build are the final gates. Latest verification: `npm run test` passed with 99 tests and `npm run build` passed in this worktree after removing ignored `.next` artifacts.
+- Handoff checks: full tests and build are the final gates. Latest verification: `npm run test` passed with 146 tests, `npx tsc --noEmit` passed, and `npm run build` passed in this worktree after removing ignored `.next` artifacts.

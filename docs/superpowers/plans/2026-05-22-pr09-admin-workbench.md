@@ -10,6 +10,10 @@
 
 **Status:** Pending after PR 08 integration.
 
+**Progress Notes (updated 2026-05-23):**
+- PR 05 cleanup isolated workflow event construction from persistence/hydration. Reuse that shape for admin settings actions instead of coupling settings event builders directly to storage.
+- Reason-chain review interval lookup and due calculation now live in focused review helpers, which is the right extension point for admin-configurable review settings.
+
 ---
 
 ## File Structure

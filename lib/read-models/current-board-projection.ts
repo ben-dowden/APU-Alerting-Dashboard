@@ -4,37 +4,15 @@ import { matchesApuEventId, normalizeTail } from "@/lib/domain/ids";
 import { deriveReasonChain, type ReasonChainState } from "@/lib/domain/reason-chain-reducer";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import type {
-  ApuStateEvent,
   DomainEvent,
   FlightStateEvent,
   ManualApuOffObservedEvent,
-  SourceEvent,
   StandAssignmentEvent,
 } from "@/lib/events";
 
 import type { BoardEventContext } from "./current-board-context";
-import type { CurrentBoardSettings, GroundAircraftState, SourceCharm } from "./current-board-types";
-
-const sourceCharm = (event: SourceEvent): SourceCharm => ({
-  sourceSystem: event.sourceSystem,
-  sourceEventId: event.sourceEventId,
-  confidence: event.quality.confidence,
-  receivedAt: event.receivedAt,
-  isStale: event.quality.isStale,
-  isPlanned: event.quality.isPlanned,
-  sourceLatencyMinutes: event.quality.sourceLatencyMinutes,
-});
-
-const sourceCharmsFor = (
-  flight: FlightStateEvent,
-  stand: StandAssignmentEvent | undefined,
-  apuState: ApuStateEvent | undefined,
-) =>
-  [flight, stand, apuState]
-    .filter((event): event is FlightStateEvent | StandAssignmentEvent | ApuStateEvent =>
-      Boolean(event),
-    )
-    .map(sourceCharm);
+import type { CurrentBoardSettings, GroundAircraftState } from "./current-board-types";
+import { sourceCharmsForAircraft, sourceEventIdsForAircraft } from "./ground-aircraft-sources";
 
 const emptyReasonChain = (): ReasonChainState => ({
   segments: [],
@@ -78,15 +56,6 @@ const fuelEstimateFor = (
       )
     : undefined;
 
-const compactStrings = (values: Array<string | undefined>) =>
-  values.filter((value): value is string => Boolean(value));
-
-const sourceEventIdsFor = (
-  flight: FlightStateEvent,
-  stand: StandAssignmentEvent | undefined,
-  apuEvent: DerivedApuEvent | undefined,
-) => compactStrings([flight.eventId, stand?.eventId, ...(apuEvent?.sourceEventIds ?? [])]);
-
 export const createGroundAircraftState = (
   flight: FlightStateEvent,
   context: BoardEventContext,
@@ -118,7 +87,7 @@ export const createGroundAircraftState = (
     groundMinutes: minutesBetweenIso(flight.payload.onGroundAt ?? flight.occurredAt, nowIso),
     apuRuntimeMinutes,
     fuelEstimate: fuelEstimateFor(apuRuntimeMinutes, apuEvent, flight, settings),
-    sourceCharms: sourceCharmsFor(flight, stand, context.latestApuStateByTail.get(tail)),
-    sourceEventIds: sourceEventIdsFor(flight, stand, apuEvent),
+    sourceCharms: sourceCharmsForAircraft(flight, stand, context.latestApuStateByTail.get(tail)),
+    sourceEventIds: sourceEventIdsForAircraft(flight, stand, apuEvent),
   };
 };

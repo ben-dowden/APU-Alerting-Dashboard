@@ -29,48 +29,62 @@ export type AircraftCardReadModel = {
   sourceCharms: SourceCharm[];
 };
 
-const bucketOrder: UrgencyBucket[] = [
-  "missing_reason",
-  "review_overdue",
-  "active_valid_reason",
-  "manual_off_pending",
-  "apu_off",
+type UrgencyPolicy = {
+  bucket: UrgencyBucket;
+  statusLabel: string;
+  matches: (aircraft: GroundAircraftState) => boolean;
+};
+
+const urgencyPolicies: UrgencyPolicy[] = [
+  {
+    bucket: "missing_reason",
+    statusLabel: "Reason missing",
+    matches: (aircraft) =>
+      aircraft.apuState === "on" &&
+      !aircraft.manualOffPending &&
+      !aircraft.reasonChain.currentReason,
+  },
+  {
+    bucket: "review_overdue",
+    statusLabel: "Review due",
+    matches: (aircraft) =>
+      aircraft.apuState === "on" &&
+      !aircraft.manualOffPending &&
+      aircraft.reasonChain.isReviewDue,
+  },
+  {
+    bucket: "active_valid_reason",
+    statusLabel: "Current reason",
+    matches: (aircraft) => aircraft.apuState === "on" && !aircraft.manualOffPending,
+  },
+  {
+    bucket: "manual_off_pending",
+    statusLabel: "Manual off pending",
+    matches: (aircraft) => aircraft.apuState === "on" && aircraft.manualOffPending,
+  },
+  {
+    bucket: "apu_off",
+    statusLabel: "APU off",
+    matches: (aircraft) => aircraft.apuState === "off",
+  },
 ];
 
-const statusLabels: Record<UrgencyBucket, string> = {
-  missing_reason: "Reason missing",
-  review_overdue: "Review due",
-  active_valid_reason: "Current reason",
-  manual_off_pending: "Manual off pending",
-  apu_off: "APU off",
-};
+const urgencyPolicyFor = (aircraft: GroundAircraftState) =>
+  urgencyPolicies.find((policy) => policy.matches(aircraft)) ??
+  urgencyPolicies[urgencyPolicies.length - 1];
 
-const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket => {
-  if (aircraft.apuState === "off") {
-    return "apu_off";
-  }
+const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket =>
+  urgencyPolicyFor(aircraft).bucket;
 
-  if (aircraft.manualOffPending) {
-    return "manual_off_pending";
-  }
-
-  if (!aircraft.reasonChain.currentReason) {
-    return "missing_reason";
-  }
-
-  if (aircraft.reasonChain.isReviewDue) {
-    return "review_overdue";
-  }
-
-  return "active_valid_reason";
-};
+const urgencyPriority = (bucket: UrgencyBucket) =>
+  urgencyPolicies.findIndex((policy) => policy.bucket === bucket);
 
 const cardForAircraft = (
   aircraft: GroundAircraftState,
   nowIso: string,
   urgencyRank: number,
 ): AircraftCardReadModel => {
-  const urgencyBucket = urgencyBucketFor(aircraft);
+  const urgencyPolicy = urgencyPolicyFor(aircraft);
   const currentReason = aircraft.reasonChain.currentReason;
 
   return {
@@ -79,8 +93,8 @@ const cardForAircraft = (
     bay: aircraft.bay,
     stand: aircraft.stand,
     apuState: aircraft.apuState,
-    statusLabel: statusLabels[urgencyBucket],
-    urgencyBucket,
+    statusLabel: urgencyPolicy.statusLabel,
+    urgencyBucket: urgencyPolicy.bucket,
     urgencyRank,
     groundMinutes: aircraft.groundMinutes,
     apuRuntimeMinutes: aircraft.apuRuntimeMinutes,
@@ -111,7 +125,7 @@ export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCard
     }))
     .sort(
       (left, right) =>
-        bucketOrder.indexOf(left.urgencyBucket) - bucketOrder.indexOf(right.urgencyBucket) ||
+        urgencyPriority(left.urgencyBucket) - urgencyPriority(right.urgencyBucket) ||
         right.aircraft.apuRuntimeMinutes - left.aircraft.apuRuntimeMinutes ||
         compareIsoStrings(left.aircraft.tail, right.aircraft.tail),
     )

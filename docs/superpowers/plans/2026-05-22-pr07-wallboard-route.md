@@ -8,7 +8,11 @@
 
 **Tech Stack:** Next.js, React client components for carousel/rotators, Tailwind, Vitest, Testing Library, Playwright or screenshot-capable route checks.
 
-**Status:** Pending after PR 04, PR 05, and PR 06 integration.
+**Status:** Pending after PR 06 completion.
+
+**Progress Notes (updated 2026-05-23):**
+- PR 05 is now implemented and clean-code hardened, so wallboard work can assume the reason workflow/read-model split exists.
+- Consume aircraft-card/read-model fields from the cleaned shared surfaces; do not import prototype workflow actions, local workflow stores, reason drawer state, or desktop-only controls into wallboard components.
 
 ## PR 04 Command-Board Carry-Forward
 
