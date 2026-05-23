@@ -9,6 +9,7 @@ import {
   deriveCurrentBoard,
   deriveDailyScorecard,
 } from "@/lib/read-models";
+import { WallboardAircraftCard } from "./wallboard-aircraft-card";
 import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
 
@@ -49,13 +50,6 @@ const sourceFreshnessLabel = (board: ReturnType<typeof deriveCurrentBoard>) => {
     : "Feed pending";
 };
 
-const formatDuration = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  return `${String(hours).padStart(2, "0")}:${String(remainingMinutes).padStart(2, "0")}`;
-};
-
 export function SeniorWallboardLayout() {
   const board = deriveCurrentBoard(bneBaselineScenario.events, boardSettings, boardNowIso);
   const scorecard = deriveDailyScorecard(board);
@@ -89,49 +83,7 @@ export function SeniorWallboardLayout() {
             className="grid min-h-0 grid-cols-2 gap-4"
           >
             {stagedAircraft.map((aircraft) => (
-              <article
-                aria-label={`${aircraft.tail} wallboard aircraft card`}
-                className="rounded-product border border-neutral-200 bg-white p-5"
-                key={aircraft.tail}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-4xl font-semibold tracking-normal">{aircraft.tail}</p>
-                    <p className="mt-2 text-lg font-semibold text-neutral-500">
-                      {[aircraft.aircraftType, aircraft.bay].filter(Boolean).join(" / ")}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={aircraft.apuState === "on" ? "red" : "outline"}
-                    className={
-                      aircraft.apuState === "off"
-                        ? "border-green-200 bg-green-50 text-green-700"
-                        : undefined
-                    }
-                  >
-                    {aircraft.apuState === "on" ? "APU On" : "APU Off"}
-                  </Badge>
-                </div>
-
-                <dl className="mt-5 grid grid-cols-3 gap-3">
-                  <div className="rounded-product bg-neutral-50 p-3">
-                    <dt className="text-sm font-semibold text-neutral-500">APU runtime</dt>
-                    <dd className="mt-2 text-2xl font-semibold">
-                      {formatDuration(aircraft.apuRuntimeMinutes)}
-                    </dd>
-                  </div>
-                  <div className="rounded-product bg-neutral-50 p-3">
-                    <dt className="text-sm font-semibold text-neutral-500">Ground time</dt>
-                    <dd className="mt-2 text-2xl font-semibold">
-                      {formatDuration(aircraft.groundMinutes)}
-                    </dd>
-                  </div>
-                  <div className="rounded-product bg-neutral-50 p-3">
-                    <dt className="text-sm font-semibold text-neutral-500">Fuel</dt>
-                    <dd className="mt-2 text-2xl font-semibold">{aircraft.estimatedFuelKg} kg</dd>
-                  </div>
-                </dl>
-              </article>
+              <WallboardAircraftCard aircraft={aircraft} key={aircraft.tail} />
             ))}
           </section>
 

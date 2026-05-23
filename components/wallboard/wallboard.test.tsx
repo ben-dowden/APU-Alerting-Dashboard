@@ -52,4 +52,36 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(within(benchmark).getByText("Weekly average")).toBeVisible();
   });
+
+  it("renders passive aircraft cards with operational detail and no workflow actions", () => {
+    render(<SeniorBneWallboardPage />);
+
+    const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
+    const card = within(stage).getByRole("article", {
+      name: "VH-8IA wallboard aircraft card",
+    });
+
+    expect(within(card).getByText("VH-8IA")).toBeVisible();
+    expect(within(card).getByText("B738")).toBeVisible();
+    expect(within(card).getByText("Bay 20")).toBeVisible();
+    expect(within(card).getByText("APU On")).toBeVisible();
+    expect(within(card).getByText("00:46")).toBeVisible();
+    expect(within(card).getByText("00:55")).toBeVisible();
+    expect(within(card).getByText("85.9 kg")).toBeVisible();
+    expect(within(card).getByText("Ground support")).toBeVisible();
+    expect(within(card).getByText("Closest tail: VH-YFX")).toBeVisible();
+    expect(within(card).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(card).getByText("Cleaner onboard")).toBeVisible();
+    expect(within(card).getByText("Review due")).toBeVisible();
+    expect(within(card).getByRole("group", { name: "Source charms for VH-8IA" })).toBeVisible();
+    expect(within(card).getByText("ACMS")).toBeVisible();
+
+    expect(within(card).queryByRole("button", { name: /select reason/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /change reason/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /manual off/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /data issue/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /reason drawer/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /qr/i })).not.toBeInTheDocument();
+    expect(within(card).queryByRole("link")).not.toBeInTheDocument();
+  });
 });
