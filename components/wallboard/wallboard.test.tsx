@@ -203,4 +203,20 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(screen.getByText("[2 of 2]")).toBeVisible();
   });
+
+  it("renders an enlarged side index sorted by urgency with passive state cues", () => {
+    render(<SeniorBneWallboardPage />);
+
+    const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
+    const rows = within(sideIndex).getAllByRole("listitem");
+
+    expect(rows.map((row) => row.getAttribute("data-tail"))).toEqual(["VH-8IA", "VH-YFX"]);
+    expect(rows[0]).toHaveAttribute("data-urgency-rank", "1");
+    expect(rows[0]).toHaveAttribute("data-urgency-cue", "changed");
+    expect(within(rows[0]).getByText("On")).toHaveClass("bg-virgin-red");
+    expect(within(rows[1]).getByText("Off")).toHaveClass("bg-green-50");
+    expect(within(rows[0]).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(rows[1]).getByText("APU off")).toBeVisible();
+    expect(within(sideIndex).queryByRole("button")).not.toBeInTheDocument();
+  });
 });

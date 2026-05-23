@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { minutesBetweenIso } from "@/lib/domain/time";
 import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
 import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
@@ -12,6 +11,7 @@ import {
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
 import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
+import { WallboardSideIndex } from "./wallboard-side-index";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -79,37 +79,7 @@ export function SeniorWallboardLayout() {
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-4 px-6 pb-6">
           <WallboardAircraftCarousel aircraft={aircraftCards} />
 
-          <section
-            aria-label="Wallboard side index"
-            className="min-h-0 rounded-product border border-neutral-200 bg-white"
-          >
-            <div className="border-b border-neutral-200 px-4 py-3">
-              <p className="text-lg font-semibold tracking-normal">Ground aircraft</p>
-              <p className="text-sm font-medium text-neutral-500">Current BNE APU signal</p>
-            </div>
-            <div className="divide-y divide-neutral-100">
-              {aircraftCards.map((aircraft) => (
-                <div className="flex items-center justify-between gap-3 px-4 py-3" key={aircraft.tail}>
-                  <div>
-                    <p className="text-xl font-semibold tracking-normal">{aircraft.tail}</p>
-                    <p className="text-sm font-medium text-neutral-500">
-                      {aircraft.currentReason?.categoryLabel ?? aircraft.statusLabel}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={aircraft.apuState === "on" ? "red" : "outline"}
-                    className={
-                      aircraft.apuState === "off"
-                        ? "border-green-200 bg-green-50 text-green-700"
-                        : undefined
-                    }
-                  >
-                    {aircraft.apuState === "on" ? "On" : "Off"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </section>
+          <WallboardSideIndex aircraft={aircraftCards} />
         </div>
       </div>
     </main>
