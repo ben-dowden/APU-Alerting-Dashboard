@@ -1,5 +1,9 @@
 import type { UrgencyBucket } from "@/lib/events";
-import { compareIsoStrings, minutesBetweenIso } from "@/lib/domain/time";
+import {
+  rankAircraftCards,
+  type UrgencyTiebreakerBreakdown,
+} from "@/lib/domain/urgency-ranking";
+import { minutesBetweenIso } from "@/lib/domain/time";
 import type { GroundAircraftState, SourceCharm, CurrentBoardState } from "./current-board";
 
 export type AircraftCardReadModel = {
@@ -11,6 +15,9 @@ export type AircraftCardReadModel = {
   statusLabel: string;
   urgencyBucket: UrgencyBucket;
   urgencyRank: number;
+  urgencyScore: number;
+  urgencyReason: string;
+  urgencyTiebreakerBreakdown: UrgencyTiebreakerBreakdown;
   groundMinutes: number;
   apuRuntimeMinutes: number;
   estimatedFuelKg: number;
@@ -73,17 +80,13 @@ const urgencyPolicyFor = (aircraft: GroundAircraftState) =>
   urgencyPolicies.find((policy) => policy.matches(aircraft)) ??
   urgencyPolicies[urgencyPolicies.length - 1];
 
-const urgencyBucketFor = (aircraft: GroundAircraftState): UrgencyBucket =>
-  urgencyPolicyFor(aircraft).bucket;
-
-const urgencyPriority = (bucket: UrgencyBucket) =>
-  urgencyPolicies.findIndex((policy) => policy.bucket === bucket);
-
 const cardForAircraft = (
   aircraft: GroundAircraftState,
   nowIso: string,
-  urgencyRank: number,
-): AircraftCardReadModel => {
+): Omit<
+  AircraftCardReadModel,
+  "urgencyRank" | "urgencyScore" | "urgencyReason" | "urgencyTiebreakerBreakdown"
+> => {
   const urgencyPolicy = urgencyPolicyFor(aircraft);
   const currentReason = aircraft.reasonChain.currentReason;
 
@@ -95,7 +98,6 @@ const cardForAircraft = (
     apuState: aircraft.apuState,
     statusLabel: urgencyPolicy.statusLabel,
     urgencyBucket: urgencyPolicy.bucket,
-    urgencyRank,
     groundMinutes: aircraft.groundMinutes,
     apuRuntimeMinutes: aircraft.apuRuntimeMinutes,
     estimatedFuelKg: aircraft.fuelEstimate?.estimatedKg ?? 0,
@@ -118,15 +120,7 @@ const cardForAircraft = (
 };
 
 export const deriveAircraftCards = (boardState: CurrentBoardState): AircraftCardReadModel[] =>
-  boardState.groundAircraft
-    .map((aircraft) => ({
-      aircraft,
-      urgencyBucket: urgencyBucketFor(aircraft),
-    }))
-    .sort(
-      (left, right) =>
-        urgencyPriority(left.urgencyBucket) - urgencyPriority(right.urgencyBucket) ||
-        right.aircraft.apuRuntimeMinutes - left.aircraft.apuRuntimeMinutes ||
-        compareIsoStrings(left.aircraft.tail, right.aircraft.tail),
-    )
-    .map(({ aircraft }, index) => cardForAircraft(aircraft, boardState.nowIso, index + 1));
+  rankAircraftCards(
+    boardState.groundAircraft.map((aircraft) => cardForAircraft(aircraft, boardState.nowIso)),
+    { nowIso: boardState.nowIso },
+  );
