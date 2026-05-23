@@ -7,6 +7,7 @@ import {
   createDataQualityFlag,
   correctPreviousReason,
   keepCurrentReason,
+  markManualApuOff,
   selectReason,
 } from "./workflow-actions";
 
@@ -225,6 +226,32 @@ describe("workflow actions", () => {
         },
       }),
     );
+    expect(readWorkflowEvents()).toEqual([event]);
+  });
+
+  it("markManualApuOff emits and appends a pending manual_apu_off_observed event", () => {
+    const event = markManualApuOff({
+      ...baseInput,
+      observedAt: "2026-05-22T09:10:00.000Z",
+      observedBy: "senior-engineer-bne",
+      observationNote: "Ramp confirmed external air connected.",
+    });
+
+    expect(event).toEqual(
+      expect.objectContaining({
+        eventType: "manual_apu_off_observed",
+        occurredAt: "2026-05-22T09:10:00.000Z",
+        receivedAt: "2026-05-22T09:10:00.000Z",
+      }),
+    );
+    expect(event.payload).toEqual({
+      apuEventId: baseInput.apuEventId,
+      tail: "VH-8IA",
+      observedBy: "senior-engineer-bne",
+      observedAt: "2026-05-22T09:10:00.000Z",
+      pendingSourceConfirmation: true,
+      observationNote: "Ramp confirmed external air connected.",
+    });
     expect(readWorkflowEvents()).toEqual([event]);
   });
 });

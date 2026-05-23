@@ -15,7 +15,6 @@ const sourceQualityFlags = (event: SourceEvent): SourceQualityFlag[] =>
   compactFlags([
     event.quality.isStale ? "stale" : undefined,
     event.quality.confidence === "low" ? "low_confidence" : undefined,
-    event.sourceSystem === "UNKNOWN" ? "unknown" : undefined,
   ]);
 
 const sourceCharm = (event: SourceEvent): SourceCharm => ({

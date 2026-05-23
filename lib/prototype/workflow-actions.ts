@@ -1,5 +1,6 @@
 import type {
   DataQualityFlagCreatedEvent,
+  ManualApuOffObservedEvent,
   ReasonChangedEvent,
   ReasonKeptEvent,
   ReasonNoteAddedEvent,
@@ -12,11 +13,13 @@ import {
   buildCorrectPreviousReasonEvent,
   buildDataQualityFlagCreatedEvent,
   buildKeepCurrentReasonEvent,
+  buildManualApuOffObservedEvent,
   buildSelectReasonEvent,
   type AddReasonNoteInput,
   type ChangeReasonInput,
   type DataQualityFlagInput,
   type KeepCurrentReasonInput,
+  type ManualApuOffInput,
   type SelectReasonInput,
 } from "./workflow-event-builders";
 import { appendWorkflowEvent } from "./workflow-event-store";
@@ -46,3 +49,6 @@ export const correctPreviousReason = (input: ChangeReasonInput): ReasonChangedEv
 export const createDataQualityFlag = (
   input: DataQualityFlagInput,
 ): DataQualityFlagCreatedEvent => appendAndReturn(buildDataQualityFlagCreatedEvent(input));
+
+export const markManualApuOff = (input: ManualApuOffInput): ManualApuOffObservedEvent =>
+  appendAndReturn(buildManualApuOffObservedEvent(input));

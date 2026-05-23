@@ -8,11 +8,31 @@ type GroundAircraftTableProps = {
 };
 
 const apuSignal = (aircraft: GroundAircraftState) => {
+  if (aircraft.manualOffPending) {
+    return "Pending off";
+  }
+
   if (aircraft.apuState === "off") {
     return "APU off";
   }
 
   return aircraft.reasonChain.currentReason?.categoryLabel ?? "Reason pending";
+};
+
+const apuBadgeLabel = (aircraft: GroundAircraftState) => {
+  if (aircraft.manualOffPending) {
+    return "Pending";
+  }
+
+  return aircraft.apuState === "on" ? "On" : "Off";
+};
+
+const apuBadgeClassName = (aircraft: GroundAircraftState) => {
+  if (aircraft.manualOffPending) {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+
+  return aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined;
 };
 
 export function GroundAircraftTable({ aircraft }: GroundAircraftTableProps) {
@@ -47,11 +67,10 @@ export function GroundAircraftTable({ aircraft }: GroundAircraftTableProps) {
                     <td className="px-3 py-3">
                       <Badge
                         variant={item.apuState === "on" ? "red" : "outline"}
-                        className={
-                          item.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined
-                        }
+                        className={apuBadgeClassName(item)}
+                        title={item.manualOffPending ? "Source confirmation outstanding" : undefined}
                       >
-                        {item.apuState === "on" ? "On" : "Off"}
+                        {apuBadgeLabel(item)}
                       </Badge>
                     </td>
                     <td className="px-3 py-3 font-medium text-neutral-800">

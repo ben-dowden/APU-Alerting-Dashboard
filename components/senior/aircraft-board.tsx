@@ -19,6 +19,7 @@ export function AircraftBoard({
   onAddReasonNote,
   onCorrectReason,
   onCreateDataQualityFlag,
+  onMarkManualApuOff,
 }: AircraftBoardProps) {
   const groundAircraftByTail = new Map(
     groundAircraft.map((aircraftState) => [aircraftState.tail, aircraftState]),
@@ -39,6 +40,7 @@ export function AircraftBoard({
             onCorrectReason={onCorrectReason}
             onCreateDataQualityFlag={onCreateDataQualityFlag}
             onKeepCurrentReason={onKeepCurrentReason}
+            onMarkManualApuOff={onMarkManualApuOff}
             onSelectReason={onSelectReason}
             taxonomy={taxonomy}
           />

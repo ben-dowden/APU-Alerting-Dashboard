@@ -13,6 +13,7 @@ export type {
   CurrentBoardState,
   GroundAircraftState,
   SourceCharm,
+  SourceQualityFlag,
 } from "./current-board-types";
 
 export const deriveCurrentBoard = (

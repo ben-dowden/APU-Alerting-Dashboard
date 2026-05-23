@@ -6,6 +6,7 @@ import {
   type EventQuality,
   type DataQualityFlagCreatedEvent,
   type DataQualityFlagCreatedPayload,
+  type ManualApuOffObservedEvent,
   type ReasonChangedEvent,
   type ReasonKeptEvent,
   type ReasonNoteAddedEvent,
@@ -65,6 +66,12 @@ export type AddReasonNoteInput = BaseWorkflowInput & {
   note: string;
   addedBy: string;
   addedAt?: string;
+};
+
+export type ManualApuOffInput = BaseWorkflowInput & {
+  observedBy: string;
+  observedAt?: string;
+  observationNote?: string;
 };
 
 export type DataQualityFlagInput = WorkflowEnvelopeBaseInput & {
@@ -242,6 +249,28 @@ export const buildKeepCurrentReasonEvent = (
       keptBy: input.keptBy,
       keptAt,
       reviewDueAt: input.reviewDueAt,
+    },
+  });
+};
+
+export const buildManualApuOffObservedEvent = (
+  input: ManualApuOffInput,
+  nowIso: WorkflowClock = systemNowIso,
+): ManualApuOffObservedEvent => {
+  const observedAt = input.observedAt ?? nowIso();
+
+  return workflowEnvelope({
+    ...input,
+    eventType: "manual_apu_off_observed",
+    occurredAt: observedAt,
+    entityId: input.tail,
+    payload: {
+      apuEventId: input.apuEventId,
+      tail: input.tail,
+      observedBy: input.observedBy,
+      observedAt,
+      pendingSourceConfirmation: true,
+      observationNote: input.observationNote,
     },
   });
 };

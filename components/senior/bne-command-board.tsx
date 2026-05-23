@@ -15,6 +15,7 @@ import {
   correctPreviousReason,
   createDataQualityFlag,
   keepCurrentReason,
+  markManualApuOff,
   selectReason,
 } from "@/lib/prototype/workflow-actions";
 import { readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
@@ -253,6 +254,14 @@ export function BneCommandBoard() {
     refreshWorkflowEvents();
   };
 
+  const handleMarkManualApuOff = (aircraft: GroundAircraftState) => {
+    runWorkflowAction(aircraft, (context) => markManualApuOff({
+      ...workflowIdentity(context),
+      observedBy: workflowActorId,
+      observedAt: context.occurredAt,
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
@@ -273,6 +282,7 @@ export function BneCommandBoard() {
             onCorrectReason={handleCorrectReason}
             onCreateDataQualityFlag={handleCreateDataQualityFlag}
             onKeepCurrentReason={handleKeepCurrentReason}
+            onMarkManualApuOff={handleMarkManualApuOff}
             onSelectReason={handleSelectReason}
             taxonomy={boardSettings.reasonTaxonomy}
           />

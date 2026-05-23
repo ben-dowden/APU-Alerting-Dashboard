@@ -115,6 +115,7 @@ const noopHandlers = {
   onCorrectReason: vi.fn(),
   onCreateDataQualityFlag: vi.fn(),
   onKeepCurrentReason: vi.fn(),
+  onMarkManualApuOff: vi.fn(),
   onSelectReason: vi.fn(),
 };
 
@@ -165,5 +166,33 @@ describe("DesktopAircraftCard", () => {
     expect(keepCurrent.textContent).toBe("");
     expect(changeReason).toHaveClass("border-neutral-300");
     expect(drawerAction).toHaveClass("text-neutral-800");
+  });
+
+  it("pauses review prompts while manual APU-off confirmation is pending", () => {
+    render(
+      <DesktopAircraftCard
+        aircraft={{
+          ...baseCard,
+          manualOffPending: true,
+          statusLabel: "Manual off pending",
+          urgencyBucket: "manual_off_pending",
+        }}
+        groundAircraft={{
+          ...baseGroundAircraft,
+          manualOffPending: true,
+        }}
+        taxonomy={reasonTaxonomySettings.payload.snapshot}
+        {...noopHandlers}
+      />,
+    );
+
+    expect(screen.getByText("Paused pending off")).toBeVisible();
+    expect(screen.getByText("Pending off")).toHaveAttribute(
+      "title",
+      "Source confirmation outstanding",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Keep current reason for VH-8IA" }),
+    ).not.toBeInTheDocument();
   });
 });

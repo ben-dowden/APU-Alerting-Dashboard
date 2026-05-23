@@ -17,6 +17,10 @@ const apuStateLabel = (state: AircraftCardReadModel["apuState"]) =>
   state === "on" ? "APU On" : "APU Off";
 
 const reviewLabel = (aircraft: AircraftCardReadModel) => {
+  if (aircraft.manualOffPending) {
+    return "Paused pending off";
+  }
+
   if (aircraft.reviewState.isReviewDue) {
     return "Review due";
   }
