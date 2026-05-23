@@ -8,7 +8,13 @@
 
 **Tech Stack:** TypeScript, React, Tailwind, lucide-react, Vitest, Testing Library.
 
-**Status:** Pending after PR 04 and PR 05 integration.
+**Status:** Pending as a dedicated feature PR after PR 05 integration; several foundations were completed or hardened on `pr05-aircraft-reason-workflow`.
+
+**Progress Notes (updated 2026-05-23):**
+- Aircraft-card urgency is now organized as named policy entries in `lib/read-models/aircraft-card.ts`, including the manual-off pending bucket and deterministic sorting boundary.
+- Manual-off source events are indexed in `lib/read-models/current-board-context.ts`; components should continue to consume `manualOffPending` as a derived read-model field.
+- PR 05 cleanup did not implement the dedicated PR 06 source-quality charm, proximity hover card, data-quality flag action, or manual-off action UI. Those remain the next PR 06 deliverables.
+- Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
 
 ---
 

@@ -6,6 +6,8 @@
 
 **Primary Fidelity Rule:** Optimize first for the Brisbane Senior Engineer workflow. HQ reporting and Admin are secondary; early HQ/Admin routes are navigation stubs only until the Senior Engineer command board, reason workflow, urgency/proximity/manual-off layer, and wallboard route are working from the event-derived read model.
 
+**Progress Snapshot (updated 2026-05-23 on `pr05-aircraft-reason-workflow`):** PR 01-03 are merged, PR 04 is complete and pending integration, PR 05 is implemented and clean-code hardened on this branch, and selected PR 06/PR 10 foundations were pulled forward while preserving behavior. PR 07-09 remain feature PRs. Latest branch verification passed with `npm run test` (146 tests), `npx tsc --noEmit`, and `npm run build` after clearing stale ignored `.next` output.
+
 ---
 
 ## PR Sequence And Gates
@@ -42,29 +44,35 @@
    - PR 04 carry-forward to PR 05/06/07: preserve `AircraftCardContent` as the shared display body, wrap it for workflow behavior in PR 05 rather than rebuilding the card contents, replace `Closest tail pending` only when PR 06 wires derived proximity fields, and keep the wallboard passive by reusing read-model data without bringing over desktop workflow actions.
    - Environment note: in this Windows/OneDrive worktree, `npm run test` and `npm run build` passed after elevated execution; if `next build` hits `.next` `EPERM` cleanup or rename errors, remove the ignored `.next` output and rerun with elevated file-write permission.
 
-5. **PR 05: Aircraft Card Reason Workflow**
+5. **PR 05: Aircraft Card Reason Workflow** - **Complete on branch `pr05-aircraft-reason-workflow`; pending PR integration**
    - Adds the core reason-chain interaction on desktop cards.
    - Gate: two-click reason selection and card-attached drawer work.
+   - PR 05 implementation notes for later PRs: local workflow event persistence/actions, reason picker, card-attached drawer/timeline, and desktop card re-derivation are implemented. Clean-code hardening split reason-chain replay/review/segment logic and separated workflow event construction from persistence/hydration.
 
-6. **PR 06: Urgency, Proximity, Source Quality, And Manual-Off**
+6. **PR 06: Urgency, Proximity, Source Quality, And Manual-Off** - **Partially advanced on PR 05 branch; remaining feature UI still pending**
    - Adds priority sorting, nearby aircraft context, compact quality charms, data-quality flags, and manual-off pending state.
    - Gate: Senior Engineer desktop surface is operationally meaningful.
+   - PR 06 progress notes from PR 05 cleanup: `lib/read-models/aircraft-card.ts` now has named urgency policies and a tested manual-off pending bucket; `lib/read-models/current-board-context.ts` centralizes manual-off event indexing; future PR 06 work should add the dedicated proximity/source-quality/data-quality UI without re-replaying events in React.
 
-7. **PR 07: Wallboard Route**
+7. **PR 07: Wallboard Route** - **Pending after PR 06 completion**
    - Creates the fixed-frame, read-only TV surface from the same BNE read model.
    - Gate: 16:9 wallboard has no workflow actions, overlays, drawers, QR links, or prompts.
+   - Carry-forward from PR 05 cleanup: wallboard should consume the same cleaned aircraft-card/read-model surfaces and avoid importing prototype workflow actions, stores, or desktop drawer state.
 
-8. **PR 08: HQ Reporting And Exports**
+8. **PR 08: HQ Reporting And Exports** - **Pending after PR 07**
    - Adds HQ reporting and reason-tagged export after the Senior Engineer workflow is proven.
    - Gate: export rows reconcile with HQ totals and include lineage/assumption metadata.
+   - Carry-forward from PR 05 cleanup: `deriveReasonTaggedBurnRows` has clearer slicing/reconciliation helpers and tests around latest review telemetry; HQ/export work should extend that read-model boundary instead of duplicating attribution logic.
 
-9. **PR 09: HQ/Admin Workbench**
+9. **PR 09: HQ/Admin Workbench** - **Pending after PR 08**
    - Adds functional admin screens for reason settings, fuel assumptions, urgency tiebreakers, reference data, persona preview, and data quality.
    - Gate: staged save/discard/reset behavior emits settings snapshot events.
+   - Carry-forward from PR 05 cleanup: reason review interval derivation now lives with reason-chain review logic, and workflow/action builders are isolated enough to mirror for admin settings snapshot events.
 
-10. **PR 10: Migration Cleanup And Hardening**
+10. **PR 10: Migration Cleanup And Hardening** - **Partially accelerated on PR 05 branch; final pass still sequenced after PR 09**
     - Removes obsolete Vite paths and hardens scripts/docs only after the Next.js app is complete.
     - Gate: full test/build pass and no active dependency on old Vite UI-ready mock records.
+    - PR 10 progress notes from PR 05 cleanup: reducer/read-model hardening covered reason-chain replay, APU source-state closure helpers, reason-tagged burn slicing, workflow store hydration guards, board event indexing, and aircraft-card urgency policy. Revalidate final cleanup after PR 09 because later feature PRs may add new scripts, docs, and generated artifacts.
 
 ---
 
