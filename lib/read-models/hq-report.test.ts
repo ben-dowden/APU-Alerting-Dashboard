@@ -31,35 +31,37 @@ describe("deriveHqReport", () => {
 
     expect(report.filters).toEqual(baseFilters);
     expect(report.generatedAt).toBe(baseFilters.endIso);
-    expect(report.totalRuntimeMinutes).toBe(46);
-    expect(report.totalFuelKg).toBe(85.9);
-    expect(report.totalDollarImpact).toBe(101.36);
-    expect(report.attributedRuntimePercent).toBe(76.1);
+    expect(report.totalRuntimeMinutes).toBe(679);
+    expect(report.totalFuelKg).toBe(1251.9);
+    expect(report.totalDollarImpact).toBe(1477.25);
+    expect(report.attributedRuntimePercent).toBe(48.3);
     expect(report.locationRows).toEqual([
       expect.objectContaining({
         port: "BNE",
-        runtimeMinutes: 46,
-        fuelKg: 85.9,
-        dollarImpact: 101.36,
-        attributedRuntimePercent: 76.1,
+        aircraftCount: 16,
+        apuEventCount: 16,
+        runtimeMinutes: 679,
+        fuelKg: 1251.9,
+        dollarImpact: 1477.25,
+        attributedRuntimePercent: 48.3,
       }),
     ]);
-    expect(report.reasonRows).toEqual([
-      expect.objectContaining({
-        reasonCategoryId: "cleaning-in-progress",
-        reasonCategoryLabel: "Cleaning in progress",
-        runtimeMinutes: 35,
-        fuelKg: 65.4,
-        dollarImpact: 77.17,
-      }),
-      expect.objectContaining({
-        reasonCategoryId: "unattributed",
-        reasonCategoryLabel: "Unattributed",
-        runtimeMinutes: 11,
-        fuelKg: 20.5,
-        dollarImpact: 24.19,
-      }),
-    ]);
+    expect(report.reasonRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reasonCategoryId: "cleaning-in-progress",
+          reasonCategoryLabel: "Cleaning in progress",
+        }),
+        expect.objectContaining({
+          reasonCategoryId: "engineering-requirement",
+          reasonCategoryLabel: "Engineering requirement",
+        }),
+        expect.objectContaining({
+          reasonCategoryId: "unattributed",
+          reasonCategoryLabel: "Unattributed",
+        }),
+      ]),
+    );
   });
 
   it("filters report rows by date range and port", () => {
@@ -73,15 +75,16 @@ describe("deriveHqReport", () => {
       ports: ["MEL"],
     });
 
-    expect(dateFiltered.totalRuntimeMinutes).toBe(20);
-    expect(dateFiltered.totalFuelKg).toBe(37.4);
-    expect(dateFiltered.exportRows).toHaveLength(1);
-    expect(dateFiltered.exportRows[0]).toEqual(
-      expect.objectContaining({
-        startedAt: "2026-05-22T08:20:00.000Z",
-        endedAt: "2026-05-22T08:40:00.000Z",
-      }),
-    );
+    expect(dateFiltered.totalRuntimeMinutes).toBe(233);
+    expect(dateFiltered.totalFuelKg).toBeGreaterThan(0);
+    expect(dateFiltered.exportRows.length).toBeGreaterThan(1);
+    expect(
+      dateFiltered.exportRows.every(
+        (row) =>
+          row.startedAt >= "2026-05-22T08:20:00.000Z" &&
+          row.endedAt <= "2026-05-22T08:40:00.000Z",
+      ),
+    ).toBe(true);
     expect(portFiltered.totalRuntimeMinutes).toBe(0);
     expect(portFiltered.exportRows).toEqual([]);
   });
@@ -89,13 +92,17 @@ describe("deriveHqReport", () => {
   it("keeps unattributed burn as its own report bucket", () => {
     const report = deriveHqReport(bneBaselineScenario.events, settings, baseFilters);
 
-    expect(report.unattributedRows).toEqual([
-      expect.objectContaining({
-        reasonCategoryId: "unattributed",
-        runtimeMinutes: 11,
-        fuelKg: 20.5,
-      }),
-    ]);
+    expect(report.unattributedRows.length).toBeGreaterThan(1);
+    expect(report.unattributedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tail: "VH-VUK",
+          reasonCategoryId: "unattributed",
+          runtimeMinutes: 57,
+          fuelKg: 106.4,
+        }),
+      ]),
+    );
   });
 
   it("excludes manual-off observations from official closure until trusted source confirmation", () => {

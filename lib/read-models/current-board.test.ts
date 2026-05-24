@@ -26,7 +26,19 @@ describe("deriveCurrentBoard", () => {
       "2026-05-22T08:55:00.000Z",
     );
 
-    expect(board.groundAircraft.map((aircraft) => aircraft.tail)).toEqual(["VH-8IA", "VH-YFX"]);
+    expect(board.groundAircraft).toHaveLength(21);
+    expect(board.groundAircraft.every((aircraft) => aircraft.port === "BNE")).toBe(true);
+    expect(board.groundAircraft.map((aircraft) => aircraft.tail)).toEqual(
+      expect.arrayContaining([
+        "VH-8IA",
+        "VH-YFX",
+        "VH-VUK",
+        "VH-8NJ",
+        "VH-VOP",
+        "VH-VUF",
+        "VH-YIT",
+      ]),
+    );
   });
 
   it("ignores ground aircraft outside the current board port", () => {
@@ -172,6 +184,55 @@ describe("deriveCurrentBoard", () => {
           expect.objectContaining({ sourceSystem: "ACMS", confidence: "high" }),
         ]),
       }),
+    );
+  });
+
+  it("derives representative high-density baseline edge states", () => {
+    const board = deriveCurrentBoard(
+      bneBaselineScenario.events,
+      settings,
+      "2026-05-22T08:55:00.000Z",
+    );
+    const cards = deriveAircraftCards(board);
+
+    expect(cards.find((card) => card.tail === "VH-VUK")).toEqual(
+      expect.objectContaining({
+        apuState: "on",
+        urgencyBucket: "missing_reason",
+        statusLabel: "Reason missing",
+      }),
+    );
+    expect(cards.find((card) => card.tail === "VH-8NJ")).toEqual(
+      expect.objectContaining({
+        apuState: "on",
+        manualOffPending: true,
+        urgencyBucket: "manual_off_pending",
+      }),
+    );
+    expect(board.groundAircraft.find((aircraft) => aircraft.tail === "VH-VUF")).toEqual(
+      expect.objectContaining({
+        bay: undefined,
+        stand: undefined,
+        apuState: "off",
+      }),
+    );
+    expect(cards.find((card) => card.tail === "VH-VOP")?.sourceCharms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceSystem: "BNE_STAND_PLAN",
+          confidence: "low",
+          isStale: true,
+          qualityFlags: expect.arrayContaining(["stale", "low_confidence"]),
+        }),
+      ]),
+    );
+    expect(cards.find((card) => card.tail === "VH-YIT")?.sourceCharms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceSystem: "ACMS",
+          sourceLatencyMinutes: 7,
+        }),
+      ]),
     );
   });
 

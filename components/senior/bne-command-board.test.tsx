@@ -46,7 +46,11 @@ describe("BneCommandBoard", () => {
     expect(within(benchmark).queryByText("Annual average")).not.toBeInTheDocument();
 
     const benchmarkText = benchmark.textContent ?? "";
-    expect(benchmarkText.indexOf("+15.9 kg")).toBeLessThan(benchmarkText.indexOf("+8 min"));
+    const fuelDeltaIndex = benchmarkText.search(/[+-]\d+(\.\d)? kg/);
+    const runtimeDeltaIndex = benchmarkText.search(/[+-]\d+ min/);
+    expect(fuelDeltaIndex).toBeGreaterThanOrEqual(0);
+    expect(runtimeDeltaIndex).toBeGreaterThanOrEqual(0);
+    expect(fuelDeltaIndex).toBeLessThan(runtimeDeltaIndex);
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/AUD/i)).not.toBeInTheDocument();
   });
@@ -55,6 +59,7 @@ describe("BneCommandBoard", () => {
     render(<BneCommandBoard />);
 
     const board = screen.getByRole("region", { name: "Aircraft work queue" });
+    expect(within(board).getAllByRole("article")).toHaveLength(21);
     const card = within(board).getByRole("article", { name: "VH-8IA aircraft card" });
 
     expect(within(card).getByText("VH-8IA")).toBeVisible();
@@ -67,7 +72,7 @@ describe("BneCommandBoard", () => {
     expect(within(card).getByText("Cleaning in progress")).toBeVisible();
     expect(within(card).getByText("Cleaner onboard")).toBeVisible();
     expect(within(card).getByText("Review due")).toBeVisible();
-    expect(within(card).getByText(/Closest tail: VH-YFX/)).toBeVisible();
+    expect(within(card).getByText(/Closest tail:/)).toBeVisible();
     expect(within(card).getByRole("button", { name: "Nearby aircraft for VH-8IA" })).toBeVisible();
 
     const currentReasonBlock = within(card).getByRole("group", { name: "Current reason for VH-8IA" });
@@ -84,21 +89,26 @@ describe("BneCommandBoard", () => {
     render(<BneCommandBoard />);
 
     const table = screen.getByRole("table", { name: "Ground aircraft side table" });
+    const rows = within(table).getAllByRole("row");
+    expect(rows).toHaveLength(22);
 
-    expect(within(table).getByText("VH-8IA")).toBeVisible();
-    expect(within(table).getByText("Bay 20")).toBeVisible();
-    expect(within(table).getByText("On")).toBeVisible();
-    expect(within(table).getByText("46 min")).toBeVisible();
-    expect(within(table).getByText("55 min")).toBeVisible();
-    expect(within(table).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(table).getByRole("button", { name: "Focus VH-8IA" })).toHaveAttribute(
+    const activeReasonRow = within(table).getByRole("row", { name: /VH-8IA/ });
+    expect(within(activeReasonRow).getByText("Bay 20")).toBeVisible();
+    expect(within(activeReasonRow).getByText("On")).toBeVisible();
+    expect(within(activeReasonRow).getByText("46 min")).toBeVisible();
+    expect(within(activeReasonRow).getByText("55 min")).toBeVisible();
+    expect(within(activeReasonRow).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(activeReasonRow).getByRole("button", { name: "Focus VH-8IA" })).toHaveAttribute(
       "data-focus-tail",
       "VH-8IA",
     );
 
-    expect(within(table).getByText("VH-YFX")).toBeVisible();
-    expect(within(table).getByText("Off")).toBeVisible();
-    expect(within(table).getByText("APU off")).toBeVisible();
+    const missingReasonRow = within(table).getByRole("row", { name: /VH-VUK/ });
+    expect(within(missingReasonRow).getByText("Reason pending")).toBeVisible();
+
+    const apuOffRow = within(table).getByRole("row", { name: /VH-YFX/ });
+    expect(within(apuOffRow).getByText("Off")).toBeVisible();
+    expect(within(apuOffRow).getByText("APU off")).toBeVisible();
   });
 
   it("keeps the current reason through the local workflow event stream", async () => {

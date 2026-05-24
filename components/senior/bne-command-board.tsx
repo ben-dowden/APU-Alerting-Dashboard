@@ -122,6 +122,12 @@ export function BneCommandBoard() {
   const board = deriveCurrentBoard(boardEvents, boardSettings, boardNowIso);
   const scorecard = deriveDailyScorecard(board);
   const aircraftCards = deriveAircraftCards(board);
+  const groundAircraftByTail = new Map(
+    board.groundAircraft.map((aircraft) => [aircraft.tail, aircraft]),
+  );
+  const prioritizedGroundAircraft = aircraftCards
+    .map((aircraft) => groundAircraftByTail.get(aircraft.tail))
+    .filter((aircraft): aircraft is GroundAircraftState => Boolean(aircraft));
   const benchmarkPanel = deriveBenchmarkPanel(
     {
       runtimeMinutes: scorecard.runtimeMinutesToday,
@@ -287,7 +293,7 @@ export function BneCommandBoard() {
             onSelectReason={handleSelectReason}
             taxonomy={boardSettings.reasonTaxonomy}
           />
-          <GroundAircraftTable aircraft={board.groundAircraft} />
+          <GroundAircraftTable aircraft={prioritizedGroundAircraft} />
         </div>
       </main>
     </div>

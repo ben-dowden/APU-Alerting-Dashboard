@@ -22,10 +22,10 @@ describe("deriveDailyScorecard", () => {
 
     expect(deriveDailyScorecard(board)).toEqual(
       expect.objectContaining({
-        activeApuCount: 1,
-        runtimeMinutesToday: 46,
-        estimatedFuelKgToday: 85.9,
-        attributedRuntimePercent: 76.1,
+        activeApuCount: 16,
+        runtimeMinutesToday: 679,
+        estimatedFuelKgToday: 1251.9,
+        attributedRuntimePercent: 48.3,
       }),
     );
   });

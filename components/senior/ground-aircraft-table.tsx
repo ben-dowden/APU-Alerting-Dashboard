@@ -44,9 +44,9 @@ export function GroundAircraftTable({ aircraft }: GroundAircraftTableProps) {
             <p className="text-sm font-semibold text-neutral-950">Ground aircraft</p>
             <p className="text-xs font-medium text-neutral-500">Current BNE APU and reason signal</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-[640px] overflow-auto lg:max-h-[calc(100vh-19rem)]">
             <table aria-label="Ground aircraft side table" className="w-full min-w-[380px] text-left text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr className="border-b border-neutral-200 text-xs font-semibold uppercase tracking-normal text-neutral-500">
                   <th className="px-4 py-2">Tail</th>
                   <th className="px-3 py-2">Bay</th>

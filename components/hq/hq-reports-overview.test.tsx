@@ -33,22 +33,22 @@ describe("HQReportsOverview", () => {
 
     const kpis = screen.getByRole("region", { name: "HQ report KPIs" });
     expect(within(kpis).getByText("Runtime")).toBeVisible();
-    expect(within(kpis).getByText("46 min")).toBeVisible();
+    expect(within(kpis).getByText("679 min")).toBeVisible();
     expect(within(kpis).getByText("Fuel")).toBeVisible();
-    expect(within(kpis).getByText("85.9 kg")).toBeVisible();
+    expect(within(kpis).getByText("1251.9 kg")).toBeVisible();
     expect(within(kpis).getByText("Dollar impact")).toBeVisible();
-    expect(within(kpis).getByText("AUD 101.36")).toBeVisible();
+    expect(within(kpis).getByText("AUD 1477.25")).toBeVisible();
     expect(within(kpis).getByText("Attribution")).toBeVisible();
-    expect(within(kpis).getByText("76.1%")).toBeVisible();
+    expect(within(kpis).getByText("48.3%")).toBeVisible();
 
     const locationTable = screen.getByRole("table", { name: "Location performance" });
     expect(within(locationTable).getByText("BNE")).toBeVisible();
-    expect(within(locationTable).getByText("85.9 kg")).toBeVisible();
-    expect(within(locationTable).getByText("AUD 101.36")).toBeVisible();
+    expect(within(locationTable).getByText("1251.9 kg")).toBeVisible();
+    expect(within(locationTable).getByText("AUD 1477.25")).toBeVisible();
 
     const reasonTable = screen.getByRole("table", { name: "Reason breakdown" });
-    expect(within(reasonTable).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(reasonTable).getByText("Unattributed")).toBeVisible();
+    expect(within(reasonTable).getAllByText("Cleaning in progress")[0]).toBeVisible();
+    expect(within(reasonTable).getAllByText("Unattributed")[0]).toBeVisible();
 
     const assumptions = screen.getByRole("region", { name: "HQ report assumptions" });
     expect(within(assumptions).getByText("Fuel price")).toBeVisible();

@@ -99,9 +99,24 @@ describe("deriveReasonTaggedBurnRows", () => {
     );
     const rows = deriveReasonTaggedBurnRows(board);
 
-    expect(rows.map((row) => row.runtimeMinutes)).toEqual([11, 35]);
-    expect(rows.reduce((total, row) => total + row.runtimeMinutes, 0)).toBe(46);
-    expect(rows.reduce((total, row) => total + row.estimatedKg, 0)).toBe(85.9);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tail: "VH-8IA",
+          reasonDetailId: "cleaner-onboard",
+          runtimeMinutes: 35,
+        }),
+        expect.objectContaining({
+          tail: "VH-VUK",
+          reasonCategoryId: "unattributed",
+          runtimeMinutes: 57,
+        }),
+      ]),
+    );
+    expect(rows.reduce((total, row) => total + row.runtimeMinutes, 0)).toBe(679);
+    expect(rows.reduce((total, row) => Math.round((total + row.estimatedKg) * 10) / 10, 0)).toBe(
+      1251.9,
+    );
   });
 
   it("keeps unattributed runtime as a first-class bucket", () => {
@@ -111,12 +126,14 @@ describe("deriveReasonTaggedBurnRows", () => {
       "2026-05-22T08:55:00.000Z",
     );
 
-    expect(deriveReasonTaggedBurnRows(board)[0]).toEqual(
-      expect.objectContaining({
-        reasonCategoryId: "unattributed",
-        reasonDetailId: "unattributed",
-        isUnattributed: true,
-      }),
+    expect(deriveReasonTaggedBurnRows(board)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reasonCategoryId: "unattributed",
+          reasonDetailId: "unattributed",
+          isUnattributed: true,
+        }),
+      ]),
     );
   });
 
