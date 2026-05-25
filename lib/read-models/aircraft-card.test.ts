@@ -53,7 +53,29 @@ describe("deriveAircraftCards", () => {
       "2026-05-22T08:55:00.000Z",
     );
 
-    expect(deriveAircraftCards(board).map((card) => card.tail)).toEqual(["VH-8IA", "VH-YFX"]);
+    expect(deriveAircraftCards(board).map((card) => card.tail)).toEqual([
+      "VH-VUK",
+      "VH-VUY",
+      "VH-YFW",
+      "VH-YQO",
+      "VH-8FE",
+      "VH-YIR",
+      "VH-8IA",
+      "VH-VUZ",
+      "VH-VUT",
+      "VH-VOP",
+      "VH-VUL",
+      "VH-YVA",
+      "VH-YIT",
+      "VH-8XB",
+      "VH-8NJ",
+      "VH-YWE",
+      "VH-YFX",
+      "VH-VUF",
+      "VH-8FP",
+      "VH-VUQ",
+      "VH-YFR",
+    ]);
   });
 
   it("exposes stable aircraft card display fields", () => {
@@ -63,7 +85,7 @@ describe("deriveAircraftCards", () => {
       "2026-05-22T08:55:00.000Z",
     );
 
-    expect(deriveAircraftCards(board)[0]).toEqual(
+    expect(deriveAircraftCards(board).find((card) => card.tail === "VH-8IA")).toEqual(
       expect.objectContaining({
         tail: "VH-8IA",
         aircraftType: "B738",

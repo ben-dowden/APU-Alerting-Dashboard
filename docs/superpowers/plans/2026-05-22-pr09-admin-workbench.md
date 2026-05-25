@@ -8,11 +8,15 @@
 
 **Tech Stack:** Next.js, React client components, TypeScript, Tailwind, Vitest, Testing Library.
 
-**Status:** Pending after PR 08 integration.
+**Status:** Next after PR 08 integration/manual PR flow.
 
 **Progress Notes (updated 2026-05-23):**
 - PR 05 cleanup isolated workflow event construction from persistence/hydration. Reuse that shape for admin settings actions instead of coupling settings event builders directly to storage.
 - Reason-chain review interval lookup and due calculation now live in focused review helpers, which is the right extension point for admin-configurable review settings.
+- PR 08 added `deriveHqReport(events, settings, filters)`, `bneHqReportSettings`, `bneHqReport`, and export-ready HQ report rows. Admin previews should consume those boundaries rather than replaying events in React or duplicating HQ reporting fixtures.
+- PR 08 export lineage now depends on settings version/source metadata, fuel price source/version, burn assumption source/version, reason taxonomy source/version, source event ids, manual-off status, closure confidence, and fallback flags. PR 09 settings snapshots should preserve that metadata shape so HQ reports and workbook rows remain reconcilable.
+- PR 08 added the `xlsx` dependency and the browser download wrapper in `components/hq/export-button.tsx`; PR 09 should not re-add or replace export plumbing unless it is extending an Admin-specific export.
+- Latest inherited verification from PR 08: `npm run test` passed with 32 files and 180 tests, and `npm run build` passed after clearing ignored `.next` output for the known Windows/OneDrive `EPERM` cleanup case.
 
 ---
 
@@ -37,6 +41,7 @@
 - [ ] **Step 1: Write tests**
 
 Cover staged save creating `settings_changed`, version increment, discard returning saved state, reset default creating a snapshot event, and localStorage hydration.
+Preserve source/version fields required by PR 08 `assumptionMetadata` and reason-tagged export rows.
 
 - [ ] **Step 2: Implement store/actions**
 
@@ -122,6 +127,7 @@ git commit -m feat-add-admin-reason-settings
 - [ ] **Step 1: Write tests**
 
 Fuel tests cover fuel price, equipment burn rates, fallback rate warning, version metadata, and estimated kg preview. Urgency tests cover fixed bucket display, editable global weights, global-only urgency editing for MVP, validation, reset defaults, and BNE board order preview.
+Fuel previews should verify that changed rates flow through `deriveHqReport` without changing export-row lineage semantics.
 
 - [ ] **Step 2: Implement pages**
 
@@ -150,11 +156,11 @@ git commit -m feat-add-admin-fuel-urgency-settings
 
 - [ ] **Step 1: Write tests**
 
-Assert reference data tables for tail/equipment and stand coordinates. Assert data-quality filters by port, source, issue type, status, and recency; detail panel shows tail, bay, source metadata, user note, and related event ids.
+Assert reference data tables for tail/equipment and stand coordinates. Assert data-quality filters by port, source, issue type, status, and recency; detail panel shows tail, bay, source metadata, user note, related event ids, PR 08 manual-off status, fallback-rate flags, and inferred-closure confidence where present.
 
 - [ ] **Step 2: Implement pages**
 
-Use table-first layout and compact badges for stale/conflicting/fallback states.
+Use table-first layout and compact badges for stale/conflicting/fallback states. Combine existing `deriveDataQualityTelemetry` event flags with PR 08 report/export row fields for manual-off, fallback assumption, inferred closure, and source-event traceability diagnostics.
 
 - [ ] **Step 3: Full verification and commit**
 
@@ -172,5 +178,5 @@ git commit -m feat-complete-admin-workbench
 ## Self-Review
 
 - Spec coverage: admin overview, reasons, fuel, urgency, reference data, settings snapshots, previews, validation, and data-quality diagnostics are covered.
-- Public interfaces: settings snapshot events are the only write path for admin changes.
+- Public interfaces: settings snapshot events are the only write path for admin changes; HQ previews reuse PR 08 report/export read-model contracts.
 - Handoff checks: full tests/build pass before cleanup.

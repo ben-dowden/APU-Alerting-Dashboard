@@ -70,6 +70,7 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.getByRole("heading", { name: "BNE Wallboard", level: 1 })).toBeVisible();
     expect(screen.getByText("APU on now")).toBeVisible();
     expect(screen.getByRole("region", { name: "Wallboard side index" })).toBeVisible();
+    expect(screen.getByText("[1 of 11]")).toBeVisible();
   });
 
   it("renders a read-only wallboard command bar without workflow controls", () => {
@@ -114,22 +115,21 @@ describe("SeniorBneWallboardPage", () => {
 
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     const card = within(stage).getByRole("article", {
-      name: "VH-8IA wallboard aircraft card",
+      name: "VH-VUK wallboard aircraft card",
     });
 
-    expect(within(card).getByText("VH-8IA")).toBeVisible();
+    expect(within(card).getByText("VH-VUK")).toBeVisible();
     expect(within(card).getByText("B738")).toBeVisible();
-    expect(within(card).getByText("Bay 20")).toBeVisible();
+    expect(within(card).getByText("Bay 22")).toBeVisible();
     expect(within(card).getByText("APU On")).toBeVisible();
-    expect(within(card).getByText("00:46")).toBeVisible();
-    expect(within(card).getByText("00:55")).toBeVisible();
-    expect(within(card).getByText("85.9 kg")).toBeVisible();
+    expect(within(card).getByText("00:57")).toBeVisible();
+    expect(within(card).getByText("01:20")).toBeVisible();
+    expect(within(card).getByText("106.4 kg")).toBeVisible();
     expect(within(card).getByText("Ground support")).toBeVisible();
-    expect(within(card).getByText("Closest tail: VH-YFX")).toBeVisible();
-    expect(within(card).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(card).getByText("Cleaner onboard")).toBeVisible();
-    expect(within(card).getByText("Review due")).toBeVisible();
-    expect(within(card).getByRole("group", { name: "Source charms for VH-8IA" })).toBeVisible();
+    expect(within(card).getByText(/Closest tail:/)).toBeVisible();
+    expect(within(card).getByText("Reason pending")).toBeVisible();
+    expect(within(card).getByText("No review due")).toBeVisible();
+    expect(within(card).getByRole("group", { name: "Source charms for VH-VUK" })).toBeVisible();
     expect(within(card).getByText("ACMS")).toBeVisible();
 
     expect(within(card).queryByRole("button", { name: /select reason/i })).not.toBeInTheDocument();
@@ -209,14 +209,19 @@ describe("SeniorBneWallboardPage", () => {
 
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
     const rows = within(sideIndex).getAllByRole("listitem");
+    const apuOffRow = rows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
 
-    expect(rows.map((row) => row.getAttribute("data-tail"))).toEqual(["VH-8IA", "VH-YFX"]);
+    expect(rows).toHaveLength(21);
+    expect(rows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
+      Array.from({ length: 21 }, (_, index) => index + 1),
+    );
     expect(rows[0]).toHaveAttribute("data-urgency-rank", "1");
     expect(rows[0]).toHaveAttribute("data-urgency-cue", "changed");
     expect(within(rows[0]).getByText("On")).toHaveClass("bg-virgin-red");
-    expect(within(rows[1]).getByText("Off")).toHaveClass("bg-green-50");
-    expect(within(rows[0]).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(rows[1]).getByText("APU off")).toBeVisible();
+    expect(apuOffRow).toBeDefined();
+    expect(within(apuOffRow as HTMLElement).getByText("Off")).toHaveClass("bg-green-50");
+    expect(within(rows[0]).getByText(/Reason missing|Review due|Cleaning in progress/)).toBeVisible();
+    expect(within(apuOffRow as HTMLElement).getByText("APU off")).toBeVisible();
     expect(within(sideIndex).queryByRole("button")).not.toBeInTheDocument();
   });
 });

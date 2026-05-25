@@ -6,7 +6,7 @@
 
 **Primary Fidelity Rule:** Optimize first for the Brisbane Senior Engineer workflow. HQ reporting and Admin are secondary; early HQ/Admin routes are navigation stubs only until the Senior Engineer command board, reason workflow, urgency/proximity/manual-off layer, and wallboard route are working from the event-derived read model.
 
-**Progress Snapshot (updated 2026-05-23 on `pr06-urgency-proximity-quality-manual-off`):** PR 01-03 are merged, PR 04 and PR 05 are complete and pending PR integration, and PR 06 is complete on its feature branch. PR 07 can start after PR 06 integration by reusing the urgency-sorted aircraft card read model, proximity context, source-quality charms, and passive manual-off state. PR 08-09 remain feature PRs; PR 10 remains the final cleanup pass. Latest PR 06 verification passed with `npm run test` (161 tests) and `npm run build`, with a focused clean-code rerun covering urgency ranking and BNE command-board integration.
+**Progress Snapshot (updated 2026-05-23 on `pr08-hq-reporting-exports`):** PR 01-03 are merged. PR 04-08 are complete on their feature branches in sequence, with PR 08 pushed to origin for manual PR creation/integration after PR 07. PR 09 is next and should build on the PR 08 HQ report/export read-model surfaces rather than recreating reporting derivation in Admin or HQ React components. Latest PR 08 verification passed with `npm run test` (32 files, 180 tests) and `npm run build`; on this Windows/OneDrive worktree, clear the ignored `.next` output and rerun if `next build` hits the known `.next` `EPERM` cleanup case.
 
 ---
 
@@ -58,20 +58,28 @@
    - Workflow implementation notes: `data_quality_flag_created` captures tail, port, bay, derived card state, source freshness, related source event ids, user/persona, issue type, note, and timestamp. `manual_apu_off_observed` moves the card and table into neutral pending state, pauses review prompts, and does not close official burn durations until trusted source confirmation or governed inference.
    - Clean-code handoff: no larger decomposition is required before PR 07. Keep extending domain/read-model helpers rather than replaying events in React; the ranking cleanup consolidated proximity input to `card.proximity.nearbyApuAircraft`.
 
-7. **PR 07: Wallboard Route** - **Pending after PR 06 completion**
+7. **PR 07: Wallboard Route** - **Complete 2026-05-23 on branch `pr07-wallboard-route`; pending PR integration**
    - Creates the fixed-frame, read-only TV surface from the same BNE read model.
    - Gate: 16:9 wallboard has no workflow actions, overlays, drawers, QR links, or prompts.
    - Carry-forward from PR 06: wallboard should consume the same urgency-sorted `AircraftCardReadModel` fields and passive card content for rank, bucket, proximity, source freshness, and manual-off pending status. It must not import prototype workflow actions, event stores, data-quality flag controls, drawer state, or desktop-only manual-off actions.
+   - PR 07 implementation notes for later PRs: the wallboard is fixed-frame and read-only, using shared aircraft card display primitives without importing workflow controls. Later surfaces should keep wallboard data passive and continue deriving operational state from `lib/read-models/index.ts`.
 
-8. **PR 08: HQ Reporting And Exports** - **Pending after PR 07**
+8. **PR 08: HQ Reporting And Exports** - **Complete 2026-05-23 on branch `pr08-hq-reporting-exports`; pushed for manual PR creation/integration**
    - Adds HQ reporting and reason-tagged export after the Senior Engineer workflow is proven.
    - Gate: export rows reconcile with HQ totals and include lineage/assumption metadata.
    - Carry-forward from PR 06: `data_quality_flag_created` events now carry source freshness, related event ids, derived state, and actor/persona context that HQ data-quality views can surface. Manual APU-off observations remain operational telemetry only and must not close reason-tagged burn rows until trusted confirmation or governed inference.
+   - PR 08 implementation notes: `deriveHqReport(events, settings, filters)` is exported through `lib/read-models/index.ts` and returns KPI totals, location/reason/unattributed rows, assumption metadata, data-quality summaries, and export-ready rows.
+   - Export implementation notes: `lib/export/reason-tagged-burn-export.ts` builds an XLSX workbook with `Summary`, `Reason Tagged Burn`, `Assumptions`, and `Data Quality` sheets. Export rows include source event ids, `aircraftGroundEventId`, `apuEventId`, fuel price and burn assumption lineage, reason taxonomy lineage, `settingsVersion`, manual-off status, closure type/confidence, and fallback flags.
+   - UI implementation notes: `/hq` and `/hq/reports` now render `HQReportsOverview`; shared BNE HQ report fixtures live in `lib/fixtures/hq-reporting.ts`, and shared HQ display formatting lives in `components/hq/format.ts`.
+   - Clean-code handoff: three PR 08 cleanup passes extracted shared reporting fixtures/formatters, narrowed export/read-model helper boundaries, and removed duplicate route/component derivation. Full verification passed with `npm run test` (32 files, 180 tests) and `npm run build`.
 
-9. **PR 09: HQ/Admin Workbench** - **Pending after PR 08**
+9. **PR 09: HQ/Admin Workbench** - **Next after PR 08 integration**
    - Adds functional admin screens for reason settings, fuel assumptions, urgency tiebreakers, reference data, persona preview, and data quality.
    - Gate: staged save/discard/reset behavior emits settings snapshot events.
    - Carry-forward from PR 06: urgency bucket order remains fixed in product logic; Admin should edit only the weighted tiebreakers that feed `rankAircraftCards`. Keep the future settings contract compatible with global defaults first and port overrides later.
+   - Carry-forward from PR 08: Admin previews should reuse `deriveHqReport`, `bneHqReportSettings`, and the report/export row contracts instead of replaying events in React or duplicating HQ fixtures.
+   - Settings handoff from PR 08: preserve settings version/source metadata so future `settings_changed` snapshots can reconcile with HQ `assumptionMetadata`, workbook assumption rows, and export row lineage.
+   - Data-quality handoff from PR 08: HQ/Admin diagnostics can combine existing `deriveDataQualityTelemetry` event flags with PR 08 export row fields for manual-off status, fallback burn assumptions, inferred closures, and source-event traceability.
 
 10. **PR 10: Migration Cleanup And Hardening** - **Partially accelerated on PR 05 branch; final pass still sequenced after PR 09**
     - Removes obsolete Vite paths and hardens scripts/docs only after the Next.js app is complete.

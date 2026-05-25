@@ -24,13 +24,13 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
   return (
     <section
       aria-label="Wallboard side index"
-      className="min-h-0 rounded-product border border-neutral-200 bg-white"
+      className="flex min-h-0 flex-col rounded-product border border-neutral-200 bg-white"
     >
       <div className="border-b border-neutral-200 px-4 py-3">
         <p className="text-xl font-semibold tracking-normal">Ground aircraft</p>
         <p className="text-sm font-medium text-neutral-500">Current BNE APU signal</p>
       </div>
-      <ol className="divide-y divide-neutral-100">
+      <ol className="min-h-0 flex-1 divide-y divide-neutral-100 overflow-y-auto">
         {aircraft.map((item) => {
           const changed = hasUrgencyCue(item);
 
