@@ -85,29 +85,39 @@ describe("BneCommandBoard", () => {
     ).toHaveClass("text-neutral-800");
   });
 
-  it("renders the ground aircraft side table", () => {
+  it("renders the dense ground aircraft ops table with LED APU state", () => {
     render(<BneCommandBoard />);
 
-    const table = screen.getByRole("table", { name: "Ground aircraft side table" });
+    const table = screen.getByRole("table", { name: "Ground aircraft ops table" });
     const rows = within(table).getAllByRole("row");
     expect(rows).toHaveLength(22);
+    expect(within(rows[0]).queryByText("Focus")).not.toBeInTheDocument();
 
-    const activeReasonRow = within(table).getByRole("row", { name: /VH-8IA/ });
+    const activeReasonRow = within(table).getByRole("row", {
+      name: /Show VH-8IA aircraft card/,
+    });
+    expect(activeReasonRow).toHaveAttribute("data-focus-tail", "VH-8IA");
     expect(within(activeReasonRow).getByText("Bay 20")).toBeVisible();
-    expect(within(activeReasonRow).getByText("On")).toBeVisible();
+    expect(within(activeReasonRow).getByRole("img", { name: "APU on" })).toHaveClass(
+      "bg-virgin-red",
+    );
+    expect(within(activeReasonRow).queryByText("On")).not.toBeInTheDocument();
     expect(within(activeReasonRow).getByText("46 min")).toBeVisible();
     expect(within(activeReasonRow).getByText("55 min")).toBeVisible();
     expect(within(activeReasonRow).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(activeReasonRow).getByRole("button", { name: "Focus VH-8IA" })).toHaveAttribute(
-      "data-focus-tail",
-      "VH-8IA",
-    );
+    expect(
+      within(activeReasonRow).queryByRole("button", { name: "Focus VH-8IA" }),
+    ).not.toBeInTheDocument();
 
-    const missingReasonRow = within(table).getByRole("row", { name: /VH-VUK/ });
+    const missingReasonRow = within(table).getByRole("row", {
+      name: /Show VH-VUK aircraft card/,
+    });
     expect(within(missingReasonRow).getByText("Reason pending")).toBeVisible();
 
-    const apuOffRow = within(table).getByRole("row", { name: /VH-YFX/ });
-    expect(within(apuOffRow).getByText("Off")).toBeVisible();
+    const apuOffRow = within(table).getByRole("row", {
+      name: /Show VH-YFX aircraft card/,
+    });
+    expect(within(apuOffRow).getByRole("img", { name: "APU off" })).toHaveClass("bg-green-600");
     expect(within(apuOffRow).getByText("APU off")).toBeVisible();
   });
 
