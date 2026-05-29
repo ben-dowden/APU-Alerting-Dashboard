@@ -96,12 +96,16 @@ describe("BneCommandBoard", () => {
     const rows = within(table).getAllByRole("row");
     expect(rows).toHaveLength(22);
     expect(within(rows[0]).queryByText("Focus")).not.toBeInTheDocument();
+    expect(within(rows[0]).getByText("Burn Elsp")).toBeVisible();
+    expect(within(rows[0]).getByText("Ground Time")).toBeVisible();
+    expect(within(rows[0]).queryByText("Elapsed")).not.toBeInTheDocument();
 
     const activeReasonRow = within(table).getByRole("row", {
       name: /Show VH-8IA aircraft card/,
     });
     expect(activeReasonRow).toHaveAttribute("data-focus-tail", "VH-8IA");
-    expect(within(activeReasonRow).getByText("Bay 20")).toBeVisible();
+    expect(within(activeReasonRow).getByLabelText("Bay 20")).toHaveTextContent("20");
+    expect(within(activeReasonRow).queryByText("Bay 20")).not.toBeInTheDocument();
     expect(within(activeReasonRow).getByRole("img", { name: "APU on" })).toHaveClass(
       "bg-virgin-red",
     );
@@ -115,6 +119,10 @@ describe("BneCommandBoard", () => {
     expect(
       within(activeReasonRow).queryByRole("button", { name: "Focus VH-8IA" }),
     ).not.toBeInTheDocument();
+
+    const unassignedBay = within(table).getByLabelText("Unassigned bay");
+    expect(unassignedBay).toHaveTextContent("U/A");
+    expect(unassignedBay).toHaveClass("text-virgin-red");
 
     const missingReasonRow = within(table).getByRole("row", {
       name: /Show VH-VUK aircraft card/,
