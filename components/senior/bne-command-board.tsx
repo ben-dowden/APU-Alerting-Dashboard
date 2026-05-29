@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import type { DomainEvent } from "@/lib/events";
@@ -28,6 +28,7 @@ import {
   type GroundAircraftState,
 } from "@/lib/read-models";
 
+import { aircraftCardDomId, aircraftFocusHighlightMs } from "./aircraft-card-focus";
 import { CommandBar } from "./command-bar";
 import { ScorecardBenchmarkBand } from "./scorecard-benchmark-band";
 import { AircraftBoard } from "./aircraft-board";
@@ -114,6 +115,8 @@ const sourceFreshnessForAircraft = (aircraft: GroundAircraftState, nowIso: strin
 
 export function BneCommandBoard() {
   const [workflowEvents, setWorkflowEvents] = useState<DomainEvent[]>([]);
+  const [focusedTail, setFocusedTail] = useState<string>();
+  const focusTimeoutRef = useRef<number | undefined>(undefined);
   const refreshWorkflowEvents = () => setWorkflowEvents(readWorkflowEvents());
   const boardEvents = useMemo(
     () => [...bneBaselineScenario.events, ...workflowEvents],
@@ -152,6 +155,14 @@ export function BneCommandBoard() {
 
   useEffect(() => {
     refreshWorkflowEvents();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        window.clearTimeout(focusTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleSelectReason = (
@@ -269,6 +280,23 @@ export function BneCommandBoard() {
     }));
   };
 
+  const handleFocusTail = (tail: string) => {
+    const cardElement = document.getElementById(aircraftCardDomId(tail));
+
+    setFocusedTail(tail);
+    cardElement?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    cardElement?.focus({ preventScroll: true });
+
+    if (focusTimeoutRef.current) {
+      window.clearTimeout(focusTimeoutRef.current);
+    }
+
+    focusTimeoutRef.current = window.setTimeout(() => {
+      setFocusedTail((currentTail) => (currentTail === tail ? undefined : currentTail));
+      focusTimeoutRef.current = undefined;
+    }, aircraftFocusHighlightMs);
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
@@ -283,6 +311,7 @@ export function BneCommandBoard() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <AircraftBoard
             aircraft={aircraftCards}
+            focusedTail={focusedTail}
             groundAircraft={board.groundAircraft}
             onAddReasonNote={handleAddReasonNote}
             onChangeReason={handleChangeReason}
@@ -293,7 +322,7 @@ export function BneCommandBoard() {
             onSelectReason={handleSelectReason}
             taxonomy={boardSettings.reasonTaxonomy}
           />
-          <GroundAircraftTable aircraft={prioritizedGroundAircraft} />
+          <GroundAircraftTable aircraft={prioritizedGroundAircraft} onFocusTail={handleFocusTail} />
         </div>
       </main>
     </div>

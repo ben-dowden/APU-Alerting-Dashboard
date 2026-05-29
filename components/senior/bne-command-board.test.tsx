@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearWorkflowEvents, readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import { BneCommandBoard } from "./bne-command-board";
@@ -9,6 +9,10 @@ describe("BneCommandBoard", () => {
   beforeEach(() => {
     clearWorkflowEvents();
     localStorage.clear();
+    Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
   });
 
   it("renders the compact command bar", () => {
@@ -119,6 +123,20 @@ describe("BneCommandBoard", () => {
     });
     expect(within(apuOffRow).getByRole("img", { name: "APU off" })).toHaveClass("bg-green-600");
     expect(within(apuOffRow).getByText("APU off")).toBeVisible();
+  });
+
+  it("snaps to the matching aircraft card when an ops table row is activated", async () => {
+    render(<BneCommandBoard />);
+
+    const table = screen.getByRole("table", { name: "Ground aircraft ops table" });
+    const row = within(table).getByRole("row", { name: /Show VH-8IA aircraft card/ });
+    const card = screen.getByRole("article", { name: "VH-8IA aircraft card" });
+
+    fireEvent.click(row);
+
+    await waitFor(() => expect(card).toHaveFocus());
+    expect(card).toHaveAttribute("data-focus-highlight", "true");
+    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
   });
 
   it("keeps the current reason through the local workflow event stream", async () => {
