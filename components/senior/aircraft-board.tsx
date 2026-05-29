@@ -5,12 +5,14 @@ import { DesktopAircraftCard, type ReasonWorkflowHandlers } from "./desktop-airc
 
 type AircraftBoardProps = {
   aircraft: AircraftCardReadModel[];
+  focusedTail?: string;
   groundAircraft: GroundAircraftState[];
   taxonomy: ReasonTaxonomySnapshot;
 } & ReasonWorkflowHandlers;
 
 export function AircraftBoard({
   aircraft,
+  focusedTail,
   groundAircraft,
   taxonomy,
   onSelectReason,
@@ -34,6 +36,7 @@ export function AircraftBoard({
           <DesktopAircraftCard
             aircraft={aircraftCard}
             groundAircraft={aircraftState}
+            isFocusHighlighted={focusedTail === aircraftCard.tail}
             key={aircraftCard.tail}
             onAddReasonNote={onAddReasonNote}
             onChangeReason={onChangeReason}

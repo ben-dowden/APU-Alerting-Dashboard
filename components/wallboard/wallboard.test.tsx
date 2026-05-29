@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SeniorBneWallboardPage from "@/app/senior/bne/wallboard/page";
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
+import { estimateWallboardOpsRailDensity, WallboardSideIndex } from "./wallboard-side-index";
 
 const aircraftCard = (tail: string, urgencyRank: number): AircraftCardReadModel => ({
   tail,
@@ -204,24 +205,95 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.getByText("[2 of 2]")).toBeVisible();
   });
 
-  it("renders an enlarged side index sorted by urgency with passive state cues", () => {
+  it("estimates wallboard ops table density from the rail height", () => {
+    expect(estimateWallboardOpsRailDensity(363)).toEqual({
+      rowHeightPx: 25,
+      rowsPerPage: 12,
+    });
+    expect(estimateWallboardOpsRailDensity(570)).toEqual({
+      rowHeightPx: 34,
+      rowsPerPage: 15,
+    });
+  });
+
+  it("renders a paged wallboard ops table with compact bay, elapsed, ground, and reason cues", () => {
+    vi.useFakeTimers();
+    const aircraft = Array.from({ length: 21 }, (_, index) =>
+      aircraftCard(`VH-${String(index + 1).padStart(3, "0")}`, index + 1),
+    );
+    aircraft[0] = { ...aircraft[0], bay: undefined, stand: undefined };
+
+    render(<WallboardSideIndex aircraft={aircraft} />);
+
+    const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
+    const table = within(sideIndex).getByRole("table", { name: "Wallboard ground aircraft ops table" });
+    const rows = within(table).getAllByRole("row");
+    const bodyRows = rows.slice(1);
+
+    expect(sideIndex).toHaveAttribute("data-rotation-interval-ms", "5000");
+    expect(sideIndex).toHaveAttribute("data-rows-per-page", "12");
+    expect(within(sideIndex).getByRole("heading", { name: "Aircraft on-ground" })).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+    expect(within(sideIndex).queryByText("[1 of 2]")).not.toBeInTheDocument();
+    expect(bodyRows).toHaveLength(12);
+    expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
+      Array.from({ length: 12 }, (_, index) => index + 1),
+    );
+    expect(within(rows[0]).getByText("Burn Elpsd / Grnd")).toBeVisible();
+    expect(within(rows[0]).queryByText("Elapsed / Ground")).not.toBeInTheDocument();
+    expect(within(rows[0]).queryByText("Elapsed")).not.toBeInTheDocument();
+    expect(within(rows[0]).queryByText("Ground")).not.toBeInTheDocument();
+    expect(within(bodyRows[0]).getByLabelText("Unassigned bay")).toHaveTextContent("U/A");
+    expect(within(bodyRows[0]).queryByText("Unassigned")).not.toBeInTheDocument();
+    expect(within(bodyRows[1]).getByLabelText("Bay 22")).toHaveTextContent("22");
+    expect(within(bodyRows[1]).queryByText("Bay 22")).not.toBeInTheDocument();
+    expect(within(bodyRows[0]).getByText("46m / 55m")).toBeVisible();
+    expect(within(bodyRows[0]).queryByText("46 min")).not.toBeInTheDocument();
+    expect(
+      within(bodyRows[0]).getByRole("img", { name: "Reason: Cleaning in progress" }),
+    ).toHaveClass("text-virgin-purple");
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(within(sideIndex).getByText("Page 2 of 2")).toBeVisible();
+    expect(within(sideIndex).queryByText("[2 of 2]")).not.toBeInTheDocument();
+    expect(within(table).queryByText("VH-001")).not.toBeInTheDocument();
+    expect(within(table).getByText("VH-013")).toBeVisible();
+  });
+
+  it("renders the wallboard ops table sorted by urgency with passive LED state", () => {
     render(<SeniorBneWallboardPage />);
 
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
-    const rows = within(sideIndex).getAllByRole("listitem");
-    const apuOffRow = rows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
+    const table = within(sideIndex).getByRole("table", { name: "Wallboard ground aircraft ops table" });
+    const rows = within(table).getAllByRole("row");
+    const bodyRows = rows.slice(1);
+    const apuOffRow = bodyRows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
 
-    expect(rows).toHaveLength(21);
-    expect(rows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
-      Array.from({ length: 21 }, (_, index) => index + 1),
+    expect(bodyRows).toHaveLength(12);
+    expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
+      Array.from({ length: 12 }, (_, index) => index + 1),
     );
-    expect(rows[0]).toHaveAttribute("data-urgency-rank", "1");
-    expect(rows[0]).toHaveAttribute("data-urgency-cue", "changed");
-    expect(within(rows[0]).getByText("On")).toHaveClass("bg-virgin-red");
-    expect(apuOffRow).toBeDefined();
-    expect(within(apuOffRow as HTMLElement).getByText("Off")).toHaveClass("bg-green-50");
-    expect(within(rows[0]).getByText(/Reason missing|Review due|Cleaning in progress/)).toBeVisible();
-    expect(within(apuOffRow as HTMLElement).getByText("APU off")).toBeVisible();
+    expect(bodyRows[0]).toHaveAttribute("data-urgency-rank", "1");
+    expect(within(bodyRows[0]).getByRole("img", { name: "APU on" })).toHaveClass(
+      "bg-virgin-red",
+    );
+    expect(within(bodyRows[0]).queryByText("On")).not.toBeInTheDocument();
+    if (apuOffRow) {
+      expect(within(apuOffRow).getByRole("img", { name: "APU off" })).toHaveClass("bg-green-600");
+      expect(within(apuOffRow).getByRole("img", { name: "Reason: APU off" })).toHaveAttribute(
+        "title",
+        "APU off",
+      );
+    }
+    expect(
+      within(bodyRows[0]).getByRole("img", {
+        name: /Reason: (Reason missing|Review due|Cleaning in progress)/,
+      }),
+    ).toBeVisible();
     expect(within(sideIndex).queryByRole("button")).not.toBeInTheDocument();
   });
 });

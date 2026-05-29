@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearWorkflowEvents, readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import { BneCommandBoard } from "./bne-command-board";
@@ -9,6 +9,10 @@ describe("BneCommandBoard", () => {
   beforeEach(() => {
     clearWorkflowEvents();
     localStorage.clear();
+    Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
   });
 
   it("renders the compact command bar", () => {
@@ -85,30 +89,62 @@ describe("BneCommandBoard", () => {
     ).toHaveClass("text-neutral-800");
   });
 
-  it("renders the ground aircraft side table", () => {
+  it("renders the dense ground aircraft ops table with LED APU state", () => {
     render(<BneCommandBoard />);
 
-    const table = screen.getByRole("table", { name: "Ground aircraft side table" });
+    const table = screen.getByRole("table", { name: "Ground aircraft ops table" });
     const rows = within(table).getAllByRole("row");
     expect(rows).toHaveLength(22);
+    expect(within(rows[0]).queryByText("Focus")).not.toBeInTheDocument();
 
-    const activeReasonRow = within(table).getByRole("row", { name: /VH-8IA/ });
+    const activeReasonRow = within(table).getByRole("row", {
+      name: /Show VH-8IA aircraft card/,
+    });
+    expect(activeReasonRow).toHaveAttribute("data-focus-tail", "VH-8IA");
     expect(within(activeReasonRow).getByText("Bay 20")).toBeVisible();
-    expect(within(activeReasonRow).getByText("On")).toBeVisible();
+    expect(within(activeReasonRow).getByRole("img", { name: "APU on" })).toHaveClass(
+      "bg-virgin-red",
+    );
+    expect(within(activeReasonRow).queryByText("On")).not.toBeInTheDocument();
     expect(within(activeReasonRow).getByText("46 min")).toBeVisible();
     expect(within(activeReasonRow).getByText("55 min")).toBeVisible();
-    expect(within(activeReasonRow).getByText("Cleaning in progress")).toBeVisible();
-    expect(within(activeReasonRow).getByRole("button", { name: "Focus VH-8IA" })).toHaveAttribute(
-      "data-focus-tail",
-      "VH-8IA",
+    expect(
+      within(activeReasonRow).getByRole("img", { name: "Reason: Cleaning in progress" }),
+    ).toHaveAttribute("title", "Cleaning in progress");
+    expect(within(activeReasonRow).queryByText("Cleaning in progress")).not.toBeInTheDocument();
+    expect(
+      within(activeReasonRow).queryByRole("button", { name: "Focus VH-8IA" }),
+    ).not.toBeInTheDocument();
+
+    const missingReasonRow = within(table).getByRole("row", {
+      name: /Show VH-VUK aircraft card/,
+    });
+    expect(
+      within(missingReasonRow).getByRole("img", { name: "Reason: Reason pending" }),
+    ).toHaveAttribute("title", "Reason pending");
+
+    const apuOffRow = within(table).getByRole("row", {
+      name: /Show VH-YFX aircraft card/,
+    });
+    expect(within(apuOffRow).getByRole("img", { name: "APU off" })).toHaveClass("bg-green-600");
+    expect(within(apuOffRow).getByRole("img", { name: "Reason: APU off" })).toHaveAttribute(
+      "title",
+      "APU off",
     );
+  });
 
-    const missingReasonRow = within(table).getByRole("row", { name: /VH-VUK/ });
-    expect(within(missingReasonRow).getByText("Reason pending")).toBeVisible();
+  it("snaps to the matching aircraft card when an ops table row is activated", async () => {
+    render(<BneCommandBoard />);
 
-    const apuOffRow = within(table).getByRole("row", { name: /VH-YFX/ });
-    expect(within(apuOffRow).getByText("Off")).toBeVisible();
-    expect(within(apuOffRow).getByText("APU off")).toBeVisible();
+    const table = screen.getByRole("table", { name: "Ground aircraft ops table" });
+    const row = within(table).getByRole("row", { name: /Show VH-8IA aircraft card/ });
+    const card = screen.getByRole("article", { name: "VH-8IA aircraft card" });
+
+    fireEvent.click(row);
+
+    await waitFor(() => expect(card).toHaveFocus());
+    expect(card).toHaveAttribute("data-focus-highlight", "true");
+    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
   });
 
   it("keeps the current reason through the local workflow event stream", async () => {

@@ -9,7 +9,9 @@ import type { AircraftCardReadModel, GroundAircraftState } from "@/lib/read-mode
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils/cn";
 
+import { aircraftCardDomId } from "./aircraft-card-focus";
 import { CardReasonDrawer } from "./card-reason-drawer";
 import {
   DataQualityFlagAction,
@@ -50,6 +52,7 @@ type ReasonCaptureHandlers = Pick<
 type DesktopAircraftCardProps = {
   aircraft: AircraftCardReadModel;
   groundAircraft: GroundAircraftState;
+  isFocusHighlighted?: boolean;
   taxonomy: ReasonTaxonomySnapshot;
 } & ReasonWorkflowHandlers;
 
@@ -77,6 +80,7 @@ const reviewLabel = (aircraft: AircraftCardReadModel) => {
 export function DesktopAircraftCard({
   aircraft,
   groundAircraft,
+  isFocusHighlighted = false,
   taxonomy,
   onSelectReason,
   onChangeReason,
@@ -98,8 +102,14 @@ export function DesktopAircraftCard({
   return (
     <Card
       aria-label={`${aircraft.tail} aircraft card`}
-      className="relative min-h-[260px]"
+      className={cn(
+        "relative min-h-[260px] outline-none transition-shadow",
+        isFocusHighlighted && "ring-2 ring-virgin-purple ring-offset-2",
+      )}
+      data-focus-highlight={isFocusHighlighted ? "true" : "false"}
+      id={aircraftCardDomId(aircraft.tail)}
       role="article"
+      tabIndex={-1}
     >
       <div className="flex h-full flex-col gap-4 p-4">
         <AircraftCardHeader
