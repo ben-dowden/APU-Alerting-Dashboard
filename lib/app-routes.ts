@@ -32,7 +32,7 @@ export const appRoutes = [
     href: "/senior/bne",
     navLabel: "BNE Command Board",
     eyebrow: "Senior Engineer",
-    title: "BNE APU Command Board",
+    title: "Daily APU Fuel Burn - Command",
     description:
       "Brisbane Senior Engineer surface for current APU runtime, estimated fuel kg, source quality, and reason-chain workflow.",
   },
@@ -42,7 +42,7 @@ export const appRoutes = [
     href: "/senior/bne/wallboard",
     navLabel: "BNE Wallboard",
     eyebrow: "Wallboard",
-    title: "BNE Wallboard",
+    title: "Daily APU Fuel Burn",
     description:
       "Read-only Brisbane operations display for the same APU-derived board state used by the Senior Engineer surface.",
   },

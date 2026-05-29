@@ -301,7 +301,6 @@ export function BneCommandBoard() {
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
         localTimeLabel={formatBneLocalTime(board.nowIso)}
-        port={board.port}
         sourceFreshnessLabel={sourceFreshnessLabel(board)}
         temperatureLabel={`${board.weather?.temperatureC ?? "--"}°C`}
       />
