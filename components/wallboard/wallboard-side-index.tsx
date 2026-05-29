@@ -55,8 +55,15 @@ const apuLedStatus = (aircraft: AircraftCardReadModel): ApuStatusLedState => {
   return aircraft.apuState;
 };
 
-const bayCode = (aircraft: AircraftCardReadModel) =>
-  (aircraft.bay ?? aircraft.stand ?? "Unassigned").replace(/^Bay\s+/i, "");
+const bayDisplay = (aircraft: AircraftCardReadModel) => {
+  const bay = aircraft.bay ?? aircraft.stand;
+
+  if (!bay || bay.toLowerCase() === "unassigned") {
+    return { code: "U/A", isUnassigned: true };
+  }
+
+  return { code: bay.replace(/^Bay\s+/i, ""), isUnassigned: false };
+};
 
 const compactMinutes = (minutes: number) => `${minutes}m`;
 
@@ -110,43 +117,58 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
         >
           <thead className="sticky top-0 z-10 bg-white">
             <tr className="border-b border-neutral-200 text-xs font-semibold uppercase tracking-normal text-neutral-500">
-              <th className="w-[76px] px-3 py-2">Tail</th>
-              <th className="w-[48px] px-2 py-2 text-center">Bay</th>
-              <th className="w-[38px] px-3 py-2 text-center">APU</th>
-              <th className="w-[92px] px-3 py-2 text-right">Elapsed / Ground</th>
-              <th className="w-[40px] px-3 py-2 text-center">Rsn</th>
+              <th className="w-[86px] px-3 py-1">Tail</th>
+              <th className="w-[62px] px-2 py-1 text-center">Bay</th>
+              <th className="w-[44px] px-3 py-1 text-center">APU</th>
+              <th className="w-[118px] px-3 py-1 text-right">Elapsed / Ground</th>
+              <th className="w-[48px] px-3 py-1 text-center">Rsn</th>
             </tr>
           </thead>
           <tbody>
-            {visibleAircraft.map((item) => (
-              <tr
-                className="h-[30px] border-b border-neutral-100 text-[12px] leading-4 last:border-b-0"
-                data-tail={item.tail}
-                data-urgency-rank={item.urgencyRank}
-                key={item.tail}
-              >
-                <th
-                  className="h-[30px] truncate px-3 py-0 font-semibold text-neutral-950"
-                  scope="row"
+            {visibleAircraft.map((item) => {
+              const bay = bayDisplay(item);
+
+              return (
+                <tr
+                  className="h-[32px] border-b border-neutral-100 text-[13px] leading-5 last:border-b-0"
+                  data-tail={item.tail}
+                  data-urgency-rank={item.urgencyRank}
+                  key={item.tail}
                 >
-                  {item.tail}
-                </th>
-                <td className="h-[30px] px-2 py-0 text-center">
-                  <Badge className="min-w-7 justify-center px-1.5 py-0 text-[11px]" variant="neutral">
-                    {bayCode(item)}
-                  </Badge>
-                </td>
-                <td className="h-[30px] px-3 py-0 text-center">
-                  <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
-                </td>
-                <td className="h-[30px] px-3 py-0 text-right font-semibold tabular-nums text-neutral-900">
-                  {compactMinutes(item.apuRuntimeMinutes)} / {compactMinutes(item.groundMinutes)}
-                </td>
-                <td className="h-[30px] px-3 py-0 text-center">
-                  <ReasonCharm label={apuSignal(item)} size="wallboard" />
-                </td>
-              </tr>
-            ))}
+                  <th
+                    className="h-[32px] truncate px-3 py-0 font-semibold text-neutral-950"
+                    scope="row"
+                  >
+                    {item.tail}
+                  </th>
+                  <td className="h-[32px] px-2 py-0 text-center">
+                    <Badge
+                      aria-label={bay.isUnassigned ? "Unassigned bay" : `Bay ${bay.code}`}
+                      className={
+                        bay.isUnassigned
+                          ? "min-w-9 justify-center gap-1 border-virgin-red/40 bg-virgin-red/5 px-1.5 py-0 text-[12px] text-virgin-red"
+                          : "min-w-8 justify-center px-1.5 py-0 text-[12px]"
+                      }
+                      variant={bay.isUnassigned ? "outline" : "neutral"}
+                    >
+                      <span>{bay.code}</span>
+                      {bay.isUnassigned ? (
+                        <span aria-hidden="true" className="size-1.5 rounded-full bg-virgin-red" />
+                      ) : null}
+                    </Badge>
+                  </td>
+                  <td className="h-[32px] px-3 py-0 text-center">
+                    <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
+                  </td>
+                  <td className="h-[32px] px-3 py-0 text-right font-semibold tabular-nums text-neutral-900">
+                    {compactMinutes(item.apuRuntimeMinutes)} / {compactMinutes(item.groundMinutes)}
+                  </td>
+                  <td className="h-[32px] px-3 py-0 text-center">
+                    <ReasonCharm label={apuSignal(item)} size="wallboard" />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

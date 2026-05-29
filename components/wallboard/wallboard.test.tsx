@@ -210,6 +210,7 @@ describe("SeniorBneWallboardPage", () => {
     const aircraft = Array.from({ length: 21 }, (_, index) =>
       aircraftCard(`VH-${String(index + 1).padStart(3, "0")}`, index + 1),
     );
+    aircraft[0] = { ...aircraft[0], bay: undefined, stand: undefined };
 
     render(<WallboardSideIndex aircraft={aircraft} />);
 
@@ -226,8 +227,10 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(rows[0]).getByText("Elapsed / Ground")).toBeVisible();
     expect(within(rows[0]).queryByText("Elapsed")).not.toBeInTheDocument();
     expect(within(rows[0]).queryByText("Ground")).not.toBeInTheDocument();
-    expect(within(bodyRows[0]).getByText("21")).toBeVisible();
-    expect(within(bodyRows[0]).queryByText("Bay 21")).not.toBeInTheDocument();
+    expect(within(bodyRows[0]).getByLabelText("Unassigned bay")).toHaveTextContent("U/A");
+    expect(within(bodyRows[0]).queryByText("Unassigned")).not.toBeInTheDocument();
+    expect(within(bodyRows[1]).getByLabelText("Bay 22")).toHaveTextContent("22");
+    expect(within(bodyRows[1]).queryByText("Bay 22")).not.toBeInTheDocument();
     expect(within(bodyRows[0]).getByText("46m / 55m")).toBeVisible();
     expect(within(bodyRows[0]).queryByText("46 min")).not.toBeInTheDocument();
     expect(
