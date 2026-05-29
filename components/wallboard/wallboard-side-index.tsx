@@ -107,41 +107,57 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
   return (
     <section
       aria-label="Wallboard side index"
-      className="relative flex min-h-0 flex-col border border-neutral-200 bg-white"
+      className="flex min-h-0 flex-col border border-neutral-200 bg-white [--ops-row-height:clamp(25px,calc((100vh-455px)/12),34px)]"
       data-rotation-interval-ms={rotationIntervalMs}
     >
+      <div className="flex h-8 shrink-0 items-center justify-between gap-3 border-b border-neutral-200 px-3">
+        <h2 className="text-sm font-semibold uppercase leading-none tracking-normal text-neutral-700">
+          Aircraft on-ground
+        </h2>
+        {pageCount > 1 ? (
+          <p
+            aria-live="polite"
+            className="text-sm font-semibold leading-none tabular-nums text-neutral-500"
+          >
+            Page {safePageIndex + 1} of {pageCount}
+          </p>
+        ) : null}
+      </div>
+
       <div className="min-h-0 flex-1 overflow-hidden">
         <table
           aria-label="Wallboard ground aircraft ops table"
-          className="h-[calc(100%-2rem)] w-full table-fixed border-collapse text-left"
+          className="grid w-full grid-rows-[24px_auto] border-collapse text-left"
         >
           <thead className="sticky top-0 z-10 bg-white">
-            <tr className="h-6 border-b border-neutral-200 text-[11px] font-semibold uppercase leading-none tracking-normal text-neutral-500">
-              <th className="w-[104px] px-3 py-0">Tail</th>
-              <th className="w-[72px] px-3 py-0 text-center">Bay</th>
-              <th className="w-[58px] px-3 py-0 text-center">APU</th>
-              <th className="w-[154px] whitespace-nowrap px-2 py-0 text-left">Burn Elpsd / Grnd</th>
-              <th className="w-[52px] px-3 py-0 text-center">Rsn</th>
+            <tr className="grid h-6 grid-cols-[104px_68px_56px_minmax(0,1fr)_52px] border-b border-neutral-200 text-[11px] font-semibold uppercase leading-none tracking-normal text-neutral-500">
+              <th className="flex items-center px-3 py-0">Tail</th>
+              <th className="flex items-center justify-center px-3 py-0">Bay</th>
+              <th className="flex items-center justify-center px-3 py-0">APU</th>
+              <th className="flex items-center whitespace-nowrap px-2 py-0 text-left">
+                Burn Elpsd / Grnd
+              </th>
+              <th className="flex items-center justify-center px-3 py-0">Rsn</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block">
             {visibleAircraft.map((item) => {
               const bay = bayDisplay(item);
 
               return (
                 <tr
-                  className="border-b border-neutral-100 text-base leading-6 last:border-b-0"
+                  className="grid h-[var(--ops-row-height)] grid-cols-[104px_68px_56px_minmax(0,1fr)_52px] border-b border-neutral-100 text-base leading-6 last:border-b-0"
                   data-tail={item.tail}
                   data-urgency-rank={item.urgencyRank}
                   key={item.tail}
                 >
                   <th
-                    className="truncate px-3 py-0 font-semibold text-neutral-950"
+                    className="flex min-w-0 items-center truncate px-3 py-0 font-semibold text-neutral-950"
                     scope="row"
                   >
                     {item.tail}
                   </th>
-                  <td className="px-3 py-0 text-center">
+                  <td className="flex items-center justify-center px-3 py-0 text-center">
                     <Badge
                       aria-label={bay.isUnassigned ? "Unassigned bay" : `Bay ${bay.code}`}
                       className={
@@ -157,13 +173,13 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
                       ) : null}
                     </Badge>
                   </td>
-                  <td className="px-3 py-0 text-center">
+                  <td className="flex items-center justify-center px-3 py-0 text-center">
                     <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
                   </td>
-                  <td className="px-2 py-0 text-left font-semibold tabular-nums text-neutral-900">
+                  <td className="flex items-center px-2 py-0 text-left font-semibold tabular-nums text-neutral-900">
                     {compactMinutes(item.apuRuntimeMinutes)} / {compactMinutes(item.groundMinutes)}
                   </td>
-                  <td className="px-3 py-0 text-center">
+                  <td className="flex items-center justify-center px-3 py-0 text-center">
                     <ReasonCharm label={apuSignal(item)} size="wallboard" />
                   </td>
                 </tr>
@@ -172,12 +188,6 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
           </tbody>
         </table>
       </div>
-
-      {pageCount > 1 ? (
-        <div className="absolute bottom-2 right-2 rounded-product bg-neutral-950 px-2.5 py-0.5 text-xs font-semibold text-white">
-          [{safePageIndex + 1} of {pageCount}]
-        </div>
-      ) : null}
     </section>
   );
 }

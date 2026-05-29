@@ -220,6 +220,9 @@ describe("SeniorBneWallboardPage", () => {
     const bodyRows = rows.slice(1);
 
     expect(sideIndex).toHaveAttribute("data-rotation-interval-ms", "5000");
+    expect(within(sideIndex).getByRole("heading", { name: "Aircraft on-ground" })).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+    expect(within(sideIndex).queryByText("[1 of 2]")).not.toBeInTheDocument();
     expect(bodyRows).toHaveLength(12);
     expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
       Array.from({ length: 12 }, (_, index) => index + 1),
@@ -237,13 +240,14 @@ describe("SeniorBneWallboardPage", () => {
     expect(
       within(bodyRows[0]).getByRole("img", { name: "Reason: Cleaning in progress" }),
     ).toHaveClass("text-virgin-purple");
-    expect(screen.getByText("[1 of 2]")).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(screen.getByText("[2 of 2]")).toBeVisible();
+    expect(within(sideIndex).getByText("Page 2 of 2")).toBeVisible();
+    expect(within(sideIndex).queryByText("[2 of 2]")).not.toBeInTheDocument();
     expect(within(table).queryByText("VH-001")).not.toBeInTheDocument();
     expect(within(table).getByText("VH-013")).toBeVisible();
   });
