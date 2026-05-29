@@ -65,7 +65,6 @@ export function SeniorWallboardLayout() {
       <div className="mx-auto flex aspect-video max-h-[calc(100vh-2rem)] min-h-[720px] w-full max-w-[1600px] flex-col overflow-hidden rounded-product border border-neutral-800 bg-neutral-100 text-neutral-950 shadow-2xl">
         <WallboardCommandBar
           localTimeLabel={formatBneLocalTime(board.nowIso)}
-          port={board.port}
           sourceFreshnessLabel={sourceFreshnessLabel(board)}
           temperatureLabel={`${board.weather?.temperatureC ?? "--"}°C`}
         />
