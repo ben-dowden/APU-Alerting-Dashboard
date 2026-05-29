@@ -204,24 +204,30 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.getByText("[2 of 2]")).toBeVisible();
   });
 
-  it("renders an enlarged side index sorted by urgency with passive state cues", () => {
+  it("renders a wallboard-scale ops table sorted by urgency with passive LED state", () => {
     render(<SeniorBneWallboardPage />);
 
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
-    const rows = within(sideIndex).getAllByRole("listitem");
-    const apuOffRow = rows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
+    const table = within(sideIndex).getByRole("table", { name: "Wallboard ground aircraft ops table" });
+    const rows = within(table).getAllByRole("row");
+    const bodyRows = rows.slice(1);
+    const apuOffRow = bodyRows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
 
-    expect(rows).toHaveLength(21);
-    expect(rows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
+    expect(bodyRows).toHaveLength(21);
+    expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
       Array.from({ length: 21 }, (_, index) => index + 1),
     );
-    expect(rows[0]).toHaveAttribute("data-urgency-rank", "1");
-    expect(rows[0]).toHaveAttribute("data-urgency-cue", "changed");
-    expect(within(rows[0]).getByText("On")).toHaveClass("bg-virgin-red");
+    expect(bodyRows[0]).toHaveAttribute("data-urgency-rank", "1");
+    expect(within(bodyRows[0]).getByRole("img", { name: "APU on" })).toHaveClass(
+      "bg-virgin-red",
+    );
+    expect(within(bodyRows[0]).queryByText("On")).not.toBeInTheDocument();
     expect(apuOffRow).toBeDefined();
-    expect(within(apuOffRow as HTMLElement).getByText("Off")).toHaveClass("bg-green-50");
-    expect(within(rows[0]).getByText(/Reason missing|Review due|Cleaning in progress/)).toBeVisible();
+    expect(within(apuOffRow as HTMLElement).getByRole("img", { name: "APU off" })).toHaveClass(
+      "bg-green-600",
+    );
     expect(within(apuOffRow as HTMLElement).getByText("APU off")).toBeVisible();
+    expect(within(bodyRows[0]).getByText(/Reason missing|Review due|Cleaning in progress/)).toBeVisible();
     expect(within(sideIndex).queryByRole("button")).not.toBeInTheDocument();
   });
 });

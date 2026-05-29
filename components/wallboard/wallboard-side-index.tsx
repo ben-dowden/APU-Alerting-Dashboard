@@ -1,6 +1,5 @@
+import { ApuStatusLed, type ApuStatusLedState } from "@/components/senior/apu-status-led";
 import type { AircraftCardReadModel } from "@/lib/read-models";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils/cn";
 
 type WallboardSideIndexProps = {
   aircraft: AircraftCardReadModel[];
@@ -18,57 +17,71 @@ const apuSignal = (aircraft: AircraftCardReadModel) => {
   return aircraft.currentReason?.categoryLabel ?? aircraft.statusLabel;
 };
 
-const hasUrgencyCue = (aircraft: AircraftCardReadModel) => aircraft.urgencyBucket !== "apu_off";
+const apuLedStatus = (aircraft: AircraftCardReadModel): ApuStatusLedState => {
+  if (aircraft.manualOffPending) {
+    return "pending";
+  }
+
+  return aircraft.apuState;
+};
 
 export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
   return (
     <section
       aria-label="Wallboard side index"
-      className="flex min-h-0 flex-col rounded-product border border-neutral-200 bg-white"
+      className="flex min-h-0 flex-col border border-neutral-200 bg-white"
     >
       <div className="border-b border-neutral-200 px-4 py-3">
-        <p className="text-xl font-semibold tracking-normal">Ground aircraft</p>
-        <p className="text-sm font-medium text-neutral-500">Current BNE APU signal</p>
+        <p className="text-lg font-semibold tracking-normal">Ground aircraft</p>
+        <p className="text-sm font-medium text-neutral-500">Current BNE APU and reason signal</p>
       </div>
-      <ol className="min-h-0 flex-1 divide-y divide-neutral-100 overflow-y-auto">
-        {aircraft.map((item) => {
-          const changed = hasUrgencyCue(item);
-
-          return (
-            <li
-              className={cn(
-                "flex min-h-20 items-center justify-between gap-3 border-l-4 px-4 py-3",
-                changed ? "border-l-virgin-red bg-red-50/40" : "border-l-transparent",
-              )}
-              data-tail={item.tail}
-              data-urgency-cue={changed ? "changed" : "steady"}
-              data-urgency-rank={item.urgencyRank}
-              key={item.tail}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-2xl font-semibold tracking-normal text-neutral-950">
-                  {item.tail}
-                </p>
-                <p className="mt-1 truncate text-base font-semibold text-neutral-600">
-                  {apuSignal(item)}
-                </p>
-                <p className="mt-1 text-sm font-medium text-neutral-500">
-                  {item.bay ?? "Unassigned"}
-                </p>
-              </div>
-              <Badge
-                variant={item.apuState === "on" ? "red" : "outline"}
-                className={cn(
-                  "shrink-0 px-3 py-1 text-sm",
-                  item.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined,
-                )}
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table
+          aria-label="Wallboard ground aircraft ops table"
+          className="w-full table-fixed text-left text-sm"
+        >
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr className="border-b border-neutral-200 text-xs font-semibold uppercase tracking-normal text-neutral-500">
+              <th className="w-[86px] px-3 py-2">Tail</th>
+              <th className="w-[74px] px-3 py-2">Bay</th>
+              <th className="w-[44px] px-3 py-2 text-center">APU</th>
+              <th className="w-[74px] px-3 py-2 text-right">Elapsed</th>
+              <th className="w-[74px] px-3 py-2 text-right">Ground</th>
+              <th className="px-3 py-2">Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {aircraft.map((item) => (
+              <tr
+                className="h-10 border-b border-neutral-100 last:border-b-0"
+                data-tail={item.tail}
+                data-urgency-rank={item.urgencyRank}
+                key={item.tail}
               >
-                {item.apuState === "on" ? "On" : "Off"}
-              </Badge>
-            </li>
-          );
-        })}
-      </ol>
+                <th
+                  className="truncate px-3 py-2 text-sm font-semibold text-neutral-950"
+                  scope="row"
+                >
+                  {item.tail}
+                </th>
+                <td className="truncate px-3 py-2 text-neutral-700">{item.bay ?? "Unassigned"}</td>
+                <td className="px-3 py-2 text-center">
+                  <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
+                </td>
+                <td className="px-3 py-2 text-right font-semibold tabular-nums text-neutral-900">
+                  {item.apuRuntimeMinutes} min
+                </td>
+                <td className="px-3 py-2 text-right font-semibold tabular-nums text-neutral-900">
+                  {item.groundMinutes} min
+                </td>
+                <td className="truncate px-3 py-2 font-medium text-neutral-700">
+                  {apuSignal(item)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
