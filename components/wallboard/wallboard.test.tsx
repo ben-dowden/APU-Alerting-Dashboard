@@ -220,9 +220,9 @@ describe("SeniorBneWallboardPage", () => {
     const bodyRows = rows.slice(1);
 
     expect(sideIndex).toHaveAttribute("data-rotation-interval-ms", "5000");
-    expect(bodyRows).toHaveLength(10);
+    expect(bodyRows).toHaveLength(12);
     expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
-      Array.from({ length: 10 }, (_, index) => index + 1),
+      Array.from({ length: 12 }, (_, index) => index + 1),
     );
     expect(within(rows[0]).getByText("Burn Elpsd / Grnd")).toBeVisible();
     expect(within(rows[0]).queryByText("Elapsed / Ground")).not.toBeInTheDocument();
@@ -237,15 +237,15 @@ describe("SeniorBneWallboardPage", () => {
     expect(
       within(bodyRows[0]).getByRole("img", { name: "Reason: Cleaning in progress" }),
     ).toHaveClass("text-virgin-purple");
-    expect(screen.getByText("[1 of 3]")).toBeVisible();
+    expect(screen.getByText("[1 of 2]")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(screen.getByText("[2 of 3]")).toBeVisible();
+    expect(screen.getByText("[2 of 2]")).toBeVisible();
     expect(within(table).queryByText("VH-001")).not.toBeInTheDocument();
-    expect(within(table).getByText("VH-011")).toBeVisible();
+    expect(within(table).getByText("VH-013")).toBeVisible();
   });
 
   it("renders the wallboard ops table sorted by urgency with passive LED state", () => {
@@ -257,9 +257,9 @@ describe("SeniorBneWallboardPage", () => {
     const bodyRows = rows.slice(1);
     const apuOffRow = bodyRows.find((row) => row.getAttribute("data-tail") === "VH-YFX");
 
-    expect(bodyRows).toHaveLength(10);
+    expect(bodyRows).toHaveLength(12);
     expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
-      Array.from({ length: 10 }, (_, index) => index + 1),
+      Array.from({ length: 12 }, (_, index) => index + 1),
     );
     expect(bodyRows[0]).toHaveAttribute("data-urgency-rank", "1");
     expect(within(bodyRows[0]).getByRole("img", { name: "APU on" })).toHaveClass(

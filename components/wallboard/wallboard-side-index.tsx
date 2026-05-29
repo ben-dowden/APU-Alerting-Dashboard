@@ -11,7 +11,7 @@ type WallboardSideIndexProps = {
   aircraft: AircraftCardReadModel[];
 };
 
-const rowsPerPage = 10;
+const rowsPerPage = 12;
 const rotationIntervalMs = 5000;
 
 const chunkAircraft = (aircraft: AircraftCardReadModel[]) => {
@@ -113,14 +113,14 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
       <div className="min-h-0 flex-1 overflow-hidden">
         <table
           aria-label="Wallboard ground aircraft ops table"
-          className="w-full table-fixed border-collapse text-left"
+          className="h-[calc(100%-2rem)] w-full table-fixed border-collapse text-left"
         >
           <thead className="sticky top-0 z-10 bg-white">
-            <tr className="h-[21px] border-b border-neutral-200 text-[11px] font-semibold uppercase leading-none tracking-normal text-neutral-500">
-              <th className="w-[94px] px-3 py-0">Tail</th>
-              <th className="w-[66px] px-2 py-0 text-center">Bay</th>
-              <th className="w-[42px] px-2 py-0 text-center">APU</th>
-              <th className="w-[170px] whitespace-nowrap px-1 py-0 text-left">Burn Elpsd / Grnd</th>
+            <tr className="h-6 border-b border-neutral-200 text-[11px] font-semibold uppercase leading-none tracking-normal text-neutral-500">
+              <th className="w-[104px] px-3 py-0">Tail</th>
+              <th className="w-[72px] px-3 py-0 text-center">Bay</th>
+              <th className="w-[58px] px-3 py-0 text-center">APU</th>
+              <th className="w-[154px] whitespace-nowrap px-2 py-0 text-left">Burn Elpsd / Grnd</th>
               <th className="w-[52px] px-3 py-0 text-center">Rsn</th>
             </tr>
           </thead>
@@ -130,24 +130,24 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
 
               return (
                 <tr
-                  className="h-[34px] border-b border-neutral-100 text-[14px] leading-5 last:border-b-0"
+                  className="border-b border-neutral-100 text-base leading-6 last:border-b-0"
                   data-tail={item.tail}
                   data-urgency-rank={item.urgencyRank}
                   key={item.tail}
                 >
                   <th
-                    className="h-[34px] truncate px-3 py-0 font-semibold text-neutral-950"
+                    className="truncate px-3 py-0 font-semibold text-neutral-950"
                     scope="row"
                   >
                     {item.tail}
                   </th>
-                  <td className="h-[34px] px-2 py-0 text-center">
+                  <td className="px-3 py-0 text-center">
                     <Badge
                       aria-label={bay.isUnassigned ? "Unassigned bay" : `Bay ${bay.code}`}
                       className={
                         bay.isUnassigned
-                          ? "min-w-9 justify-center gap-1 border-virgin-red/40 bg-virgin-red/5 px-1.5 py-0 text-[13px] text-virgin-red"
-                          : "min-w-8 justify-center px-1.5 py-0 text-[13px]"
+                          ? "min-w-10 justify-center gap-1 border-virgin-red/40 bg-virgin-red/5 px-1.5 py-0 text-[15px] text-virgin-red"
+                          : "min-w-9 justify-center px-1.5 py-0 text-[15px]"
                       }
                       variant={bay.isUnassigned ? "outline" : "neutral"}
                     >
@@ -157,13 +157,13 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
                       ) : null}
                     </Badge>
                   </td>
-                  <td className="h-[34px] px-2 py-0 text-center">
+                  <td className="px-3 py-0 text-center">
                     <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
                   </td>
-                  <td className="h-[34px] px-1 py-0 text-left font-semibold tabular-nums text-neutral-900">
+                  <td className="px-2 py-0 text-left font-semibold tabular-nums text-neutral-900">
                     {compactMinutes(item.apuRuntimeMinutes)} / {compactMinutes(item.groundMinutes)}
                   </td>
-                  <td className="h-[34px] px-3 py-0 text-center">
+                  <td className="px-3 py-0 text-center">
                     <ReasonCharm label={apuSignal(item)} size="wallboard" />
                   </td>
                 </tr>
