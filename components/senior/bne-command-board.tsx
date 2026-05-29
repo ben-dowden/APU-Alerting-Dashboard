@@ -308,7 +308,7 @@ export function BneCommandBoard() {
 
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
         <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AircraftBoard
             aircraft={aircraftCards}
             focusedTail={focusedTail}

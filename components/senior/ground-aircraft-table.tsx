@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import type { GroundAircraftState } from "@/lib/read-models";
 
 import { ApuStatusLed, type ApuStatusLedState } from "./apu-status-led";
+import { ReasonCharm } from "./reason-charm";
 
 type GroundAircraftTableProps = {
   aircraft: GroundAircraftState[];
@@ -52,7 +53,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
         <div className="max-h-[640px] overflow-auto lg:max-h-[calc(100vh-18rem)]">
           <table
             aria-label="Ground aircraft ops table"
-            className="w-full min-w-[360px] table-fixed text-left text-[12px]"
+            className="w-full min-w-[336px] table-fixed border-collapse text-left text-[12px]"
           >
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-neutral-200 text-[11px] font-semibold uppercase tracking-normal text-neutral-500">
@@ -61,14 +62,14 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                 <th className="w-[34px] px-2 py-1.5 text-center">APU</th>
                 <th className="w-[58px] px-2 py-1.5 text-right">Elapsed</th>
                 <th className="w-[70px] px-2 py-1.5 text-right">Ground</th>
-                <th className="px-2 py-1.5">Reason</th>
+                <th className="w-[38px] px-2 py-1.5 text-center">Rsn</th>
               </tr>
             </thead>
             <tbody>
               {aircraft.map((item) => (
                 <tr
                   aria-label={`Show ${item.tail} aircraft card`}
-                  className="h-[34px] cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple"
+                  className="h-[27px] cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple"
                   data-focus-tail={item.tail}
                   key={item.tail}
                   onClick={() => onFocusTail?.(item.tail)}
@@ -76,22 +77,24 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                   tabIndex={0}
                 >
                   <th
-                    className="truncate px-2 py-1 text-[12px] font-semibold text-neutral-950"
+                    className="truncate px-2 py-0.5 text-[12px] font-semibold text-neutral-950"
                     scope="row"
                   >
                     {item.tail}
                   </th>
-                  <td className="truncate px-2 py-1 text-neutral-700">{item.bay ?? "Unassigned"}</td>
-                  <td className="px-2 py-1 text-center">
+                  <td className="truncate px-2 py-0.5 text-neutral-700">{item.bay ?? "Unassigned"}</td>
+                  <td className="px-2 py-0.5 text-center">
                     <ApuStatusLed status={apuLedStatus(item)} />
                   </td>
-                  <td className="px-2 py-1 text-right font-medium tabular-nums text-neutral-800">
+                  <td className="px-2 py-0.5 text-right font-medium tabular-nums text-neutral-800">
                     {item.apuRuntimeMinutes} min
                   </td>
-                  <td className="px-2 py-1 text-right font-medium tabular-nums text-neutral-800">
+                  <td className="px-2 py-0.5 text-right font-medium tabular-nums text-neutral-800">
                     {item.groundMinutes} min
                   </td>
-                  <td className="truncate px-2 py-1 text-neutral-700">{apuSignal(item)}</td>
+                  <td className="px-2 py-0.5 text-center">
+                    <ReasonCharm label={apuSignal(item)} />
+                  </td>
                 </tr>
               ))}
             </tbody>

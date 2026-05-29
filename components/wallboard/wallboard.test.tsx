@@ -226,8 +226,14 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(apuOffRow as HTMLElement).getByRole("img", { name: "APU off" })).toHaveClass(
       "bg-green-600",
     );
-    expect(within(apuOffRow as HTMLElement).getByText("APU off")).toBeVisible();
-    expect(within(bodyRows[0]).getByText(/Reason missing|Review due|Cleaning in progress/)).toBeVisible();
+    expect(
+      within(apuOffRow as HTMLElement).getByRole("img", { name: "Reason: APU off" }),
+    ).toHaveAttribute("title", "APU off");
+    expect(
+      within(bodyRows[0]).getByRole("img", {
+        name: /Reason: (Reason missing|Review due|Cleaning in progress)/,
+      }),
+    ).toBeVisible();
     expect(within(sideIndex).queryByRole("button")).not.toBeInTheDocument();
   });
 });

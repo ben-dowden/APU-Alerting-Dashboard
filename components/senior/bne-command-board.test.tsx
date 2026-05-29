@@ -108,7 +108,10 @@ describe("BneCommandBoard", () => {
     expect(within(activeReasonRow).queryByText("On")).not.toBeInTheDocument();
     expect(within(activeReasonRow).getByText("46 min")).toBeVisible();
     expect(within(activeReasonRow).getByText("55 min")).toBeVisible();
-    expect(within(activeReasonRow).getByText("Cleaning in progress")).toBeVisible();
+    expect(
+      within(activeReasonRow).getByRole("img", { name: "Reason: Cleaning in progress" }),
+    ).toHaveAttribute("title", "Cleaning in progress");
+    expect(within(activeReasonRow).queryByText("Cleaning in progress")).not.toBeInTheDocument();
     expect(
       within(activeReasonRow).queryByRole("button", { name: "Focus VH-8IA" }),
     ).not.toBeInTheDocument();
@@ -116,13 +119,18 @@ describe("BneCommandBoard", () => {
     const missingReasonRow = within(table).getByRole("row", {
       name: /Show VH-VUK aircraft card/,
     });
-    expect(within(missingReasonRow).getByText("Reason pending")).toBeVisible();
+    expect(
+      within(missingReasonRow).getByRole("img", { name: "Reason: Reason pending" }),
+    ).toHaveAttribute("title", "Reason pending");
 
     const apuOffRow = within(table).getByRole("row", {
       name: /Show VH-YFX aircraft card/,
     });
     expect(within(apuOffRow).getByRole("img", { name: "APU off" })).toHaveClass("bg-green-600");
-    expect(within(apuOffRow).getByText("APU off")).toBeVisible();
+    expect(within(apuOffRow).getByRole("img", { name: "Reason: APU off" })).toHaveAttribute(
+      "title",
+      "APU off",
+    );
   });
 
   it("snaps to the matching aircraft card when an ops table row is activated", async () => {
