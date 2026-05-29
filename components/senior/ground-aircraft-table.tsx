@@ -49,12 +49,6 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
       className="xl:sticky xl:top-4 xl:self-start"
     >
       <div className="border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 px-3 py-2">
-          <p className="text-xs font-semibold text-neutral-950">Ground aircraft</p>
-          <p className="text-[11px] font-medium text-neutral-500">
-            Current BNE APU and reason signal
-          </p>
-        </div>
         <div className="max-h-[640px] overflow-auto lg:max-h-[calc(100vh-18rem)]">
           <table
             aria-label="Ground aircraft ops table"
@@ -66,7 +60,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                 <th className="w-[64px] px-2 py-1.5">Bay</th>
                 <th className="w-[34px] px-2 py-1.5 text-center">APU</th>
                 <th className="w-[58px] px-2 py-1.5 text-right">Elapsed</th>
-                <th className="w-[58px] px-2 py-1.5 text-right">Ground</th>
+                <th className="w-[70px] px-2 py-1.5 text-right">Ground</th>
                 <th className="px-2 py-1.5">Reason</th>
               </tr>
             </thead>
@@ -74,7 +68,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
               {aircraft.map((item) => (
                 <tr
                   aria-label={`Show ${item.tail} aircraft card`}
-                  className="h-7 cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple"
+                  className="h-[34px] cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple"
                   data-focus-tail={item.tail}
                   key={item.tail}
                   onClick={() => onFocusTail?.(item.tail)}
