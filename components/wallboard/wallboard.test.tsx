@@ -68,17 +68,27 @@ describe("SeniorBneWallboardPage", () => {
   it("renders the read-only BNE wallboard shell", () => {
     render(<SeniorBneWallboardPage />);
 
-    expect(screen.getByRole("heading", { name: "BNE Wallboard", level: 1 })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Daily APU Fuel Burn", level: 1 })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "BNE Wallboard", level: 1 })).not.toBeInTheDocument();
     expect(screen.getByText("APU on now")).toBeVisible();
     expect(screen.getByRole("region", { name: "Wallboard side index" })).toBeVisible();
     expect(screen.getByText("[1 of 11]")).toBeVisible();
   });
 
-  it("renders a read-only wallboard command bar without workflow controls", () => {
+  it("renders a quiet wallboard command bar without workflow controls or mode labels", () => {
     render(<SeniorBneWallboardPage />);
 
-    expect(screen.getByText("Read-only TV mode")).toBeVisible();
-    expect(screen.getByText("Senior Engineer / Wallboard")).toBeVisible();
+    const header = screen.getByRole("banner");
+
+    expect(
+      within(header).getByRole("heading", { name: "Daily APU Fuel Burn", level: 1 }),
+    ).toBeVisible();
+    expect(within(header).queryByText("BNE")).not.toBeInTheDocument();
+    expect(within(header).queryByText("Senior Engineer / Wallboard")).not.toBeInTheDocument();
+    expect(within(header).queryByText("Read-only TV mode")).not.toBeInTheDocument();
+    expect(within(header).getByText("24°C")).toBeVisible();
+    expect(within(header).getByText(/Feed fresh/i)).toBeVisible();
+    expect(within(header).getByText("18:55 AEST")).toBeVisible();
     expect(screen.queryByText(/scenario/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /manual refresh/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /admin/i })).not.toBeInTheDocument();
