@@ -15,19 +15,69 @@ describe("BneCommandBoard", () => {
     });
   });
 
-  it("renders the compact command bar", () => {
+  it("renders the production command bar with an area menu", () => {
     render(<BneCommandBoard />);
 
-    expect(screen.getByRole("heading", { name: "BNE APU Command Board", level: 1 })).toBeVisible();
-    expect(screen.getAllByText("BNE")[0]).toBeVisible();
-    expect(screen.getByText("Senior Engineer")).toBeVisible();
-    expect(screen.getByText("24°C")).toBeVisible();
-    expect(screen.queryByText(/METAR/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Feed fresh/i)).toBeVisible();
-    expect(screen.getByText("18:55 AEST")).toBeVisible();
-    expect(screen.getByRole("link", { name: /Wallboard/i })).toHaveAttribute(
+    const header = screen.getByRole("banner");
+
+    expect(
+      within(header).getByRole("heading", {
+        name: "Daily APU Fuel Burn - Command",
+        level: 1,
+      }),
+    ).toBeVisible();
+    expect(within(header).queryByText("BNE")).not.toBeInTheDocument();
+    expect(within(header).queryByText("Senior Engineer")).not.toBeInTheDocument();
+    expect(within(header).getByText("24°C")).toBeVisible();
+    expect(within(header).queryByText(/METAR/i)).not.toBeInTheDocument();
+    expect(within(header).getByText(/Feed fresh/i)).toBeVisible();
+    expect(within(header).getByText("18:55 AEST")).toBeVisible();
+    expect(within(header).queryByRole("link", { name: "Wallboard" })).not.toBeInTheDocument();
+    expect(within(header).queryByRole("link", { name: /HQ/i })).not.toBeInTheDocument();
+    expect(within(header).queryByRole("link", { name: /Admin/i })).not.toBeInTheDocument();
+
+    const areaMenuButton = within(header).getByRole("button", { name: "Open area menu" });
+    expect(areaMenuButton).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(areaMenuButton);
+
+    expect(areaMenuButton).toHaveAttribute("aria-expanded", "true");
+    const areaMenu = within(header).getByRole("navigation", { name: "Area menu" });
+    expect(within(areaMenu).getByRole("link", { name: "Wallboard" })).toHaveAttribute(
       "href",
       "/senior/bne/wallboard",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "HQ Monitoring" })).toHaveAttribute(
+      "href",
+      "/hq",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "HQ Reports" })).toHaveAttribute(
+      "href",
+      "/hq/reports",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Data Quality" })).toHaveAttribute(
+      "href",
+      "/hq/data-quality",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Admin Workbench" })).toHaveAttribute(
+      "href",
+      "/admin",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Reason Settings" })).toHaveAttribute(
+      "href",
+      "/admin/reasons",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Fuel Settings" })).toHaveAttribute(
+      "href",
+      "/admin/fuel",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Urgency Ranking" })).toHaveAttribute(
+      "href",
+      "/admin/urgency",
+    );
+    expect(within(areaMenu).getByRole("link", { name: "Reference Data" })).toHaveAttribute(
+      "href",
+      "/admin/reference-data",
     );
   });
 
