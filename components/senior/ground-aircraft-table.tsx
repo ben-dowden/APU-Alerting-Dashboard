@@ -64,16 +64,24 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
         <div className="max-h-[640px] overflow-auto lg:max-h-[calc(100vh-18rem)]">
           <table
             aria-label="Ground aircraft ops table"
-            className="w-full min-w-[336px] table-fixed border-collapse text-left text-[12px]"
+            className="w-full min-w-[354px] table-fixed border-collapse text-left text-[12px]"
           >
+            <colgroup>
+              <col className="w-[82px]" />
+              <col className="w-[44px]" />
+              <col className="w-[38px]" />
+              <col className="w-[68px]" />
+              <col className="w-[86px]" />
+              <col className="w-[36px]" />
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-white">
               <tr className="border-b border-neutral-200 text-[11px] font-semibold uppercase tracking-normal text-neutral-500">
-                <th className="w-[72px] px-2 py-1.5">Tail</th>
-                <th className="w-[64px] px-2 py-1.5 text-center">Bay</th>
-                <th className="w-[34px] px-2 py-1.5 text-center">APU</th>
-                <th className="w-[58px] px-2 py-1.5 text-right">Burn Elsp</th>
-                <th className="w-[78px] px-2 py-1.5 text-right">Ground Time</th>
-                <th className="w-[38px] px-2 py-1.5 text-center">Rsn</th>
+                <th className="px-2 py-1.5">Tail</th>
+                <th className="px-1 py-1.5 text-center">Bay</th>
+                <th className="px-1 py-1.5 text-center">APU</th>
+                <th className="px-2 py-1.5 text-right">Burn Elsp</th>
+                <th className="px-2 py-1.5 text-right">Ground Time</th>
+                <th className="px-1 py-1.5 text-center">Rsn</th>
               </tr>
             </thead>
             <tbody>
@@ -96,7 +104,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                     >
                       {item.tail}
                     </th>
-                    <td className="px-2 py-0.5 text-center">
+                    <td className="px-1 py-0.5 text-center">
                       <Badge
                         aria-label={bay.isUnassigned ? "Unassigned bay" : `Bay ${bay.code}`}
                         className={
@@ -115,7 +123,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                         ) : null}
                       </Badge>
                     </td>
-                    <td className="px-2 py-0.5 text-center">
+                    <td className="px-1 py-0.5 text-center">
                       <ApuStatusLed status={apuLedStatus(item)} />
                     </td>
                     <td className="px-2 py-0.5 text-right font-medium tabular-nums text-neutral-800">
@@ -124,7 +132,7 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                     <td className="px-2 py-0.5 text-right font-medium tabular-nums text-neutral-800">
                       {item.groundMinutes} min
                     </td>
-                    <td className="px-2 py-0.5 text-center">
+                    <td className="px-1 py-0.5 text-center">
                       <ReasonCharm label={apuSignal(item)} />
                     </td>
                   </tr>
