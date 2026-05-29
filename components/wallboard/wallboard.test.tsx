@@ -224,7 +224,8 @@ describe("SeniorBneWallboardPage", () => {
     expect(bodyRows.map((row) => Number(row.getAttribute("data-urgency-rank")))).toEqual(
       Array.from({ length: 10 }, (_, index) => index + 1),
     );
-    expect(within(rows[0]).getByText("Elapsed / Ground")).toBeVisible();
+    expect(within(rows[0]).getByText("Burn Elpsd / Grnd")).toBeVisible();
+    expect(within(rows[0]).queryByText("Elapsed / Ground")).not.toBeInTheDocument();
     expect(within(rows[0]).queryByText("Elapsed")).not.toBeInTheDocument();
     expect(within(rows[0]).queryByText("Ground")).not.toBeInTheDocument();
     expect(within(bodyRows[0]).getByLabelText("Unassigned bay")).toHaveTextContent("U/A");

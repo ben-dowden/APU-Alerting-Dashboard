@@ -76,7 +76,7 @@ export function SeniorWallboardLayout() {
           scorecard={scorecard}
         />
 
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] gap-4 px-6 pb-6">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_440px] gap-4 px-6 pb-6">
           <WallboardAircraftCarousel aircraft={aircraftCards} />
 
           <WallboardSideIndex aircraft={aircraftCards} />

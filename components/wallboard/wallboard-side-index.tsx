@@ -116,12 +116,12 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
           className="w-full table-fixed border-collapse text-left"
         >
           <thead className="sticky top-0 z-10 bg-white">
-            <tr className="border-b border-neutral-200 text-xs font-semibold uppercase tracking-normal text-neutral-500">
-              <th className="w-[86px] px-3 py-1">Tail</th>
-              <th className="w-[62px] px-2 py-1 text-center">Bay</th>
-              <th className="w-[44px] px-3 py-1 text-center">APU</th>
-              <th className="w-[118px] px-3 py-1 text-right">Elapsed / Ground</th>
-              <th className="w-[48px] px-3 py-1 text-center">Rsn</th>
+            <tr className="h-[21px] border-b border-neutral-200 text-[11px] font-semibold uppercase leading-none tracking-normal text-neutral-500">
+              <th className="w-[94px] px-3 py-0">Tail</th>
+              <th className="w-[66px] px-2 py-0 text-center">Bay</th>
+              <th className="w-[42px] px-2 py-0 text-center">APU</th>
+              <th className="w-[170px] whitespace-nowrap px-1 py-0 text-left">Burn Elpsd / Grnd</th>
+              <th className="w-[52px] px-3 py-0 text-center">Rsn</th>
             </tr>
           </thead>
           <tbody>
@@ -130,24 +130,24 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
 
               return (
                 <tr
-                  className="h-[32px] border-b border-neutral-100 text-[13px] leading-5 last:border-b-0"
+                  className="h-[34px] border-b border-neutral-100 text-[14px] leading-5 last:border-b-0"
                   data-tail={item.tail}
                   data-urgency-rank={item.urgencyRank}
                   key={item.tail}
                 >
                   <th
-                    className="h-[32px] truncate px-3 py-0 font-semibold text-neutral-950"
+                    className="h-[34px] truncate px-3 py-0 font-semibold text-neutral-950"
                     scope="row"
                   >
                     {item.tail}
                   </th>
-                  <td className="h-[32px] px-2 py-0 text-center">
+                  <td className="h-[34px] px-2 py-0 text-center">
                     <Badge
                       aria-label={bay.isUnassigned ? "Unassigned bay" : `Bay ${bay.code}`}
                       className={
                         bay.isUnassigned
-                          ? "min-w-9 justify-center gap-1 border-virgin-red/40 bg-virgin-red/5 px-1.5 py-0 text-[12px] text-virgin-red"
-                          : "min-w-8 justify-center px-1.5 py-0 text-[12px]"
+                          ? "min-w-9 justify-center gap-1 border-virgin-red/40 bg-virgin-red/5 px-1.5 py-0 text-[13px] text-virgin-red"
+                          : "min-w-8 justify-center px-1.5 py-0 text-[13px]"
                       }
                       variant={bay.isUnassigned ? "outline" : "neutral"}
                     >
@@ -157,13 +157,13 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
                       ) : null}
                     </Badge>
                   </td>
-                  <td className="h-[32px] px-3 py-0 text-center">
+                  <td className="h-[34px] px-2 py-0 text-center">
                     <ApuStatusLed size="wallboard" status={apuLedStatus(item)} />
                   </td>
-                  <td className="h-[32px] px-3 py-0 text-right font-semibold tabular-nums text-neutral-900">
+                  <td className="h-[34px] px-1 py-0 text-left font-semibold tabular-nums text-neutral-900">
                     {compactMinutes(item.apuRuntimeMinutes)} / {compactMinutes(item.groundMinutes)}
                   </td>
-                  <td className="h-[32px] px-3 py-0 text-center">
+                  <td className="h-[34px] px-3 py-0 text-center">
                     <ReasonCharm label={apuSignal(item)} size="wallboard" />
                   </td>
                 </tr>
