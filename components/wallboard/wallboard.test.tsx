@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SeniorBneWallboardPage from "@/app/senior/bne/wallboard/page";
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
-import { WallboardSideIndex } from "./wallboard-side-index";
+import { estimateWallboardOpsRailDensity, WallboardSideIndex } from "./wallboard-side-index";
 
 const aircraftCard = (tail: string, urgencyRank: number): AircraftCardReadModel => ({
   tail,
@@ -205,6 +205,17 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.getByText("[2 of 2]")).toBeVisible();
   });
 
+  it("estimates wallboard ops table density from the rail height", () => {
+    expect(estimateWallboardOpsRailDensity(363)).toEqual({
+      rowHeightPx: 25,
+      rowsPerPage: 12,
+    });
+    expect(estimateWallboardOpsRailDensity(570)).toEqual({
+      rowHeightPx: 34,
+      rowsPerPage: 15,
+    });
+  });
+
   it("renders a paged wallboard ops table with compact bay, elapsed, ground, and reason cues", () => {
     vi.useFakeTimers();
     const aircraft = Array.from({ length: 21 }, (_, index) =>
@@ -220,6 +231,7 @@ describe("SeniorBneWallboardPage", () => {
     const bodyRows = rows.slice(1);
 
     expect(sideIndex).toHaveAttribute("data-rotation-interval-ms", "5000");
+    expect(sideIndex).toHaveAttribute("data-rows-per-page", "12");
     expect(within(sideIndex).getByRole("heading", { name: "Aircraft on-ground" })).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
     expect(within(sideIndex).queryByText("[1 of 2]")).not.toBeInTheDocument();

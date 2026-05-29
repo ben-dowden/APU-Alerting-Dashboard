@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 import { ApuStatusLed, type ApuStatusLedState } from "@/components/senior/apu-status-led";
 import { ReasonCharm } from "@/components/senior/reason-charm";
@@ -11,14 +11,40 @@ type WallboardSideIndexProps = {
   aircraft: AircraftCardReadModel[];
 };
 
-const rowsPerPage = 12;
+const minRowsPerPage = 12;
+const maxRowsPerPage = 15;
+const minRowHeightPx = 25;
+const targetRowHeightPx = 34;
+const railChromeHeightPx = 56;
 const rotationIntervalMs = 5000;
 
-const chunkAircraft = (aircraft: AircraftCardReadModel[]) => {
+type WallboardOpsRailDensity = {
+  rowHeightPx: number;
+  rowsPerPage: number;
+};
+
+export const estimateWallboardOpsRailDensity = (railHeightPx: number): WallboardOpsRailDensity => {
+  const availableBodyHeightPx = Math.max(0, railHeightPx - railChromeHeightPx);
+  const rowCapacityAtTargetHeight = Math.floor(availableBodyHeightPx / targetRowHeightPx);
+  const rowsPerPage = Math.min(
+    maxRowsPerPage,
+    Math.max(minRowsPerPage, rowCapacityAtTargetHeight),
+  );
+  const rowHeightPx = Math.min(
+    targetRowHeightPx,
+    Math.max(minRowHeightPx, Math.floor(availableBodyHeightPx / rowsPerPage)),
+  );
+
+  return { rowHeightPx, rowsPerPage };
+};
+
+const defaultRailDensity = estimateWallboardOpsRailDensity(0);
+
+const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
   const pages: AircraftCardReadModel[][] = [];
 
-  for (let index = 0; index < aircraft.length; index += rowsPerPage) {
-    pages.push(aircraft.slice(index, index + rowsPerPage));
+  for (let index = 0; index < aircraft.length; index += pageSize) {
+    pages.push(aircraft.slice(index, index + pageSize));
   }
 
   return pages;
@@ -69,29 +95,43 @@ const compactMinutes = (minutes: number) => `${minutes}m`;
 
 export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
   const latestAircraftRef = useRef(aircraft);
+  const railRef = useRef<HTMLElement>(null);
+  const [railDensity, setRailDensity] = useState(defaultRailDensity);
   const [pageIndex, setPageIndex] = useState(0);
   const [visibleTailIds, setVisibleTailIds] = useState(() =>
-    tailIdsForPage(chunkAircraft(aircraft), 0),
+    tailIdsForPage(chunkAircraft(aircraft, defaultRailDensity.rowsPerPage), 0),
   );
-  const pages = chunkAircraft(aircraft);
+  const pages = chunkAircraft(aircraft, railDensity.rowsPerPage);
   const pageCount = pages.length;
   const safePageIndex = pageCount > 0 ? Math.min(pageIndex, pageCount - 1) : 0;
   const visibleAircraft = visibleAircraftFor(aircraft, visibleTailIds);
+  const railStyle = {
+    "--ops-row-height": `${railDensity.rowHeightPx}px`,
+  } as CSSProperties;
+
+  useLayoutEffect(() => {
+    const updateRailDensity = () => {
+      setRailDensity(estimateWallboardOpsRailDensity(railRef.current?.clientHeight ?? 0));
+    };
+
+    updateRailDensity();
+    window.addEventListener("resize", updateRailDensity);
+
+    return () => window.removeEventListener("resize", updateRailDensity);
+  }, []);
 
   useEffect(() => {
-    latestAircraftRef.current = aircraft;
-    setVisibleTailIds((currentTailIds) => {
-      const latestTailIds = new Set(aircraft.map((item) => item.tail));
-      const currentPageStillExists = currentTailIds.every((tail) => latestTailIds.has(tail));
+    const latestPages = chunkAircraft(aircraft, railDensity.rowsPerPage);
 
-      return currentPageStillExists ? currentTailIds : tailIdsForPage(chunkAircraft(aircraft), 0);
-    });
-  }, [aircraft]);
+    latestAircraftRef.current = aircraft;
+    setPageIndex(0);
+    setVisibleTailIds(tailIdsForPage(latestPages, 0));
+  }, [aircraft, railDensity.rowsPerPage]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setPageIndex((currentIndex) => {
-        const latestPages = chunkAircraft(latestAircraftRef.current);
+        const latestPages = chunkAircraft(latestAircraftRef.current, railDensity.rowsPerPage);
         const latestPageCount = latestPages.length;
         const nextIndex = latestPageCount > 0 ? (currentIndex + 1) % latestPageCount : 0;
 
@@ -102,13 +142,16 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
     }, rotationIntervalMs);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [railDensity.rowsPerPage]);
 
   return (
     <section
       aria-label="Wallboard side index"
-      className="flex min-h-0 flex-col border border-neutral-200 bg-white [--ops-row-height:clamp(25px,calc((100vh-455px)/12),34px)]"
+      className="flex min-h-0 flex-col border border-neutral-200 bg-white"
       data-rotation-interval-ms={rotationIntervalMs}
+      data-rows-per-page={railDensity.rowsPerPage}
+      ref={railRef}
+      style={railStyle}
     >
       <div className="flex h-8 shrink-0 items-center justify-between gap-3 border-b border-neutral-200 px-3">
         <h2 className="text-sm font-semibold uppercase leading-none tracking-normal text-neutral-700">
