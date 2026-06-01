@@ -93,7 +93,7 @@ const intensityComparisonFor = (
   if (baseline.apuIntensityPercent === undefined) {
     return {
       apuIntensityDeltaPoints: undefined,
-      apuIntensityComparisonLabel: "baseline pending",
+      apuIntensityComparisonLabel: "Baseline pending",
     };
   }
 
@@ -101,9 +101,9 @@ const intensityComparisonFor = (
 
   return {
     apuIntensityDeltaPoints: deltaPoints,
-    apuIntensityComparisonLabel: `vs ${intensityBasisLabels[mode]} ${formatSignedNumber(
+    apuIntensityComparisonLabel: `${formatSignedNumber(
       deltaPoints,
-    )} pts`,
+    )} pts vs ${intensityBasisLabels[mode]}`,
   };
 };
 

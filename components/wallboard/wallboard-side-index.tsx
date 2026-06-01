@@ -7,6 +7,7 @@ import { ReasonCharm } from "@/components/senior/reason-charm";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import type { AircraftCardReadModel } from "@/lib/read-models";
+import { useKeyedListMotion } from "@/lib/ui/use-keyed-list-motion";
 import { WallboardTimerWheel } from "./wallboard-timer-wheel";
 
 type WallboardSideIndexProps = {
@@ -15,6 +16,7 @@ type WallboardSideIndexProps = {
   intervalMs: number;
   pageCount: number;
   pageIndex: number;
+  recentlyActionedTail?: string;
   remainingMs: number;
 };
 
@@ -83,9 +85,15 @@ export function WallboardSideIndex({
   intervalMs,
   pageCount,
   pageIndex,
+  recentlyActionedTail,
   remainingMs,
 }: WallboardSideIndexProps) {
   const highlightedTails = new Set(highlightedTailIds);
+  const motion = useKeyedListMotion<HTMLTableRowElement>({
+    durationMs: 489,
+    enterDurationMs: 311,
+    itemKeys: aircraft.map((item) => item.tail),
+  });
   const railStyle = {
     "--ops-row-height": `${defaultRowHeightPx}px`,
   } as CSSProperties;
@@ -143,11 +151,15 @@ export function WallboardSideIndex({
                   className={cn(
                     "grid h-[var(--ops-row-height)] grid-cols-[104px_68px_56px_minmax(0,1fr)_52px] border-b border-neutral-100 text-base leading-6 last:border-b-0",
                     isHighlighted && "bg-neutral-100",
+                    recentlyActionedTail === item.tail && "shadow-[inset_4px_0_0_var(--virgin-red)]",
                   )}
                   data-highlighted={isHighlighted ? "true" : "false"}
+                  data-layout-key={`wallboard-side:${item.tail}`}
+                  data-recently-actioned={recentlyActionedTail === item.tail ? "true" : "false"}
                   data-tail={item.tail}
                   data-urgency-rank={item.urgencyRank}
                   key={item.tail}
+                  ref={(node) => motion.registerItem(item.tail, node)}
                 >
                   <th
                     className="flex min-w-0 items-center truncate px-3 py-0 font-semibold text-neutral-950"

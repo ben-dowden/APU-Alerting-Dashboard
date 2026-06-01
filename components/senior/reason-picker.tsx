@@ -64,6 +64,7 @@ export function ReasonPicker({ mode, taxonomy, onSelect }: ReasonPickerProps) {
         type="button"
         variant={mode === "select" ? "default" : "outline"}
         size="sm"
+        className="whitespace-nowrap px-2"
       >
         {triggerLabel}
       </Button>

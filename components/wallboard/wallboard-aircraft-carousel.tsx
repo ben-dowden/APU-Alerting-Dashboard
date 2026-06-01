@@ -1,4 +1,7 @@
+"use client";
+
 import type { AircraftCardReadModel } from "@/lib/read-models";
+import { useKeyedListMotion } from "@/lib/ui/use-keyed-list-motion";
 import { WallboardAircraftCard } from "./wallboard-aircraft-card";
 import { WallboardTimerWheel } from "./wallboard-timer-wheel";
 
@@ -7,6 +10,7 @@ type WallboardAircraftCarouselProps = {
   intervalMs: number;
   pageCount: number;
   pageIndex: number;
+  recentlyActionedTail?: string;
   remainingMs: number;
 };
 
@@ -15,8 +19,16 @@ export function WallboardAircraftCarousel({
   intervalMs,
   pageCount,
   pageIndex,
+  recentlyActionedTail,
   remainingMs,
 }: WallboardAircraftCarouselProps) {
+  const motion = useKeyedListMotion<HTMLElement>({
+    durationMs: 667,
+    enterDurationMs: 400,
+    enterOffsetPx: 10,
+    itemKeys: aircraft.map((aircraftCard) => aircraftCard.tail),
+  });
+
   return (
     <section
       aria-label="Wallboard carousel stage"
@@ -44,7 +56,12 @@ export function WallboardAircraftCarousel({
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-4">
         {aircraft.map((aircraftCard) => (
-          <WallboardAircraftCard aircraft={aircraftCard} key={aircraftCard.tail} />
+          <WallboardAircraftCard
+            aircraft={aircraftCard}
+            isRecentlyActioned={recentlyActionedTail === aircraftCard.tail}
+            key={aircraftCard.tail}
+            motionRef={(node) => motion.registerItem(aircraftCard.tail, node)}
+          />
         ))}
       </div>
     </section>

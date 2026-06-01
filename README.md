@@ -13,7 +13,7 @@ This project is intentionally frontend-only. It is meant to look and behave like
 
 ```bash
 git clone <your-fork-url>
-cd "pr03-reducers-read-models"
+cd APU-Alerting-Dashboard
 npm ci
 npm run dev
 ```

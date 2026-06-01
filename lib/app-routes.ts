@@ -3,8 +3,8 @@ export const appChrome = {
   organizationName: "Virgin Australia",
   productName: "APU Management",
   operationsLabel: "Brisbane operations",
-  operationsDescription: "Senior Engineer workflow first, HQ and Admin staged behind it",
-  statusLabel: "Read Model Foundation",
+  operationsDescription: "Senior Engineer, HQ, and Admin workflows backed by event-derived APU data",
+  statusLabel: "Operational Prototype",
 } as const;
 
 export const appRouteGroups = [

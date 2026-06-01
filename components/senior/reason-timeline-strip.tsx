@@ -1,7 +1,7 @@
 "use client";
 
-import { History, Pencil } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
+import { useState } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import { cn } from "@/lib/utils/cn";
@@ -21,14 +21,17 @@ const formatBneTime = (iso: string) =>
     timeZone: "Australia/Brisbane",
   }).format(new Date(iso));
 
+const segmentOccurrenceKey = (segment: ReasonSegment, index: number) =>
+  [
+    segment.reasonSegmentId,
+    segment.startedAt,
+    segment.endedAt ?? "open",
+    index,
+  ].join(":");
+
 export function ReasonTimelineStrip({ segments, onCorrectSegment }: ReasonTimelineStripProps) {
-  const [showAll, setShowAll] = useState(false);
-  const [activeCorrectionId, setActiveCorrectionId] = useState<string>();
-  const visibleSegments = useMemo(
-    () => (showAll ? segments : segments.slice(Math.max(segments.length - 3, 0))),
-    [segments, showAll],
-  );
-  const currentSegmentId = segments.at(-1)?.reasonSegmentId;
+  const [activeCorrectionKey, setActiveCorrectionKey] = useState<string>();
+  const currentSegmentIndex = segments.length - 1;
 
   if (segments.length === 0) {
     return null;
@@ -38,27 +41,16 @@ export function ReasonTimelineStrip({ segments, onCorrectSegment }: ReasonTimeli
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Reason chain</p>
-        {segments.length > 3 ? (
-          <Button
-            aria-label={showAll ? "Show fewer reason segments" : "Show all reason segments"}
-            onClick={() => setShowAll((current) => !current)}
-            size="icon"
-            title={showAll ? "Show fewer" : "Show all"}
-            type="button"
-            variant="ghost"
-          >
-            <History data-icon="inline-start" />
-          </Button>
-        ) : null}
       </div>
 
       <ol
         aria-label="Reason timeline"
-        className={cn("flex gap-2", showAll ? "overflow-x-auto pb-1" : "overflow-visible")}
+        className="flex gap-2 overflow-x-auto pb-1"
       >
-        {visibleSegments.map((segment) => {
-          const isCurrent = segment.reasonSegmentId === currentSegmentId;
-          const isCorrectionActive = activeCorrectionId === segment.reasonSegmentId;
+        {segments.map((segment, index) => {
+          const occurrenceKey = segmentOccurrenceKey(segment, index);
+          const isCurrent = index === currentSegmentIndex;
+          const isCorrectionActive = activeCorrectionKey === occurrenceKey;
 
           return (
             <li
@@ -69,19 +61,19 @@ export function ReasonTimelineStrip({ segments, onCorrectSegment }: ReasonTimeli
                   ? "border-virgin-purple bg-purple-50"
                   : "border-neutral-200 bg-white focus-visible:ring-2 focus-visible:ring-virgin-purple",
               )}
-              key={segment.reasonSegmentId}
-              onBlur={() => setActiveCorrectionId(undefined)}
+              key={occurrenceKey}
+              onBlur={() => setActiveCorrectionKey(undefined)}
               onFocus={() => {
                 if (!isCurrent) {
-                  setActiveCorrectionId(segment.reasonSegmentId);
+                  setActiveCorrectionKey(occurrenceKey);
                 }
               }}
               onMouseEnter={() => {
                 if (!isCurrent) {
-                  setActiveCorrectionId(segment.reasonSegmentId);
+                  setActiveCorrectionKey(occurrenceKey);
                 }
               }}
-              onMouseLeave={() => setActiveCorrectionId(undefined)}
+              onMouseLeave={() => setActiveCorrectionKey(undefined)}
               tabIndex={isCurrent ? -1 : 0}
             >
               <div className="flex items-start justify-between gap-2">

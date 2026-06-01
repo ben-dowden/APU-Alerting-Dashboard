@@ -71,4 +71,12 @@
 
 - Spec coverage: inactive legacy app removed, docs/scripts consolidated, direct unused dependencies removed, reducer mutation reduced, and PR 05 domain/read-model cleanup targets hardened.
 - Public interfaces: Next.js routes and package scripts remain stable.
-- Handoff checks: full tests and build are the final gates. Latest verification: `npm run test` passed with 146 tests, `npx tsc --noEmit` passed, and `npm run build` passed in this worktree after removing ignored `.next` artifacts.
+- Handoff checks: full tests and build are the final gates. Latest verification: `npm run test` passed with 201 tests, `npx tsc --noEmit` passed, `npm run build` passed after removing ignored `.next` artifacts, and `npm audit --omit=dev` reported 0 production vulnerabilities.
+
+## 2026-05-25 Follow-Up Cleanup Review
+
+- `origin/master` is current through PR #14 (`pr09-admin-workbench`).
+- Remote PR branches `pr02`, `pr03`, `pr04`, `pr06`, and `pr09` are ancestors of `origin/master`.
+- Remote PR branches `pr05`, `pr07`, and `pr08` have merge-commit tips that are not ancestors of `origin/master`, but `git cherry -v origin/master <branch>` returns no unique patch content for each branch.
+- Local merged branch refs for PR01-PR07 and PR09 were removed after confirming clean worktrees. PR08 was kept because it has local uncommitted edits and should not be discarded without review.
+- Active product files remain Next.js-first: no tracked `src/` tree, root browser entry, or Vite app config. The only remaining `vite` package path is via Vitest test tooling.

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils/cn";
 
 import { aircraftCardDomId } from "./aircraft-card-focus";
 import { ApuStatusBadge, type ApuStatusBadgeState } from "./apu-status-badge";
-import { CardReasonDrawer } from "./card-reason-drawer";
+import { CardReasonDrawer, type ReasonDrawerPlacement } from "./card-reason-drawer";
 import {
   DataQualityFlagAction,
   type DataQualityFlagActionInput,
@@ -52,8 +52,11 @@ type ReasonCaptureHandlers = Pick<
 
 type DesktopAircraftCardProps = {
   aircraft: AircraftCardReadModel;
+  drawerPlacement?: ReasonDrawerPlacement;
   groundAircraft: GroundAircraftState;
   isFocusHighlighted?: boolean;
+  isRecentlyActioned?: boolean;
+  motionRef?: (node: HTMLDivElement | null) => void;
   taxonomy: ReasonTaxonomySnapshot;
 } & ReasonWorkflowHandlers;
 
@@ -73,8 +76,11 @@ const apuBadgeState = (aircraft: AircraftCardReadModel): ApuStatusBadgeState => 
 
 export function DesktopAircraftCard({
   aircraft,
+  drawerPlacement,
   groundAircraft,
   isFocusHighlighted = false,
+  isRecentlyActioned = false,
+  motionRef,
   taxonomy,
   onSelectReason,
   onChangeReason,
@@ -99,9 +105,13 @@ export function DesktopAircraftCard({
       className={cn(
         "relative h-[260px] outline-none transition-shadow",
         isFocusHighlighted && "ring-2 ring-virgin-purple ring-offset-2",
+        isRecentlyActioned && "z-10 shadow-lg ring-2 ring-virgin-red/60 ring-offset-2",
       )}
       data-focus-highlight={isFocusHighlighted ? "true" : "false"}
+      data-layout-key={`card:${aircraft.tail}`}
+      data-recently-actioned={isRecentlyActioned ? "true" : "false"}
       id={aircraftCardDomId(aircraft.tail)}
+      ref={motionRef}
       role="article"
       tabIndex={-1}
     >
@@ -157,6 +167,7 @@ export function DesktopAircraftCard({
         }}
         onCorrectSegment={setCorrectingSegment}
         segments={groundAircraft.reasonChain.segments}
+        placement={drawerPlacement}
         tail={aircraft.tail}
       />
     </Card>

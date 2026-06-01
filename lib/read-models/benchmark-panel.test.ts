@@ -53,14 +53,14 @@ describe("deriveBenchmarkPanel", () => {
     expect(deriveBenchmarkPanel(current, "similar_temperature", baselines).activeComparison).toEqual(
       expect.objectContaining({
         apuIntensityDeltaPoints: 12,
-        apuIntensityComparisonLabel: "vs similar temp +12 pts",
+        apuIntensityComparisonLabel: "+12 pts vs similar temp",
       }),
     );
 
     expect(deriveBenchmarkPanel(current, "weekly_average", baselines).activeComparison).toEqual(
       expect.objectContaining({
         apuIntensityDeltaPoints: 9,
-        apuIntensityComparisonLabel: "vs last week +9 pts",
+        apuIntensityComparisonLabel: "+9 pts vs last week",
       }),
     );
   });
@@ -72,6 +72,6 @@ describe("deriveBenchmarkPanel", () => {
     });
 
     expect(panel.activeComparison.apuIntensityDeltaPoints).toBeUndefined();
-    expect(panel.activeComparison.apuIntensityComparisonLabel).toBe("baseline pending");
+    expect(panel.activeComparison.apuIntensityComparisonLabel).toBe("Baseline pending");
   });
 });

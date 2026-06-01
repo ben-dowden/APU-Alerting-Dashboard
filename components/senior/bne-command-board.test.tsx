@@ -1,9 +1,48 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearWorkflowEvents, readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import { BneCommandBoard } from "./bne-command-board";
+
+const rectForIndex = (index: number): DOMRectReadOnly => ({
+  bottom: index * 32 + 28,
+  height: 28,
+  left: 0,
+  right: 320,
+  toJSON: () => ({}),
+  top: index * 32,
+  width: 320,
+  x: 0,
+  y: index * 32,
+});
+
+const mockLayoutAnimation = () => {
+  const animatedKeys: string[] = [];
+  const animate = vi.fn(function (this: HTMLElement) {
+    animatedKeys.push(this.dataset.layoutKey ?? "");
+    return { cancel: vi.fn() } as unknown as Animation;
+  });
+
+  Object.defineProperty(HTMLElement.prototype, "animate", {
+    configurable: true,
+    value: animate,
+  });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    const siblings = this.parentElement
+      ? Array.from(this.parentElement.children).filter(
+          (element) => "layoutKey" in (element as HTMLElement).dataset,
+        )
+      : [];
+    const siblingIndex = Math.max(0, siblings.indexOf(this));
+
+    return rectForIndex(siblingIndex);
+  });
+
+  return { animatedKeys };
+};
 
 describe("BneCommandBoard", () => {
   beforeEach(() => {
@@ -12,6 +51,14 @@ describe("BneCommandBoard", () => {
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       value: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Object.defineProperty(HTMLElement.prototype, "animate", {
+      configurable: true,
+      value: undefined,
     });
   });
 
@@ -87,16 +134,24 @@ describe("BneCommandBoard", () => {
     const scorecard = screen.getByRole("region", { name: "APU command metrics" });
 
     expect(within(scorecard).getAllByTestId("scorecard-label").map((label) => label.textContent)).toEqual([
-      "Active now",
-      "Long runners",
-      "Explanation gap",
-      "APU intensity",
+      "ACTIVE NOW",
+      "LONG RUNNERS",
+      "UNEXPLAINED APU RUNTIME",
+      "APU INTENSITY",
     ]);
-    expect(within(scorecard).getByText("16 / 21")).toBeVisible();
+    expect(within(scorecard).getByText("16 APU-on")).toBeVisible();
+    expect(within(scorecard).getByText("of 21 aircraft on ground")).toBeVisible();
+    expect(within(scorecard).queryByText("Live")).not.toBeInTheDocument();
     expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("Over 45 min APU runtime")).toBeVisible();
+    expect(within(scorecard).getByText("7 flights need review")).toBeVisible();
     expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("Untagged runtime today")).toBeVisible();
+    expect(within(scorecard).getByText("51.7% of runtime")).toBeVisible();
     expect(within(scorecard).getByText("58%")).toBeVisible();
-    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
+    expect(within(scorecard).getByText("Ground time with APU-on today")).toBeVisible();
+    expect(within(scorecard).getByText("+12 pts vs similar temp")).toBeVisible();
+    expect(within(scorecard).getAllByRole("img", { name: /last 6 hours/i })).toHaveLength(4);
     expect(screen.queryByRole("region", { name: "Benchmark comparison" })).not.toBeInTheDocument();
     expect(screen.queryByText("Similar-temperature days")).not.toBeInTheDocument();
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
@@ -226,6 +281,36 @@ describe("BneCommandBoard", () => {
       expect(
         within(card).queryByRole("button", { name: "Keep current reason for VH-8IA" }),
       ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("animates cards and sidebar rows into their new priority order after a workflow action", async () => {
+    const { animatedKeys } = mockLayoutAnimation();
+    render(<BneCommandBoard />);
+
+    const board = screen.getByRole("region", { name: "Aircraft work queue" });
+    const firstCardBefore = within(board).getAllByRole("article")[0];
+    expect(firstCardBefore).toHaveAttribute("aria-label", "VH-VUK aircraft card");
+
+    fireEvent.click(
+      within(firstCardBefore).getByRole("button", { name: "Select reason" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Infrastructure unavailable" }));
+    fireEvent.click(screen.getByRole("button", { name: "PCA unavailable" }));
+
+    await waitFor(() => expect(readWorkflowEvents()).toHaveLength(1));
+    await waitFor(() => expect(animatedKeys).toContain("card:VH-VUK"));
+    expect(animatedKeys).toContain("sidebar:VH-VUK");
+
+    const firstCardAfter = within(board).getAllByRole("article")[0];
+    expect(firstCardAfter).not.toHaveAttribute("aria-label", "VH-VUK aircraft card");
+    expect(screen.getByRole("article", { name: "VH-VUK aircraft card" })).toHaveAttribute(
+      "data-recently-actioned",
+      "true",
+    );
+    expect(screen.getByRole("row", { name: /Show VH-VUK aircraft card/ })).toHaveAttribute(
+      "data-recently-actioned",
+      "true",
     );
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
@@ -280,5 +280,23 @@ describe("DesktopAircraftCard", () => {
     expect(
       screen.queryByRole("button", { name: "Keep current reason for VH-8IA" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("passes drawer placement to the reason chain drawer", () => {
+    render(
+      <DesktopAircraftCard
+        aircraft={baseCard}
+        drawerPlacement="right"
+        groundAircraft={baseGroundAircraft}
+        taxonomy={reasonTaxonomySettings.payload.snapshot}
+        {...noopHandlers}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open reason drawer for VH-8IA" }));
+
+    expect(screen.getByRole("dialog", { name: "Reason chain for VH-8IA" })).toHaveClass(
+      "xl:right-0",
+    );
   });
 });

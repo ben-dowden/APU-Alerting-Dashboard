@@ -1,7 +1,11 @@
+"use client";
+
 import type { KeyboardEvent } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import type { GroundAircraftState } from "@/lib/read-models";
+import { cn } from "@/lib/utils/cn";
+import { useKeyedListMotion } from "@/lib/ui/use-keyed-list-motion";
 
 import { ApuStatusLed, type ApuStatusLedState } from "./apu-status-led";
 import { ReasonCharm } from "./reason-charm";
@@ -9,6 +13,7 @@ import { ReasonCharm } from "./reason-charm";
 type GroundAircraftTableProps = {
   aircraft: GroundAircraftState[];
   onFocusTail?: (tail: string) => void;
+  recentlyActionedTail?: string;
 };
 
 const apuSignal = (aircraft: GroundAircraftState) => {
@@ -54,7 +59,17 @@ const handleRowKeyDown = (
   onFocusTail?.(tail);
 };
 
-export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTableProps) {
+export function GroundAircraftTable({
+  aircraft,
+  onFocusTail,
+  recentlyActionedTail,
+}: GroundAircraftTableProps) {
+  const motion = useKeyedListMotion<HTMLTableRowElement>({
+    durationMs: 533,
+    enterDurationMs: 267,
+    itemKeys: aircraft.map((item) => item.tail),
+  });
+
   return (
     <section
       aria-label="Ground aircraft summary"
@@ -91,11 +106,17 @@ export function GroundAircraftTable({ aircraft, onFocusTail }: GroundAircraftTab
                 return (
                   <tr
                     aria-label={`Show ${item.tail} aircraft card`}
-                    className="h-[27px] cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple"
+                    className={cn(
+                      "h-[27px] cursor-pointer border-b border-neutral-100 text-neutral-800 outline-none transition-colors last:border-b-0 hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-virgin-purple",
+                      recentlyActionedTail === item.tail && "bg-virgin-purple/5",
+                    )}
                     data-focus-tail={item.tail}
+                    data-layout-key={`sidebar:${item.tail}`}
+                    data-recently-actioned={recentlyActionedTail === item.tail ? "true" : "false"}
                     key={item.tail}
                     onClick={() => onFocusTail?.(item.tail)}
                     onKeyDown={(event) => handleRowKeyDown(event, item.tail, onFocusTail)}
+                    ref={(node) => motion.registerItem(item.tail, node)}
                     tabIndex={0}
                   >
                     <th

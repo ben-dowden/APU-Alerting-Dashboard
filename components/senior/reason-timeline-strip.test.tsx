@@ -31,23 +31,52 @@ const segments = [
 ];
 
 describe("ReasonTimelineStrip", () => {
-  it("shows current plus previous two segments by default", () => {
+  it("renders repeated segment ids as distinct timeline occurrences", () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const repeatedIdSegments = [
+      segment("duplicate-reason", "Cleaning in progress", "Cleaner onboard", "2026-05-22T08:50:00.000Z", "2026-05-22T08:55:00.000Z"),
+      segment("duplicate-reason", "Engineering requirement", "Maintenance task in progress", "2026-05-22T08:55:00.000Z", "2026-05-22T08:55:00.000Z"),
+      segment("duplicate-reason", "Flight operations / pilot discretion", "Pilot discretion", "2026-05-22T08:55:00.000Z"),
+    ];
+
+    try {
+      render(<ReasonTimelineStrip segments={repeatedIdSegments} />);
+
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(screen.getAllByRole("listitem")).toHaveLength(3);
+      expect(
+        within(
+          screen.getByRole("listitem", { name: "Engineering requirement segment" }),
+        ).queryByText("Current"),
+      ).not.toBeInTheDocument();
+      expect(
+        within(
+          screen.getByRole("listitem", {
+            name: "Flight operations / pilot discretion segment",
+          }),
+        ).getByText("Current"),
+      ).toBeVisible();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
+  });
+
+  it("shows the full reason chain by default", () => {
     render(<ReasonTimelineStrip segments={segments} />);
 
-    expect(screen.queryByText("Infrastructure unavailable")).not.toBeInTheDocument();
+    expect(screen.getByText("Infrastructure unavailable")).toBeVisible();
     expect(screen.getByText("Cleaning in progress")).toBeVisible();
     expect(screen.getByText("Engineering requirement")).toBeVisible();
     expect(screen.getByText("Logistics / agent on the way")).toBeVisible();
   });
 
-  it("toggles show all into an internally scrolling strip", () => {
+  it("keeps the timeline inside an internal horizontal overflow boundary", () => {
     render(<ReasonTimelineStrip segments={segments} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Show all reason segments" }));
 
     const timeline = screen.getByRole("list", { name: "Reason timeline" });
     expect(screen.getByText("Infrastructure unavailable")).toBeVisible();
     expect(timeline).toHaveClass("overflow-x-auto");
+    expect(screen.queryByRole("button", { name: "Show all reason segments" })).not.toBeInTheDocument();
   });
 
   it("shows the previous-segment correction action on focus", () => {

@@ -28,6 +28,20 @@ const previousReason: ReasonSegment = {
   endedAt: "2026-05-22T08:50:00.000Z",
 };
 
+const segmentForIndex = (index: number): ReasonSegment => ({
+  ...currentReason,
+  reasonSegmentId: `reason-${index}`,
+  categoryId: `category-${index}`,
+  categoryLabel: `Reason ${index}`,
+  detailId: `detail-${index}`,
+  detailLabel: `Detail ${index}`,
+  startedAt: `2026-05-22T08:${String(40 + index).padStart(2, "0")}:00.000Z`,
+  sourceEventIds: [`reason-${index}`],
+});
+
+const segmentsForCount = (count: number) =>
+  Array.from({ length: count }, (_, index) => segmentForIndex(index + 1));
+
 function DrawerHarness() {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -64,10 +78,79 @@ describe("CardReasonDrawer", () => {
     const drawer = screen.getByRole("dialog", { name: "Reason chain for VH-8IA" });
     expect(drawer).toHaveClass("absolute");
     expect(drawer).toHaveClass("top-full");
+    expect(drawer).toHaveClass("bg-white");
+    expect(drawer).toHaveClass("border-neutral-200");
+    expect(drawer).toHaveClass("shadow-lg");
+    expect(drawer).toHaveClass("w-[760px]");
+    expect(drawer).toHaveClass("max-w-[calc(100vw-2rem)]");
     expect(screen.getAllByText("Cleaning in progress")[0]).toBeVisible();
     expect(screen.getAllByText("Cleaner onboard")[0]).toBeVisible();
     expect(screen.getByLabelText("Reason note")).toBeVisible();
     expect(screen.getByRole("list", { name: "Reason timeline" })).toBeVisible();
+  });
+
+  it("stacks the note form below the reason timeline", () => {
+    render(
+      <CardReasonDrawer
+        currentReason={currentReason}
+        isOpen
+        onAddNote={vi.fn()}
+        onClose={vi.fn()}
+        segments={[previousReason, currentReason]}
+        tail="VH-8IA"
+      />,
+    );
+
+    const timeline = screen.getByRole("list", { name: "Reason timeline" });
+    const note = screen.getByLabelText("Reason note");
+
+    expect(timeline.compareDocumentPosition(note)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it.each([
+    [1, "w-[540px]"],
+    [2, "w-[760px]"],
+    [3, "w-[960px]"],
+    [4, "w-[1160px]"],
+    [5, "w-[1200px]"],
+    [6, "w-[1200px]"],
+  ])("uses %s-segment drawer width %s", (segmentCount, widthClass) => {
+    render(
+      <CardReasonDrawer
+        currentReason={currentReason}
+        isOpen
+        onAddNote={vi.fn()}
+        onClose={vi.fn()}
+        segments={segmentsForCount(segmentCount)}
+        tail="VH-8IA"
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Reason chain for VH-8IA" })).toHaveClass(
+      widthClass,
+    );
+  });
+
+  it.each([
+    ["left", ["left-0"], ["xl:left-1/2", "xl:right-0"]],
+    ["center", ["left-0", "xl:left-1/2", "xl:-translate-x-1/2"], ["xl:right-0"]],
+    ["right", ["left-0", "xl:left-auto", "xl:right-0"], ["xl:left-1/2"]],
+  ] as const)("applies %s drawer placement classes", (placement, expected, absent) => {
+    render(
+      <CardReasonDrawer
+        currentReason={currentReason}
+        isOpen
+        onAddNote={vi.fn()}
+        onClose={vi.fn()}
+        placement={placement}
+        segments={[previousReason, currentReason]}
+        tail="VH-8IA"
+      />,
+    );
+
+    const drawer = screen.getByRole("dialog", { name: "Reason chain for VH-8IA" });
+    expected.forEach((className) => expect(drawer).toHaveClass(className));
+    absent.forEach((className) => expect(drawer).not.toHaveClass(className));
   });
 
   it("closes on Escape", () => {
