@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import SeniorBneWallboardPage from "@/app/senior/bne/wallboard/page";
 import type { AircraftCardReadModel } from "@/lib/read-models";
+import { WallboardAircraftCard } from "./wallboard-aircraft-card";
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
 import { WallboardAircraftStage } from "./wallboard-aircraft-stage";
 import { estimateWallboardOpsRailDensity, WallboardSideIndex } from "./wallboard-side-index";
@@ -168,6 +169,27 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(card).queryByRole("button", { name: /reason drawer/i })).not.toBeInTheDocument();
     expect(within(card).queryByRole("button", { name: /qr/i })).not.toBeInTheDocument();
     expect(within(card).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("shows APU off instead of a pending reason on off-state wallboard cards", () => {
+    render(
+      <WallboardAircraftCard
+        aircraft={{
+          ...aircraftCard("VH-OFF", 1),
+          apuState: "off",
+          currentReason: undefined,
+          reviewState: { isReviewDue: false },
+          statusLabel: "APU off",
+          urgencyBucket: "apu_off",
+        }}
+      />,
+    );
+
+    const card = screen.getByRole("article", { name: "VH-OFF wallboard aircraft card" });
+
+    expect(within(card).getByRole("status", { name: "APU Off" })).toBeVisible();
+    expect(within(card).getByText("APU off")).toBeVisible();
+    expect(within(card).queryByText("Reason pending")).not.toBeInTheDocument();
   });
 
   it("shows four aircraft per carousel screen with a focus strip and timer wheel", () => {

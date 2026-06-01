@@ -97,7 +97,7 @@ function ReasonSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
         <CurrentReasonSummary currentReason={aircraft.currentReason} />
       ) : (
         <p className="mt-2 text-2xl font-semibold leading-7 tracking-normal text-neutral-700">
-          Reason pending
+          {aircraft.apuState === "off" ? "APU off" : "Reason pending"}
         </p>
       )}
     </section>

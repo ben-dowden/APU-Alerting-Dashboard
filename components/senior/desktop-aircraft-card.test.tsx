@@ -150,6 +150,46 @@ describe("DesktopAircraftCard", () => {
     expect(within(reasonActions).getByRole("button", { name: "Select reason" })).toBeVisible();
   });
 
+  it("shows APU off instead of a pending reason when the APU is already off", () => {
+    render(
+      <DesktopAircraftCard
+        aircraft={{
+          ...baseCard,
+          apuState: "off",
+          currentReason: undefined,
+          reviewState: { isReviewDue: false },
+          statusLabel: "APU off",
+          urgencyBucket: "apu_off",
+        }}
+        groundAircraft={{
+          ...baseGroundAircraft,
+          apuEvent: undefined,
+          apuState: "off",
+          reasonChain: {
+            ...baseGroundAircraft.reasonChain,
+            segments: [],
+            currentReason: undefined,
+            reviewDueAt: undefined,
+            isReviewDue: false,
+          },
+        }}
+        taxonomy={reasonTaxonomySettings.payload.snapshot}
+        {...noopHandlers}
+      />,
+    );
+
+    const currentReasonBlock = screen.getByRole("group", { name: "Current reason for VH-8IA" });
+    const actionRail = screen.getByRole("group", { name: "VH-8IA actions" });
+    const reasonActions = within(actionRail).getByRole("group", {
+      name: "Reason actions for VH-8IA",
+    });
+
+    expect(screen.getByRole("status", { name: "APU Off" })).toBeVisible();
+    expect(within(currentReasonBlock).getByText("APU off")).toBeVisible();
+    expect(within(currentReasonBlock).queryByText("Reason pending")).not.toBeInTheDocument();
+    expect(within(reasonActions).queryByRole("button", { name: "Select reason" })).not.toBeInTheDocument();
+  });
+
   it("lays out the fixed card anatomy with compact context and bottom actions", () => {
     render(
       <DesktopAircraftCard

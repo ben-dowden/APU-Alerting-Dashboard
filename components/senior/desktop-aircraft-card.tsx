@@ -234,7 +234,11 @@ function CurrentReasonGroup({ aircraft }: { aircraft: AircraftCardReadModel }) {
 
 function CurrentReasonSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
   if (!aircraft.currentReason) {
-    return <p className="mt-1 text-sm font-semibold text-neutral-600">Reason pending</p>;
+    return (
+      <p className="mt-1 text-sm font-semibold text-neutral-600">
+        {aircraft.apuState === "off" ? "APU off" : "Reason pending"}
+      </p>
+    );
   }
 
   return (
