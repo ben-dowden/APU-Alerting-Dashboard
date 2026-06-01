@@ -140,10 +140,17 @@ describe("DesktopAircraftCard", () => {
     );
 
     const currentReasonBlock = screen.getByRole("group", { name: "Current reason for VH-8IA" });
-    expect(within(currentReasonBlock).getByRole("button", { name: "Select reason" })).toBeVisible();
+    const actionRail = screen.getByRole("group", { name: "VH-8IA actions" });
+    const reasonActions = within(actionRail).getByRole("group", {
+      name: "Reason actions for VH-8IA",
+    });
+
+    expect(within(currentReasonBlock).getByText("Reason pending")).toBeVisible();
+    expect(within(currentReasonBlock).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(reasonActions).getByRole("button", { name: "Select reason" })).toBeVisible();
   });
 
-  it("places review and reason actions inside the current-reason block", () => {
+  it("lays out the fixed card anatomy with compact context and bottom actions", () => {
     render(
       <DesktopAircraftCard
         aircraft={baseCard}
@@ -153,29 +160,53 @@ describe("DesktopAircraftCard", () => {
       />,
     );
 
-    const currentReasonBlock = screen.getByRole("group", { name: "Current reason for VH-8IA" });
-    const actionRow = within(currentReasonBlock).getByRole("group", {
+    const card = screen.getByRole("article", { name: "VH-8IA aircraft card" });
+    const statusRow = within(card).getByRole("group", { name: "VH-8IA status" });
+    const metricRow = within(card).getByRole("group", { name: "VH-8IA metrics" });
+    const contextStack = within(card).getByRole("group", { name: "VH-8IA context" });
+    const actionRail = within(card).getByRole("group", { name: "VH-8IA actions" });
+    const currentReasonBlock = within(contextStack).getByRole("group", {
+      name: "Current reason for VH-8IA",
+    });
+    const reasonActions = within(actionRail).getByRole("group", {
       name: "Reason actions for VH-8IA",
     });
-    const keepCurrent = within(currentReasonBlock).getByRole("button", {
+    const utilityActions = within(actionRail).getByRole("group", {
+      name: "Utility actions for VH-8IA",
+    });
+    const keepCurrent = within(reasonActions).getByRole("button", {
       name: "Keep current reason for VH-8IA",
     });
-    const changeReason = within(currentReasonBlock).getByRole("button", { name: "Change reason" });
-    const drawerAction = within(currentReasonBlock).getByRole("button", {
+    const changeReason = within(reasonActions).getByRole("button", { name: "Change reason" });
+    const manualOffAction = within(utilityActions).getByRole("button", {
+      name: "Manually mark APU off for VH-8IA",
+    });
+    const drawerAction = within(utilityActions).getByRole("button", {
       name: "Open reason drawer for VH-8IA",
     });
+    const flagAction = within(utilityActions).getByRole("button", {
+      name: "Flag data quality for VH-8IA",
+    });
 
-    expect(within(actionRow).getByRole("button", { name: "Change reason" })).toBeVisible();
-    expect(
-      within(actionRow).getByRole("button", { name: "Keep current reason for VH-8IA" }),
-    ).toBeVisible();
-    expect(
-      within(actionRow).getByRole("button", { name: "Open reason drawer for VH-8IA" }),
-    ).toBeVisible();
+    expect(card).toHaveClass("h-[260px]");
+    expect(within(statusRow).getByText("VH-8IA")).toHaveClass("text-lg", "font-semibold");
+    expect(within(statusRow).getByRole("status", { name: "APU On" })).toBeVisible();
+    expect(within(metricRow).getByText("Est. Fuel Burn")).toBeVisible();
+    expect(within(metricRow).getByText("85.9 kg")).toHaveClass(
+      "text-base",
+      "font-semibold",
+      "tabular-nums",
+    );
+    expect(within(currentReasonBlock).getByText("Cleaning in progress")).toBeVisible();
+    expect(within(currentReasonBlock).getByText("00:35")).toHaveClass("tabular-nums");
+    expect(within(contextStack).queryByText("Review")).not.toBeInTheDocument();
     expect(keepCurrent).toHaveAttribute("title", "Keep current reason");
+    expect(keepCurrent).toHaveClass("text-neutral-800");
     expect(keepCurrent.textContent).toBe("");
     expect(changeReason).toHaveClass("border-neutral-300");
+    expect(manualOffAction).toHaveClass("text-virgin-red");
     expect(drawerAction).toHaveClass("text-neutral-800");
+    expect(flagAction).toHaveClass("text-neutral-800");
     expect(screen.getByText("Nearby Tail")).toBeVisible();
     expect(screen.getByText("VH-YFX")).toBeVisible();
     expect(screen.getByText("33m")).toBeVisible();
@@ -184,7 +215,7 @@ describe("DesktopAircraftCard", () => {
     ).not.toHaveTextContent(/Closest tail:/);
   });
 
-  it("pauses review prompts while manual APU-off confirmation is pending", () => {
+  it("shows pending APU status while manual confirmation is outstanding", () => {
     render(
       <DesktopAircraftCard
         aircraft={{
@@ -202,8 +233,10 @@ describe("DesktopAircraftCard", () => {
       />,
     );
 
-    expect(screen.getByText("Paused pending off")).toBeVisible();
-    expect(screen.queryByText("Pending off")).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Pending off" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Manually mark APU off for VH-8IA" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Keep current reason for VH-8IA" }),
     ).not.toBeInTheDocument();
