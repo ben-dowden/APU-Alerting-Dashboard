@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
 import { WallboardSideIndex } from "./wallboard-side-index";
+import {
+  remainingFor,
+  wallboardCardPageSize,
+  wallboardCardRotationIntervalMs,
+  wallboardSidebarPageSize,
+  wallboardSidebarRotationIntervalMs,
+} from "./wallboard-rotation";
 
 type WallboardAircraftStageProps = {
   aircraft: AircraftCardReadModel[];
+  elapsedMs: number;
 };
-
-export const wallboardCardPageSize = 4;
-export const wallboardSidebarPageSize = 16;
-export const wallboardCardRotationIntervalMs = 5000;
-export const wallboardSidebarRotationIntervalMs = 20000;
-
-const tickMs = 1000;
 
 const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
   const pages: AircraftCardReadModel[][] = [];
@@ -27,28 +28,7 @@ const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
   return pages;
 };
 
-const remainingFor = (elapsedMs: number, intervalMs: number) =>
-  intervalMs - (elapsedMs % intervalMs);
-
-export function WallboardAircraftStage({ aircraft }: WallboardAircraftStageProps) {
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const aircraftSignature = useMemo(
-    () => aircraft.map((aircraftCard) => aircraftCard.tail).join("|"),
-    [aircraft],
-  );
-
-  useEffect(() => {
-    setElapsedMs(0);
-  }, [aircraftSignature]);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setElapsedMs((currentElapsedMs) => currentElapsedMs + tickMs);
-    }, tickMs);
-
-    return () => window.clearInterval(intervalId);
-  }, [aircraftSignature]);
-
+export function WallboardAircraftStage({ aircraft, elapsedMs }: WallboardAircraftStageProps) {
   const sidebarPages = useMemo(
     () => chunkAircraft(aircraft, wallboardSidebarPageSize),
     [aircraft],
