@@ -66,4 +66,18 @@ describe("SourceQualityCharm", () => {
     expect(screen.queryByLabelText(/Source issue:/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/fallback/i)).not.toBeInTheDocument();
   });
+
+  it("scales the strongest source issue chip for wallboard display", () => {
+    render(
+      <SourceQualityCharm
+        size="wallboard"
+        sourceCharms={[sourceCharm({ sourceSystem: "AODB", isStale: true })]}
+      />,
+    );
+
+    const chip = screen.getByLabelText("Source issue: Stale");
+
+    expect(chip).toHaveTextContent("Stale");
+    expect(chip).toHaveClass("px-2", "py-0.5", "text-xs", "leading-5");
+  });
 });

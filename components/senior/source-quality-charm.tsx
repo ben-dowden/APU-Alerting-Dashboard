@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 
 type SourceQualityCharmProps = {
+  size?: "desktop" | "wallboard";
   sourceCharms: SourceCharm[];
 };
 
@@ -67,7 +68,12 @@ const titleFor = (markers: Array<{ flag: VisibleSourceQualityFlag; source: Sourc
     })
     .join(" | ");
 
-export function SourceQualityCharm({ sourceCharms }: SourceQualityCharmProps) {
+const sizeClasses = {
+  desktop: "px-1.5 py-0 text-[10px] leading-4",
+  wallboard: "px-2 py-0.5 text-xs leading-5",
+};
+
+export function SourceQualityCharm({ size = "desktop", sourceCharms }: SourceQualityCharmProps) {
   const markers = sourceCharms.flatMap((source) =>
     flagsForCharm(source).map((flag) => ({
       flag,
@@ -88,7 +94,8 @@ export function SourceQualityCharm({ sourceCharms }: SourceQualityCharmProps) {
     <Badge
       aria-label={`Source issue: ${label.accessibleLabel}`}
       className={cn(
-        "px-1.5 py-0 text-[10px] font-semibold leading-4",
+        sizeClasses[size],
+        "font-semibold",
         label.severity === "critical"
           ? "border-virgin-red/30 bg-virgin-red/5 text-virgin-red"
           : "border-amber-300 bg-amber-50 text-amber-800",

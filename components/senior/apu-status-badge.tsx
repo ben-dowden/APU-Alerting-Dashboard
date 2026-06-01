@@ -2,8 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 
 export type ApuStatusBadgeState = "on" | "pending" | "off";
+type ApuStatusBadgeSize = "desktop" | "wallboard";
 
 type ApuStatusBadgeProps = {
+  size?: ApuStatusBadgeSize;
   state: ApuStatusBadgeState;
 };
 
@@ -31,19 +33,31 @@ const statusCopy: Record<
   },
 };
 
-export function ApuStatusBadge({ state }: ApuStatusBadgeProps) {
+const sizeClasses: Record<ApuStatusBadgeSize, { badge: string; led: string }> = {
+  desktop: {
+    badge: "gap-1.5 px-2 py-0.5 text-xs",
+    led: "size-2",
+  },
+  wallboard: {
+    badge: "gap-2 px-3 py-1 text-base",
+    led: "size-3",
+  },
+};
+
+export function ApuStatusBadge({ size = "desktop", state }: ApuStatusBadgeProps) {
   const copy = statusCopy[state];
+  const scale = sizeClasses[size];
 
   return (
     <Badge
       aria-label={copy.label}
-      className={cn("gap-1.5 px-2 py-0.5 text-xs font-semibold", copy.badgeClass)}
+      className={cn(scale.badge, "font-semibold", copy.badgeClass)}
       role="status"
       variant="outline"
     >
       <span
         aria-label={copy.ledLabel}
-        className={cn("inline-block size-2 shrink-0 rounded-full", copy.ledClass)}
+        className={cn("inline-block shrink-0 rounded-full", scale.led, copy.ledClass)}
         role="img"
       />
       {copy.label}

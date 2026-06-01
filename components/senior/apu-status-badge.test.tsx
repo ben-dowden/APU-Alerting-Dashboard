@@ -37,4 +37,14 @@ describe("ApuStatusBadge", () => {
     expect(led).toHaveClass("bg-green-600");
     expect(led).not.toHaveClass("motion-safe:animate-pulse");
   });
+
+  it("scales the badge and LED for wallboard display", () => {
+    render(<ApuStatusBadge size="wallboard" state="on" />);
+
+    const badge = screen.getByRole("status", { name: "APU On" });
+    const led = screen.getByRole("img", { name: "APU on active" });
+
+    expect(badge).toHaveClass("gap-2", "px-3", "py-1", "text-base");
+    expect(led).toHaveClass("size-3", "motion-safe:animate-pulse");
+  });
 });
