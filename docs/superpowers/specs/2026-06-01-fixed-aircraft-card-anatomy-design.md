@@ -90,7 +90,61 @@ The action rail target order is:
 
 ## Fixed-Height Behavior
 
-Cards should be designed for three visible rows in the senior board viewport. Long reason/category/detail text should be clamped rather than expanding card height. Full context remains available through existing drawer, hover, or focus interactions.
+Cards should be designed for three visible rows in the senior board viewport. The target senior-board aircraft card height is 260px. Long reason/category/detail text should be clamped rather than expanding card height. Full context remains available through existing drawer, hover, or focus interactions.
+
+## Visual Treatment And Component Styling
+
+The card should use the existing shadcn-style component framework: compose from local `Card`, `Badge`, and `Button` primitives, use variants before custom styling, and keep custom classes focused on layout, density, and domain-specific status treatment.
+
+### Card Shell
+
+- Fixed height: `h-[260px]`.
+- Padding: compact `p-3`.
+- Internal spacing: compact gaps, typically `gap-2`.
+- Surface: standard card surface with the existing 8px product radius, neutral border, and subtle shadow.
+- Content should align to stable zones rather than expanding based on text length.
+
+### Typography
+
+- Tail: `text-lg font-semibold`.
+- Aircraft type and bay metadata: `text-xs font-medium text-muted-foreground` or the local neutral-muted equivalent.
+- Metric labels: `text-[11px] font-medium text-muted-foreground`.
+- Metric values: `text-base font-semibold tabular-nums`.
+- Context labels, such as Reason and Nearby Tail: `text-[10px] uppercase font-semibold text-muted-foreground`.
+- Reason category: `text-sm font-semibold`, clamped to preserve fixed height.
+- Reason detail: `text-xs font-medium text-muted-foreground`, clamped.
+- Elapsed reason time and nearby distance: compact badge text, `text-[11px] tabular-nums`.
+
+### Buttons
+
+- Select reason: `Button` with the default/primary variant because it represents a missing required workflow input.
+- Change reason: `Button` with the outline variant because it edits an existing reason.
+- All icon buttons use the ghost variant:
+  - Keep current reason
+  - Mark APU off
+  - Reason history
+  - Data-quality flag
+- Icon buttons use consistent square sizing.
+- Icon buttons keep accessible labels and titles. Mark APU off should expose tooltip/title text such as "Manually mark APU off".
+
+### APU Status Badge
+
+APU state should be implemented as a local domain component, not by expanding the generic badge API globally. The component can be named `ApuStatusBadge` and should accept explicit states such as `on`, `pending`, and `off`.
+
+- Base treatment: white badge surface, thin state-colored border, state-colored text, LED dot before the label.
+- APU On: pulsing red LED, red border/text.
+- Pending off: pulsing amber LED, amber border/text.
+- APU Off: solid green LED, green border/text.
+
+### Source Quality Chip
+
+Source quality is exception-only. If there is no conflict or source issue, no chip is shown.
+
+- Show one chip only, using the strongest visible source issue.
+- Priority order: Conflict, Stale, Low confidence, Unknown.
+- Conflict: red-tinted outline chip.
+- Stale, Low confidence, Unknown: amber-tinted outline chip.
+- If multiple issues exist, the visible chip shows the strongest issue and tooltip/title exposes the remaining detail.
 
 ## Accessibility And Interaction
 
