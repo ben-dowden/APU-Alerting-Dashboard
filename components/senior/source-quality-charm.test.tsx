@@ -13,35 +13,57 @@ const sourceCharm = (overrides: Partial<SourceCharm>): SourceCharm => ({
 });
 
 describe("SourceQualityCharm", () => {
-  it("renders stale, unknown, conflicting, and low-confidence markers with accessible detail", () => {
+  it("renders only the strongest source issue as a compact chip", () => {
     render(
       <SourceQualityCharm
         sourceCharms={[
           sourceCharm({ sourceSystem: "AODB", isStale: true, sourceLatencyMinutes: 24 }),
           sourceCharm({ sourceSystem: "ACMS", confidence: "low" }),
-          sourceCharm({ sourceSystem: "UNKNOWN", qualityFlags: ["unknown"] }),
           sourceCharm({ sourceSystem: "AODB", qualityFlags: ["conflicting"] }),
         ]}
       />,
     );
 
-    expect(screen.getByLabelText(/Stale AODB source/i)).toHaveAttribute(
-      "title",
-      expect.stringContaining("24m latency"),
-    );
-    expect(screen.getByLabelText(/Low confidence ACMS source/i)).toBeVisible();
-    expect(screen.getByLabelText(/Unknown UNKNOWN source/i)).toBeVisible();
-    expect(screen.getByLabelText(/Conflicting AODB source/i)).toBeVisible();
+    const chip = screen.getByLabelText("Source issue: Conflict");
+
+    expect(chip).toBeVisible();
+    expect(chip).toHaveTextContent("Conflict");
+    expect(chip).toHaveClass("border-virgin-red/30", "text-virgin-red");
+    expect(chip).toHaveAttribute("title", expect.stringContaining("Conflict"));
+    expect(chip).toHaveAttribute("title", expect.stringContaining("Stale"));
+    expect(chip).toHaveAttribute("title", expect.stringContaining("Low confidence"));
+    expect(screen.queryByText("Stale")).not.toBeInTheDocument();
+    expect(screen.queryByText("Low")).not.toBeInTheDocument();
   });
 
-  it("does not render fallback burn-rate assumption markers on collapsed cards", () => {
+  it("renders amber treatment for stale or low-confidence source issues", () => {
     render(
       <SourceQualityCharm
-        sourceCharms={[sourceCharm({ sourceSystem: "FUEL_ASSUMPTIONS", qualityFlags: ["fallback_assumption"] })]}
+        sourceCharms={[
+          sourceCharm({ sourceSystem: "AODB", isStale: true, sourceLatencyMinutes: 24 }),
+          sourceCharm({ sourceSystem: "ACMS", confidence: "low" }),
+        ]}
       />,
     );
 
+    const chip = screen.getByLabelText("Source issue: Stale");
+
+    expect(chip).toHaveTextContent("Stale");
+    expect(chip).toHaveClass("border-amber-300", "text-amber-800");
+    expect(chip).toHaveAttribute("title", expect.stringContaining("Low confidence"));
+  });
+
+  it("renders nothing when no visible source issue exists", () => {
+    render(
+      <SourceQualityCharm
+        sourceCharms={[
+          sourceCharm({ sourceSystem: "AODB" }),
+          sourceCharm({ sourceSystem: "FUEL_ASSUMPTIONS", qualityFlags: ["fallback_assumption"] }),
+        ]}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/Source issue:/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/fallback/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/fallback/i)).not.toBeInTheDocument();
   });
 });
