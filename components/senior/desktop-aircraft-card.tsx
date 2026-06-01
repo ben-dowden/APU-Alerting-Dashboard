@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, History } from "lucide-react";
+import { History, RefreshCw } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
 
 import { aircraftCardDomId } from "./aircraft-card-focus";
+import { ApuStatusBadge, type ApuStatusBadgeState } from "./apu-status-badge";
 import { CardReasonDrawer } from "./card-reason-drawer";
 import {
   DataQualityFlagAction,
@@ -62,19 +63,12 @@ const formatDuration = (minutes: number) => {
   return `${String(hours).padStart(2, "0")}:${String(remainingMinutes).padStart(2, "0")}`;
 };
 
-const apuStateLabel = (state: AircraftCardReadModel["apuState"]) =>
-  state === "on" ? "APU On" : "APU Off";
-
-const reviewLabel = (aircraft: AircraftCardReadModel) => {
+const apuBadgeState = (aircraft: AircraftCardReadModel): ApuStatusBadgeState => {
   if (aircraft.manualOffPending) {
-    return "Paused pending off";
+    return "pending";
   }
 
-  if (aircraft.reviewState.isReviewDue) {
-    return "Review due";
-  }
-
-  return aircraft.reviewState.reviewDueAt ? "Review set" : "No review due";
+  return aircraft.apuState === "off" ? "off" : "on";
 };
 
 export function DesktopAircraftCard({
@@ -103,7 +97,7 @@ export function DesktopAircraftCard({
     <Card
       aria-label={`${aircraft.tail} aircraft card`}
       className={cn(
-        "relative min-h-[260px] outline-none transition-shadow",
+        "relative h-[260px] outline-none transition-shadow",
         isFocusHighlighted && "ring-2 ring-virgin-purple ring-offset-2",
       )}
       data-focus-highlight={isFocusHighlighted ? "true" : "false"}
@@ -111,15 +105,20 @@ export function DesktopAircraftCard({
       role="article"
       tabIndex={-1}
     >
-      <div className="flex h-full flex-col gap-4 p-4">
-        <AircraftCardHeader
+      <div className="flex h-full flex-col gap-2 p-3">
+        <AircraftStatusRow aircraft={aircraft} />
+        <AircraftMetricGrid aircraft={aircraft} />
+        <ContextStack aircraft={aircraft} />
+        <ActionRail
           aircraft={aircraft}
+          currentReason={currentReason}
           dataQualityFlagControl={
             <DataQualityFlagAction
               onCreateFlag={(input) => onCreateDataQualityFlag(groundAircraft, aircraft, input)}
               tail={aircraft.tail}
             />
           }
+          groundAircraft={groundAircraft}
           manualOffControl={
             aircraft.apuState === "on" && groundAircraft.apuEvent ? (
               <ManualApuOffAction
@@ -129,21 +128,10 @@ export function DesktopAircraftCard({
               />
             ) : null
           }
+          onOpenDrawer={() => setIsDrawerOpen(true)}
+          reasonCaptureHandlers={reasonCaptureHandlers}
+          taxonomy={taxonomy}
         />
-        <AircraftMetricGrid aircraft={aircraft} />
-
-        <div className="grid gap-3 border-t border-neutral-200 pt-3 sm:grid-cols-3">
-          <CurrentReasonGroup
-            aircraft={aircraft}
-            currentReason={currentReason}
-            groundAircraft={groundAircraft}
-            onOpenDrawer={() => setIsDrawerOpen(true)}
-            reasonCaptureHandlers={reasonCaptureHandlers}
-            taxonomy={taxonomy}
-          />
-          <ReviewSummary aircraft={aircraft} />
-          <NearbySummary aircraft={aircraft} />
-        </div>
       </div>
 
       <CardReasonDrawer
@@ -175,84 +163,146 @@ export function DesktopAircraftCard({
   );
 }
 
-function AircraftCardHeader({
-  aircraft,
-  dataQualityFlagControl,
-  manualOffControl,
-}: {
-  aircraft: AircraftCardReadModel;
-  dataQualityFlagControl: ReactNode;
-  manualOffControl: ReactNode;
-}) {
+function AircraftStatusRow({ aircraft }: { aircraft: AircraftCardReadModel }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <p className="text-2xl font-semibold tracking-normal text-neutral-950">{aircraft.tail}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-neutral-500">
+    <div
+      aria-label={`${aircraft.tail} status`}
+      className="flex items-start justify-between gap-2"
+      role="group"
+    >
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="truncate text-lg font-semibold leading-6 tracking-normal text-neutral-950">
+            {aircraft.tail}
+          </p>
+          <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
+        </div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-neutral-500">
           {aircraft.aircraftType ? <span>{aircraft.aircraftType}</span> : null}
           {aircraft.bay ? <span>{aircraft.bay}</span> : null}
         </div>
-        <SourceQualityCharm sourceCharms={aircraft.sourceCharms} />
       </div>
-      <div className="flex items-center gap-2">
-        <Badge
-          variant={aircraft.apuState === "on" ? "red" : "outline"}
-          className={
-            aircraft.apuState === "off" ? "border-green-200 bg-green-50 text-green-700" : undefined
-          }
-        >
-          {apuStateLabel(aircraft.apuState)}
-        </Badge>
-        {manualOffControl}
-        {dataQualityFlagControl}
-      </div>
+      <ApuStatusBadge state={apuBadgeState(aircraft)} />
     </div>
   );
 }
 
 function AircraftMetricGrid({ aircraft }: { aircraft: AircraftCardReadModel }) {
   return (
-    <dl className="grid grid-cols-3 gap-2">
-      <AircraftMetric label="APU runtime" value={formatDuration(aircraft.apuRuntimeMinutes)} />
-      <AircraftMetric label="Ground time" value={formatDuration(aircraft.groundMinutes)} />
-      <AircraftMetric label="Fuel" value={`${aircraft.estimatedFuelKg} kg`} />
-    </dl>
+    <div aria-label={`${aircraft.tail} metrics`} role="group">
+      <dl className="grid grid-cols-3 gap-1.5">
+        <AircraftMetric label="APU Runtime" value={formatDuration(aircraft.apuRuntimeMinutes)} />
+        <AircraftMetric label="Ground Time" value={formatDuration(aircraft.groundMinutes)} />
+        <AircraftMetric label="Est. Fuel Burn" value={`${aircraft.estimatedFuelKg} kg`} />
+      </dl>
+    </div>
   );
 }
 
 function AircraftMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-product bg-neutral-50 p-3">
-      <dt className="text-xs font-medium text-neutral-500">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold text-neutral-950">{value}</dd>
+    <div className="rounded-product bg-neutral-50 p-2">
+      <dt className="text-[11px] font-medium leading-4 text-neutral-500">{label}</dt>
+      <dd className="mt-0.5 text-base font-semibold leading-5 tabular-nums text-neutral-950">
+        {value}
+      </dd>
     </div>
   );
 }
 
-type CurrentReasonGroupProps = {
+function ContextStack({ aircraft }: { aircraft: AircraftCardReadModel }) {
+  return (
+    <div
+      aria-label={`${aircraft.tail} context`}
+      className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(5.5rem,auto)] gap-2 border-t border-neutral-200 pt-2"
+      role="group"
+    >
+      <CurrentReasonGroup aircraft={aircraft} />
+      <NearbySummary aircraft={aircraft} />
+    </div>
+  );
+}
+
+function CurrentReasonGroup({ aircraft }: { aircraft: AircraftCardReadModel }) {
+  return (
+    <div aria-label={`Current reason for ${aircraft.tail}`} className="min-w-0" role="group">
+      <p className="text-[10px] font-semibold uppercase tracking-normal text-neutral-500">Reason</p>
+      <CurrentReasonSummary aircraft={aircraft} />
+    </div>
+  );
+}
+
+function CurrentReasonSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
+  if (!aircraft.currentReason) {
+    return (
+      <p className="mt-1 text-sm font-semibold text-neutral-600">
+        {aircraft.apuState === "off" ? "APU off" : "Reason pending"}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-1 min-w-0">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <p className="min-w-0 truncate text-sm font-semibold leading-5 text-neutral-950">
+          {aircraft.currentReason.categoryLabel}
+        </p>
+        <Badge
+          className="shrink-0 px-1.5 py-0 text-[11px] leading-4 tabular-nums text-virgin-purple"
+          variant="secondary"
+        >
+          {formatDuration(aircraft.currentReason.elapsedMinutes)}
+        </Badge>
+      </div>
+      <p className="truncate text-xs font-medium text-neutral-500">
+        {aircraft.currentReason.detailLabel}
+      </p>
+    </div>
+  );
+}
+
+function NearbySummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
+  return (
+    <div className="min-w-[5.5rem]">
+      <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
+    </div>
+  );
+}
+
+type ActionRailProps = {
   aircraft: AircraftCardReadModel;
   groundAircraft: GroundAircraftState;
   currentReason?: ReasonSegment;
   taxonomy: ReasonTaxonomySnapshot;
   reasonCaptureHandlers: ReasonCaptureHandlers;
+  manualOffControl: ReactNode;
+  dataQualityFlagControl: ReactNode;
   onOpenDrawer: () => void;
 };
 
-function CurrentReasonGroup({
+function ActionRail({
   aircraft,
   groundAircraft,
   currentReason,
   taxonomy,
   reasonCaptureHandlers,
+  manualOffControl,
+  dataQualityFlagControl,
   onOpenDrawer,
-}: CurrentReasonGroupProps) {
+}: ActionRailProps) {
   const canCaptureReason = aircraft.apuState === "on" && Boolean(groundAircraft.apuEvent);
 
   return (
-    <div aria-label={`Current reason for ${aircraft.tail}`} role="group">
-      <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Current reason</p>
-      <CurrentReasonSummary aircraft={aircraft} />
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div
+      aria-label={`${aircraft.tail} actions`}
+      className="flex items-center justify-between gap-2 pt-1"
+      role="group"
+    >
+      <div
+        aria-label={`Reason actions for ${aircraft.tail}`}
+        className="flex w-[63%] min-w-0 items-center gap-1.5"
+        role="group"
+      >
         {!aircraft.currentReason && canCaptureReason ? (
           <ReasonPicker
             mode="select"
@@ -274,19 +324,28 @@ function CurrentReasonGroup({
         {currentReason && aircraft.reviewState.isReviewDue && !aircraft.manualOffPending ? (
           <Button
             aria-label={`Keep current reason for ${aircraft.tail}`}
+            className="size-8 text-neutral-800"
             onClick={() => reasonCaptureHandlers.onKeepCurrentReason(groundAircraft, currentReason)}
             size="icon"
             title="Keep current reason"
             type="button"
-            variant="outline"
+            variant="ghost"
           >
-            <Check data-icon="inline-start" />
+            <RefreshCw data-icon="inline-start" />
           </Button>
         ) : null}
+      </div>
 
+      <div
+        aria-label={`Utility actions for ${aircraft.tail}`}
+        className="flex shrink-0 items-center justify-end gap-1"
+        role="group"
+      >
+        {manualOffControl}
         {groundAircraft.reasonChain.segments.length > 0 ? (
           <Button
             aria-label={`Open reason drawer for ${aircraft.tail}`}
+            className="size-8 text-neutral-800"
             onClick={onOpenDrawer}
             size="icon"
             title="Reason chain"
@@ -296,45 +355,8 @@ function CurrentReasonGroup({
             <History data-icon="inline-start" />
           </Button>
         ) : null}
+        {dataQualityFlagControl}
       </div>
-    </div>
-  );
-}
-
-function CurrentReasonSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
-  if (!aircraft.currentReason) {
-    return <p className="mt-1 text-sm font-semibold text-neutral-600">Reason pending</p>;
-  }
-
-  return (
-    <div className="mt-1">
-      <p className="text-sm font-semibold text-neutral-950">
-        {aircraft.currentReason.categoryLabel}
-      </p>
-      <p className="text-xs font-medium text-neutral-500">
-        {aircraft.currentReason.detailLabel}
-      </p>
-      <p className="mt-1 text-xs font-semibold text-virgin-purple">
-        {formatDuration(aircraft.currentReason.elapsedMinutes)}
-      </p>
-    </div>
-  );
-}
-
-function ReviewSummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Review</p>
-      <p className="mt-1 text-sm font-semibold text-neutral-950">{reviewLabel(aircraft)}</p>
-    </div>
-  );
-}
-
-function NearbySummary({ aircraft }: { aircraft: AircraftCardReadModel }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Nearby</p>
-      <ProximityHoverCard proximity={aircraft.proximity} tail={aircraft.tail} />
     </div>
   );
 }

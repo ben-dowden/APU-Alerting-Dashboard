@@ -34,6 +34,7 @@ export function DataQualityFlagAction({ tail, onCreateFlag }: DataQualityFlagAct
     <div className="relative">
       <Button
         aria-label={`Flag data quality for ${tail}`}
+        className="size-8 text-neutral-800"
         onClick={() => setIsOpen((current) => !current)}
         size="icon"
         title="Flag data quality"

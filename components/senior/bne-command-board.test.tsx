@@ -113,29 +113,41 @@ describe("BneCommandBoard", () => {
     render(<BneCommandBoard />);
 
     const board = screen.getByRole("region", { name: "Aircraft work queue" });
+    expect(board).toHaveClass("xl:grid-cols-3");
+    expect(board).not.toHaveClass("xl:grid-cols-2");
     expect(within(board).getAllByRole("article")).toHaveLength(21);
     const card = within(board).getByRole("article", { name: "VH-8IA aircraft card" });
 
     expect(within(card).getByText("VH-8IA")).toBeVisible();
     expect(within(card).getByText("B738")).toBeVisible();
     expect(within(card).getByText("Bay 20")).toBeVisible();
-    expect(within(card).getByText("APU On")).toBeVisible();
+    expect(within(card).getByRole("status", { name: "APU On" })).toBeVisible();
     expect(within(card).getByText("00:46")).toBeVisible();
     expect(within(card).getByText("00:55")).toBeVisible();
+    expect(within(card).getByText("Est. Fuel Burn")).toBeVisible();
     expect(within(card).getByText("85.9 kg")).toBeVisible();
     expect(within(card).getByText("Cleaning in progress")).toBeVisible();
     expect(within(card).getByText("Cleaner onboard")).toBeVisible();
-    expect(within(card).getByText("Review due")).toBeVisible();
-    expect(within(card).getByText(/Closest tail:/)).toBeVisible();
+    expect(within(card).queryByText("Review due")).not.toBeInTheDocument();
+    expect(within(card).getByText("Nearby Tail")).toBeVisible();
+    expect(
+      within(card).getByRole("button", { name: "Nearby aircraft for VH-8IA" }),
+    ).not.toHaveTextContent(/Closest tail:/);
     expect(within(card).getByRole("button", { name: "Nearby aircraft for VH-8IA" })).toBeVisible();
 
-    const currentReasonBlock = within(card).getByRole("group", { name: "Current reason for VH-8IA" });
-    expect(within(currentReasonBlock).getByRole("button", { name: "Change reason" })).toBeVisible();
+    const actionRail = within(card).getByRole("group", { name: "VH-8IA actions" });
+    const reasonActions = within(actionRail).getByRole("group", {
+      name: "Reason actions for VH-8IA",
+    });
+    const utilityActions = within(actionRail).getByRole("group", {
+      name: "Utility actions for VH-8IA",
+    });
+    expect(within(reasonActions).getByRole("button", { name: "Change reason" })).toBeVisible();
     expect(
-      within(currentReasonBlock).getByRole("button", { name: "Keep current reason for VH-8IA" }),
+      within(reasonActions).getByRole("button", { name: "Keep current reason for VH-8IA" }),
     ).toHaveAttribute("title", "Keep current reason");
     expect(
-      within(currentReasonBlock).getByRole("button", { name: "Open reason drawer for VH-8IA" }),
+      within(utilityActions).getByRole("button", { name: "Open reason drawer for VH-8IA" }),
     ).toHaveClass("text-neutral-800");
   });
 
@@ -209,13 +221,17 @@ describe("BneCommandBoard", () => {
     render(<BneCommandBoard />);
 
     const card = screen.getByRole("article", { name: "VH-8IA aircraft card" });
-    expect(within(card).getByText("Review due")).toBeVisible();
+    const keepCurrentReason = within(card).getByRole("button", {
+      name: "Keep current reason for VH-8IA",
+    });
 
-    fireEvent.click(
-      within(card).getByRole("button", { name: "Keep current reason for VH-8IA" }),
-    );
+    fireEvent.click(keepCurrentReason);
 
     expect(readWorkflowEvents()).toHaveLength(1);
-    expect(await within(card).findByText("Review set")).toBeVisible();
+    await waitFor(() =>
+      expect(
+        within(card).queryByRole("button", { name: "Keep current reason for VH-8IA" }),
+      ).not.toBeInTheDocument(),
+    );
   });
 });

@@ -1,4 +1,5 @@
 import type { AircraftProximityContext } from "@/lib/domain/proximity";
+import { Badge } from "@/components/ui/badge";
 
 type ProximityHoverCardProps = {
   tail: string;
@@ -12,26 +13,41 @@ export function ProximityHoverCard({ tail, proximity }: ProximityHoverCardProps)
 
   if (!closest) {
     return (
-      <p className="mt-1 text-sm font-semibold text-neutral-600">No stand context</p>
+      <div className="text-right">
+        <p className="text-[10px] font-semibold uppercase tracking-normal text-neutral-500">
+          Nearby Tail
+        </p>
+        <p className="mt-1 text-xs font-semibold text-neutral-600">No stand context</p>
+      </div>
     );
   }
 
   return (
-    <div className="group relative mt-1">
+    <div className="group relative text-right">
+      <p className="text-[10px] font-semibold uppercase tracking-normal text-neutral-500">
+        Nearby Tail
+      </p>
       <button
         aria-describedby={`proximity-details-${tail}`}
         aria-label={`Nearby aircraft for ${tail}`}
-        className="text-left text-sm font-semibold text-neutral-950 outline-none focus-visible:ring-2 focus-visible:ring-virgin-purple"
+        className="mt-1 inline-flex items-center justify-end gap-1.5 text-xs font-semibold text-neutral-950 outline-none focus-visible:ring-2 focus-visible:ring-virgin-purple"
         type="button"
       >
-        Closest tail: {closest.tail} · {formatDistance(closest.distanceMeters)}
+        <span>{closest.tail}</span>
+        <Badge className="px-1.5 py-0 text-[11px] leading-4 tabular-nums" variant="secondary">
+          {formatDistance(closest.distanceMeters)}
+        </Badge>
       </button>
       <div
-        className="pointer-events-none absolute left-0 top-full z-20 mt-2 min-w-[220px] rounded-product border border-neutral-200 bg-white p-3 text-xs text-neutral-700 opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+        className="pointer-events-none absolute right-0 top-full z-20 mt-2 min-w-[220px] rounded-product border border-neutral-200 bg-white p-3 text-left text-xs text-neutral-700 opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
         id={`proximity-details-${tail}`}
         role="tooltip"
       >
         <p className="font-semibold text-neutral-950">Nearby APU on</p>
+        <p className="mt-1 text-neutral-600">
+          Closest tail: {closest.tail}, {closest.bay ?? closest.stand} ·{" "}
+          {formatDistance(closest.distanceMeters)}
+        </p>
         {proximity.nearbyApuAircraft.length > 0 ? (
           <ul className="mt-2 grid gap-1">
             {proximity.nearbyApuAircraft.map((aircraft) => (

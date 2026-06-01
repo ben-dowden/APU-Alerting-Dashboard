@@ -8,10 +8,9 @@ import {
   deriveCurrentBoard,
   deriveDailyScorecard,
 } from "@/lib/read-models";
-import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
+import { WallboardAircraftStage } from "./wallboard-aircraft-stage";
 import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
-import { WallboardSideIndex } from "./wallboard-side-index";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -75,11 +74,7 @@ export function SeniorWallboardLayout() {
           scorecard={scorecard}
         />
 
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_420px] gap-4 px-6 pb-6">
-          <WallboardAircraftCarousel aircraft={aircraftCards} />
-
-          <WallboardSideIndex aircraft={aircraftCards} />
-        </div>
+        <WallboardAircraftStage aircraft={aircraftCards} />
       </div>
     </main>
   );
