@@ -132,16 +132,21 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(card).getByText("VH-VUK")).toBeVisible();
     expect(within(card).getByText("B738")).toBeVisible();
     expect(within(card).getByText("Bay 22")).toBeVisible();
-    expect(within(card).getByText("APU On")).toBeVisible();
+    expect(within(card).getByRole("status", { name: "APU On" })).toBeVisible();
+    expect(within(card).getByText("APU Runtime")).toBeVisible();
+    expect(within(card).getByText("Ground Time")).toBeVisible();
+    expect(within(card).getByText("Est. Fuel Burn")).toBeVisible();
     expect(within(card).getByText("00:57")).toBeVisible();
     expect(within(card).getByText("01:20")).toBeVisible();
     expect(within(card).getByText("106.4 kg")).toBeVisible();
-    expect(within(card).getByText("Ground support")).toBeVisible();
-    expect(within(card).getByText(/Closest tail:/)).toBeVisible();
+    expect(within(card).getByText("Reason")).toBeVisible();
+    expect(within(card).getByText("Nearby Tail")).toBeVisible();
+    expect(within(card).queryByText(/Closest tail:/)).not.toBeInTheDocument();
+    expect(within(card).getByText("Review Status")).toBeVisible();
     expect(within(card).getByText("Reason pending")).toBeVisible();
     expect(within(card).getByText("No review due")).toBeVisible();
-    expect(within(card).getByRole("group", { name: "Source charms for VH-VUK" })).toBeVisible();
-    expect(within(card).getByText("ACMS")).toBeVisible();
+    expect(within(card).queryByRole("group", { name: "Source charms for VH-VUK" })).not.toBeInTheDocument();
+    expect(within(card).queryByText("ACMS")).not.toBeInTheDocument();
 
     expect(within(card).queryByRole("button", { name: /select reason/i })).not.toBeInTheDocument();
     expect(within(card).queryByRole("button", { name: /change reason/i })).not.toBeInTheDocument();
@@ -166,7 +171,14 @@ describe("SeniorBneWallboardPage", () => {
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     expect(within(stage).getAllByRole("article")).toHaveLength(2);
     expect(screen.getByText("[1 of 2]")).toBeVisible();
-    expect(within(stage).getByText("VH-AAA")).toBeVisible();
+    const firstCard = within(stage).getByRole("article", {
+      name: "VH-AAA wallboard aircraft card",
+    });
+    expect(within(firstCard).getByText("VH-AAA")).toBeVisible();
+    expect(within(firstCard).getByText("Nearby Tail")).toBeVisible();
+    expect(within(firstCard).getByText("VH-YFX")).toBeVisible();
+    expect(within(firstCard).getByText("33m")).toBeVisible();
+    expect(within(firstCard).queryByText(/Closest tail:/)).not.toBeInTheDocument();
     expect(within(stage).getByText("VH-BBB")).toBeVisible();
     expect(within(stage).queryByText("VH-CCC")).not.toBeInTheDocument();
   });
