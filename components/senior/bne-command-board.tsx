@@ -21,7 +21,6 @@ import {
 import { readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import {
   deriveAircraftCards,
-  deriveBenchmarkPanel,
   deriveCurrentBoard,
   deriveDailyScorecard,
   type AircraftCardReadModel,
@@ -39,10 +38,10 @@ import type { ReasonPickerSelection } from "./reason-picker";
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
 const benchmarkBaselines = {
-  similar_temperature: { runtimeMinutes: 38, fuelKg: 70 },
-  weekly_average: { runtimeMinutes: 44, fuelKg: 81 },
-  monthly_average: { runtimeMinutes: 49, fuelKg: 90 },
-  annual_average: { runtimeMinutes: 52, fuelKg: 96 },
+  similar_temperature: { runtimeMinutes: 38, fuelKg: 70, apuIntensityPercent: 45.6 },
+  weekly_average: { runtimeMinutes: 44, fuelKg: 81, apuIntensityPercent: 48.6 },
+  monthly_average: { runtimeMinutes: 49, fuelKg: 90, apuIntensityPercent: 42.6 },
+  annual_average: { runtimeMinutes: 52, fuelKg: 96, apuIntensityPercent: 39.6 },
 };
 
 const boardSettings = {
@@ -131,15 +130,12 @@ export function BneCommandBoard() {
   const prioritizedGroundAircraft = aircraftCards
     .map((aircraft) => groundAircraftByTail.get(aircraft.tail))
     .filter((aircraft): aircraft is GroundAircraftState => Boolean(aircraft));
-  const benchmarkPanel = deriveBenchmarkPanel(
-    {
-      runtimeMinutes: scorecard.runtimeMinutesToday,
-      fuelKg: scorecard.estimatedFuelKgToday,
-      temperatureC: board.weather?.temperatureC ?? 0,
-    },
-    "similar_temperature",
-    benchmarkBaselines,
-  );
+  const benchmarkCurrent = {
+    runtimeMinutes: scorecard.runtimeMinutesToday,
+    fuelKg: scorecard.estimatedFuelKgToday,
+    temperatureC: board.weather?.temperatureC ?? 0,
+    apuIntensityPercent: scorecard.apuIntensityPercent,
+  };
   const runWorkflowAction = (
     aircraft: GroundAircraftState,
     action: (context: WorkflowActionContext) => void,
@@ -306,7 +302,11 @@ export function BneCommandBoard() {
       />
 
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
-        <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
+        <ScorecardBenchmarkBand
+          benchmarkBaselines={benchmarkBaselines}
+          benchmarkCurrent={benchmarkCurrent}
+          scorecard={scorecard}
+        />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AircraftBoard
             aircraft={aircraftCards}

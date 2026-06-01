@@ -81,30 +81,24 @@ describe("BneCommandBoard", () => {
     );
   });
 
-  it("renders the scorecard and default similar-temperature benchmark without dollars", () => {
+  it("renders the command metric bar with APU intensity benchmark context", () => {
     render(<BneCommandBoard />);
 
-    const scorecard = screen.getByRole("region", { name: "Daily scorecard" });
+    const scorecard = screen.getByRole("region", { name: "APU command metrics" });
+
     expect(within(scorecard).getAllByTestId("scorecard-label").map((label) => label.textContent)).toEqual([
-      "APU on now",
-      "Runtime today",
-      "Fuel burned today",
-      "Attributed runtime",
+      "Active now",
+      "Long runners",
+      "Explanation gap",
+      "APU intensity",
     ]);
-
-    const benchmark = screen.getByRole("region", { name: "Benchmark comparison" });
-    expect(within(benchmark).getByText("Similar-temperature days")).toBeVisible();
-    expect(within(benchmark).getByText("23-25°C")).toBeVisible();
-    expect(within(benchmark).queryByText("Weekly average")).not.toBeInTheDocument();
-    expect(within(benchmark).queryByText("Monthly average")).not.toBeInTheDocument();
-    expect(within(benchmark).queryByText("Annual average")).not.toBeInTheDocument();
-
-    const benchmarkText = benchmark.textContent ?? "";
-    const fuelDeltaIndex = benchmarkText.search(/[+-]\d+(\.\d)? kg/);
-    const runtimeDeltaIndex = benchmarkText.search(/[+-]\d+ min/);
-    expect(fuelDeltaIndex).toBeGreaterThanOrEqual(0);
-    expect(runtimeDeltaIndex).toBeGreaterThanOrEqual(0);
-    expect(fuelDeltaIndex).toBeLessThan(runtimeDeltaIndex);
+    expect(within(scorecard).getByText("16 / 21")).toBeVisible();
+    expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("58%")).toBeVisible();
+    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Benchmark comparison" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Similar-temperature days")).not.toBeInTheDocument();
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/AUD/i)).not.toBeInTheDocument();
   });
