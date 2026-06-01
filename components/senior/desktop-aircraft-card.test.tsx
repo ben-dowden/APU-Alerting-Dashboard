@@ -154,6 +154,9 @@ describe("DesktopAircraftCard", () => {
     );
 
     const currentReasonBlock = screen.getByRole("group", { name: "Current reason for VH-8IA" });
+    const actionRow = within(currentReasonBlock).getByRole("group", {
+      name: "Reason actions for VH-8IA",
+    });
     const keepCurrent = within(currentReasonBlock).getByRole("button", {
       name: "Keep current reason for VH-8IA",
     });
@@ -162,10 +165,23 @@ describe("DesktopAircraftCard", () => {
       name: "Open reason drawer for VH-8IA",
     });
 
+    expect(within(actionRow).getByRole("button", { name: "Change reason" })).toBeVisible();
+    expect(
+      within(actionRow).getByRole("button", { name: "Keep current reason for VH-8IA" }),
+    ).toBeVisible();
+    expect(
+      within(actionRow).getByRole("button", { name: "Open reason drawer for VH-8IA" }),
+    ).toBeVisible();
     expect(keepCurrent).toHaveAttribute("title", "Keep current reason");
     expect(keepCurrent.textContent).toBe("");
     expect(changeReason).toHaveClass("border-neutral-300");
     expect(drawerAction).toHaveClass("text-neutral-800");
+    expect(screen.getByText("Nearby Tail")).toBeVisible();
+    expect(screen.getByText("VH-YFX")).toBeVisible();
+    expect(screen.getByText("33m")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Nearby aircraft for VH-8IA" }),
+    ).not.toHaveTextContent(/Closest tail:/);
   });
 
   it("pauses review prompts while manual APU-off confirmation is pending", () => {
@@ -187,10 +203,7 @@ describe("DesktopAircraftCard", () => {
     );
 
     expect(screen.getByText("Paused pending off")).toBeVisible();
-    expect(screen.getByText("Pending off")).toHaveAttribute(
-      "title",
-      "Source confirmation outstanding",
-    );
+    expect(screen.queryByText("Pending off")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Keep current reason for VH-8IA" }),
     ).not.toBeInTheDocument();
