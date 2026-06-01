@@ -13,8 +13,6 @@ import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
 import {
   activeBenchmarkModeForElapsed,
-  remainingFor,
-  wallboardBenchmarkRotationIntervalMs,
   wallboardRotationTickMs,
 } from "./wallboard-rotation";
 
@@ -58,7 +56,6 @@ export function WallboardRotationShell({
 
       <WallboardScorecardBand
         activeBenchmarkMode={activeBenchmarkMode}
-        benchmarkRemainingMs={remainingFor(elapsedMs, wallboardBenchmarkRotationIntervalMs)}
         benchmarkBaselines={benchmarkBaselines}
         benchmarkCurrent={benchmarkCurrent}
         scorecard={scorecard}

@@ -13,10 +13,10 @@ import { WallboardRotationShell } from "./wallboard-rotation-shell";
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
 const benchmarkBaselines = {
-  similar_temperature: { runtimeMinutes: 38, fuelKg: 70 },
-  weekly_average: { runtimeMinutes: 44, fuelKg: 81 },
-  monthly_average: { runtimeMinutes: 49, fuelKg: 90 },
-  annual_average: { runtimeMinutes: 52, fuelKg: 96 },
+  similar_temperature: { runtimeMinutes: 38, fuelKg: 70, apuIntensityPercent: 45.6 },
+  weekly_average: { runtimeMinutes: 44, fuelKg: 81, apuIntensityPercent: 48.6 },
+  monthly_average: { runtimeMinutes: 49, fuelKg: 90, apuIntensityPercent: 42.6 },
+  annual_average: { runtimeMinutes: 52, fuelKg: 96, apuIntensityPercent: 39.6 },
 };
 
 const boardSettings = {
@@ -55,6 +55,7 @@ export function SeniorWallboardLayout() {
     runtimeMinutes: scorecard.runtimeMinutesToday,
     fuelKg: scorecard.estimatedFuelKgToday,
     temperatureC: board.weather?.temperatureC ?? 0,
+    apuIntensityPercent: scorecard.apuIntensityPercent,
   };
 
   return (

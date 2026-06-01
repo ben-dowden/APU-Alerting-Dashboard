@@ -82,7 +82,7 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(screen.getByRole("heading", { name: "Daily APU Fuel Burn", level: 1 })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "BNE Wallboard", level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText("APU on now")).toBeVisible();
+    expect(screen.getByText("Active now")).toBeVisible();
     expect(screen.getByRole("region", { name: "Wallboard side index" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Aircraft in focus" })).toBeVisible();
     expect(screen.getByText("Page 1 of 6")).toBeVisible();
@@ -114,52 +114,51 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.queryByText(/benchmark controls/i)).not.toBeInTheDocument();
   });
 
-  it("amplifies scorecard labels and rotates the benchmark state every 5 seconds", () => {
+  it("amplifies command-derived scorecard labels and rotates only APU intensity", () => {
     vi.useFakeTimers();
 
     render(<SeniorBneWallboardPage />);
 
     const scorecard = screen.getByRole("region", { name: "Wallboard scorecard" });
     expect(within(scorecard).getAllByTestId("wallboard-scorecard-label").map((label) => label.textContent)).toEqual([
-      "APU on now",
-      "Runtime today",
-      "Fuel today",
-      "Reason coverage",
+      "Active now",
+      "Long runners",
+      "Explanation gap",
+      "APU intensity",
     ]);
-
-    const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
-    expect(benchmark).toHaveAttribute("data-rotation-interval-ms", "5000");
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toHaveAttribute(
-      "data-interval-ms",
-      "5000",
-    );
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
-    expect(within(benchmark).getByText("23-25°C")).toBeVisible();
-    expect(within(benchmark).queryByText("Similar-temperature days")).not.toBeInTheDocument();
+    expect(within(scorecard).getByText("16 / 21")).toBeVisible();
+    expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("58%")).toBeVisible();
+    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
+    expect(screen.queryByTestId("wallboard-benchmark-rotator")).not.toBeInTheDocument();
+    expect(screen.queryByRole("timer", { name: /Benchmark rotates/i })).not.toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(within(benchmark).getByText("Weekly average")).toBeVisible();
-    expect(within(benchmark).queryByText("23-25°C")).not.toBeInTheDocument();
+    expect(within(scorecard).getByText("16 / 21")).toBeVisible();
+    expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("vs last week +9 pts")).toBeVisible();
+    expect(within(scorecard).queryByText("vs similar temp +12 pts")).not.toBeInTheDocument();
   });
 
-  it("keeps section timers synchronized with card, sidebar, and benchmark rotation", () => {
+  it("keeps card and sidebar timers synchronized while benchmark text rides inside APU intensity", () => {
     vi.useFakeTimers();
 
     render(<SeniorBneWallboardPage />);
 
-    const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
+    const scorecard = screen.getByRole("region", { name: "Wallboard scorecard" });
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
+    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
     expect(within(stage).getByText("Page 1 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(4000);
@@ -167,7 +166,7 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 1s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 16s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 1s" })).toBeVisible();
+    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -175,10 +174,9 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 15s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
     expect(within(stage).getByText("Page 2 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Weekly average")).toBeVisible();
+    expect(within(scorecard).getByText("vs last week +9 pts")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(15000);
@@ -187,7 +185,7 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
     expect(within(stage).getByText("Page 5 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 2 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
+    expect(within(scorecard).getByText("vs similar temp +12 pts")).toBeVisible();
   });
 
   it("renders passive aircraft cards with compact reason context and no workflow actions", () => {
