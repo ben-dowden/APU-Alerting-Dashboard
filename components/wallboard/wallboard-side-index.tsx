@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 import { ApuStatusLed, type ApuStatusLedState } from "@/components/senior/apu-status-led";
 import { ReasonCharm } from "@/components/senior/reason-charm";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils/cn";
 import type { AircraftCardReadModel } from "@/lib/read-models";
+import { WallboardTimerWheel } from "./wallboard-timer-wheel";
 
 type WallboardSideIndexProps = {
   aircraft: AircraftCardReadModel[];
+  highlightedTailIds?: string[];
+  intervalMs: number;
+  pageCount: number;
+  pageIndex: number;
+  remainingMs: number;
 };
 
 const minRowsPerPage = 12;
-const maxRowsPerPage = 15;
+const maxRowsPerPage = 16;
 const minRowHeightPx = 25;
 const targetRowHeightPx = 34;
 const railChromeHeightPx = 56;
-const rotationIntervalMs = 5000;
+const defaultRowHeightPx = 32;
 
 type WallboardOpsRailDensity = {
   rowHeightPx: number;
@@ -25,10 +32,10 @@ type WallboardOpsRailDensity = {
 
 export const estimateWallboardOpsRailDensity = (railHeightPx: number): WallboardOpsRailDensity => {
   const availableBodyHeightPx = Math.max(0, railHeightPx - railChromeHeightPx);
-  const rowCapacityAtTargetHeight = Math.floor(availableBodyHeightPx / targetRowHeightPx);
+  const rowCapacityAtMinimumHeight = Math.floor(availableBodyHeightPx / minRowHeightPx);
   const rowsPerPage = Math.min(
     maxRowsPerPage,
-    Math.max(minRowsPerPage, rowCapacityAtTargetHeight),
+    Math.max(minRowsPerPage, rowCapacityAtMinimumHeight),
   );
   const rowHeightPx = Math.min(
     targetRowHeightPx,
@@ -36,29 +43,6 @@ export const estimateWallboardOpsRailDensity = (railHeightPx: number): Wallboard
   );
 
   return { rowHeightPx, rowsPerPage };
-};
-
-const defaultRailDensity = estimateWallboardOpsRailDensity(0);
-
-const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
-  const pages: AircraftCardReadModel[][] = [];
-
-  for (let index = 0; index < aircraft.length; index += pageSize) {
-    pages.push(aircraft.slice(index, index + pageSize));
-  }
-
-  return pages;
-};
-
-const tailIdsForPage = (pages: AircraftCardReadModel[][], pageIndex: number) =>
-  pages[pageIndex]?.map((aircraft) => aircraft.tail) ?? [];
-
-const visibleAircraftFor = (aircraft: AircraftCardReadModel[], tailIds: string[]) => {
-  const aircraftByTail = new Map(aircraft.map((item) => [item.tail, item]));
-
-  return tailIds
-    .map((tail) => aircraftByTail.get(tail))
-    .filter((item): item is AircraftCardReadModel => Boolean(item));
 };
 
 const apuSignal = (aircraft: AircraftCardReadModel) => {
@@ -93,78 +77,44 @@ const bayDisplay = (aircraft: AircraftCardReadModel) => {
 
 const compactMinutes = (minutes: number) => `${minutes}m`;
 
-export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
-  const latestAircraftRef = useRef(aircraft);
-  const railRef = useRef<HTMLElement>(null);
-  const [railDensity, setRailDensity] = useState(defaultRailDensity);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [visibleTailIds, setVisibleTailIds] = useState(() =>
-    tailIdsForPage(chunkAircraft(aircraft, defaultRailDensity.rowsPerPage), 0),
-  );
-  const pages = chunkAircraft(aircraft, railDensity.rowsPerPage);
-  const pageCount = pages.length;
-  const safePageIndex = pageCount > 0 ? Math.min(pageIndex, pageCount - 1) : 0;
-  const visibleAircraft = visibleAircraftFor(aircraft, visibleTailIds);
+export function WallboardSideIndex({
+  aircraft,
+  highlightedTailIds = [],
+  intervalMs,
+  pageCount,
+  pageIndex,
+  remainingMs,
+}: WallboardSideIndexProps) {
+  const highlightedTails = new Set(highlightedTailIds);
   const railStyle = {
-    "--ops-row-height": `${railDensity.rowHeightPx}px`,
+    "--ops-row-height": `${defaultRowHeightPx}px`,
   } as CSSProperties;
-
-  useLayoutEffect(() => {
-    const updateRailDensity = () => {
-      setRailDensity(estimateWallboardOpsRailDensity(railRef.current?.clientHeight ?? 0));
-    };
-
-    updateRailDensity();
-    window.addEventListener("resize", updateRailDensity);
-
-    return () => window.removeEventListener("resize", updateRailDensity);
-  }, []);
-
-  useEffect(() => {
-    const latestPages = chunkAircraft(aircraft, railDensity.rowsPerPage);
-
-    latestAircraftRef.current = aircraft;
-    setPageIndex(0);
-    setVisibleTailIds(tailIdsForPage(latestPages, 0));
-  }, [aircraft, railDensity.rowsPerPage]);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setPageIndex((currentIndex) => {
-        const latestPages = chunkAircraft(latestAircraftRef.current, railDensity.rowsPerPage);
-        const latestPageCount = latestPages.length;
-        const nextIndex = latestPageCount > 0 ? (currentIndex + 1) % latestPageCount : 0;
-
-        setVisibleTailIds(tailIdsForPage(latestPages, nextIndex));
-
-        return nextIndex;
-      });
-    }, rotationIntervalMs);
-
-    return () => window.clearInterval(intervalId);
-  }, [railDensity.rowsPerPage]);
 
   return (
     <section
       aria-label="Wallboard side index"
       className="flex min-h-0 flex-col border border-neutral-200 bg-white"
-      data-rotation-interval-ms={rotationIntervalMs}
-      data-rows-per-page={railDensity.rowsPerPage}
-      ref={railRef}
+      data-rotation-interval-ms={intervalMs}
+      data-rows-per-page={maxRowsPerPage}
       style={railStyle}
     >
       <div className="flex h-8 shrink-0 items-center justify-between gap-3 border-b border-neutral-200 px-3">
         <h2 className="text-sm font-semibold uppercase leading-none tracking-normal text-neutral-700">
           Aircraft on-ground
         </h2>
-        {pageCount > 1 ? (
+        <div className="flex items-center gap-3">
           <p
             aria-live="polite"
             className="text-sm font-semibold leading-none tabular-nums text-neutral-500"
           >
-            Page {safePageIndex + 1} of {pageCount}
+            Page {pageIndex + 1} of {pageCount}
           </p>
-        ) : null}
+          <WallboardTimerWheel
+            intervalMs={intervalMs}
+            label="Sidebar page rotates"
+            remainingMs={remainingMs}
+          />
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden">
@@ -184,12 +134,17 @@ export function WallboardSideIndex({ aircraft }: WallboardSideIndexProps) {
             </tr>
           </thead>
           <tbody className="block">
-            {visibleAircraft.map((item) => {
+            {aircraft.map((item) => {
               const bay = bayDisplay(item);
+              const isHighlighted = highlightedTails.has(item.tail);
 
               return (
                 <tr
-                  className="grid h-[var(--ops-row-height)] grid-cols-[104px_68px_56px_minmax(0,1fr)_52px] border-b border-neutral-100 text-base leading-6 last:border-b-0"
+                  className={cn(
+                    "grid h-[var(--ops-row-height)] grid-cols-[104px_68px_56px_minmax(0,1fr)_52px] border-b border-neutral-100 text-base leading-6 last:border-b-0",
+                    isHighlighted && "bg-neutral-100",
+                  )}
+                  data-highlighted={isHighlighted ? "true" : "false"}
                   data-tail={item.tail}
                   data-urgency-rank={item.urgencyRank}
                   key={item.tail}
