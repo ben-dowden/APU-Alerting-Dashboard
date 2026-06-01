@@ -4,18 +4,48 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 import { ReasonTimelineStrip } from "./reason-timeline-strip";
+
+export type ReasonDrawerPlacement = "left" | "center" | "right";
 
 type CardReasonDrawerProps = {
   isOpen: boolean;
   tail: string;
   currentReason?: ReasonSegment;
   segments: ReasonSegment[];
+  placement?: ReasonDrawerPlacement;
   onClose: () => void;
   onAddNote: (note: string) => void;
   onCorrectSegment?: (segment: ReasonSegment) => void;
   correctionControls?: ReactNode;
+};
+
+const drawerPlacementClasses: Record<ReasonDrawerPlacement, string> = {
+  left: "left-0",
+  center: "left-0 xl:left-1/2 xl:-translate-x-1/2",
+  right: "left-0 xl:left-auto xl:right-0",
+};
+
+const drawerWidthClass = (segmentCount: number) => {
+  if (segmentCount >= 5) {
+    return "w-[1200px]";
+  }
+
+  if (segmentCount === 4) {
+    return "w-[1160px]";
+  }
+
+  if (segmentCount === 3) {
+    return "w-[960px]";
+  }
+
+  if (segmentCount === 2) {
+    return "w-[760px]";
+  }
+
+  return "w-[540px]";
 };
 
 export function CardReasonDrawer({
@@ -23,6 +53,7 @@ export function CardReasonDrawer({
   tail,
   currentReason,
   segments,
+  placement = "left",
   onClose,
   onAddNote,
   onCorrectSegment,
@@ -49,24 +80,26 @@ export function CardReasonDrawer({
   return (
     <div
       aria-label={`Reason chain for ${tail}`}
-      className="absolute left-0 top-full z-30 mt-2 flex w-full flex-col gap-4 rounded-product border border-neutral-200 bg-white p-4 shadow-lg"
+      className={cn(
+        "absolute top-full z-30 mt-2 flex max-w-[calc(100vw-2rem)] flex-col gap-4 overflow-hidden rounded-product border border-neutral-200 bg-white p-4 shadow-lg",
+        drawerWidthClass(segments.length),
+        drawerPlacementClasses[placement],
+      )}
       ref={drawerRef}
       role="dialog"
     >
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
-        <div className="flex flex-col gap-3">
-          <CurrentReasonPanel currentReason={currentReason} />
-          <ReasonTimelineStrip onCorrectSegment={onCorrectSegment} segments={segments} />
-          {correctionControls}
-        </div>
-
-        <ReasonNoteForm
-          note={note}
-          onChange={setNote}
-          onSubmit={handleNoteSubmit}
-          tail={tail}
-        />
+      <div className="flex min-w-0 flex-col gap-3">
+        <CurrentReasonPanel currentReason={currentReason} />
+        <ReasonTimelineStrip onCorrectSegment={onCorrectSegment} segments={segments} />
+        {correctionControls}
       </div>
+
+      <ReasonNoteForm
+        note={note}
+        onChange={setNote}
+        onSubmit={handleNoteSubmit}
+        tail={tail}
+      />
     </div>
   );
 }

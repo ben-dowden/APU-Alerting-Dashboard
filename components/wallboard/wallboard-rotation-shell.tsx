@@ -7,14 +7,13 @@ import type {
   BenchmarkBaselines,
   BenchmarkCurrent,
   DailyScorecard,
+  ScorecardTrendPoint,
 } from "@/lib/read-models";
 import { WallboardAircraftStage } from "./wallboard-aircraft-stage";
 import { WallboardCommandBar } from "./wallboard-command-bar";
 import { WallboardScorecardBand } from "./wallboard-scorecard-band";
 import {
   activeBenchmarkModeForElapsed,
-  remainingFor,
-  wallboardBenchmarkRotationIntervalMs,
   wallboardRotationTickMs,
 } from "./wallboard-rotation";
 
@@ -23,7 +22,9 @@ type WallboardRotationShellProps = {
   benchmarkBaselines: BenchmarkBaselines;
   benchmarkCurrent: BenchmarkCurrent;
   localTimeLabel: string;
+  recentlyActionedTail?: string;
   scorecard: DailyScorecard;
+  scorecardTrend: ScorecardTrendPoint[];
   sourceFreshnessLabel: string;
   temperatureLabel: string;
 };
@@ -33,7 +34,9 @@ export function WallboardRotationShell({
   benchmarkBaselines,
   benchmarkCurrent,
   localTimeLabel,
+  recentlyActionedTail,
   scorecard,
+  scorecardTrend,
   sourceFreshnessLabel,
   temperatureLabel,
 }: WallboardRotationShellProps) {
@@ -58,13 +61,17 @@ export function WallboardRotationShell({
 
       <WallboardScorecardBand
         activeBenchmarkMode={activeBenchmarkMode}
-        benchmarkRemainingMs={remainingFor(elapsedMs, wallboardBenchmarkRotationIntervalMs)}
         benchmarkBaselines={benchmarkBaselines}
         benchmarkCurrent={benchmarkCurrent}
         scorecard={scorecard}
+        trend={scorecardTrend}
       />
 
-      <WallboardAircraftStage aircraft={aircraftCards} elapsedMs={elapsedMs} />
+      <WallboardAircraftStage
+        aircraft={aircraftCards}
+        elapsedMs={elapsedMs}
+        recentlyActionedTail={recentlyActionedTail}
+      />
     </>
   );
 }

@@ -1,83 +1,94 @@
-import type { BenchmarkPanel, DailyScorecard } from "@/lib/read-models";
-import { Card, CardContent } from "@/components/ui/card";
+"use client";
+
+import { useEffect, useState } from "react";
+
+import {
+  scorecardMetricTilesFor,
+  type ScorecardMetricTile,
+} from "@/components/scorecard/scorecard-metrics";
+import { ScorecardSparkline } from "@/components/scorecard/scorecard-sparkline";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  activeBenchmarkModeForElapsed,
+  wallboardBenchmarkRotationIntervalMs,
+  wallboardRotationTickMs,
+} from "@/components/wallboard/wallboard-rotation";
+import {
+  deriveBenchmarkPanel,
+  type BenchmarkBaselines,
+  type BenchmarkCurrent,
+  type DailyScorecard,
+  type ScorecardTrendPoint,
+} from "@/lib/read-models";
 
 type ScorecardBenchmarkBandProps = {
   scorecard: DailyScorecard;
-  benchmark: BenchmarkPanel;
+  benchmarkBaselines: BenchmarkBaselines;
+  benchmarkCurrent: BenchmarkCurrent;
+  trend: ScorecardTrendPoint[];
 };
 
-const formatSigned = (value: number) => (value > 0 ? `+${value}` : `${value}`);
+const isIntensityMetric = (metric: ScorecardMetricTile) => metric.key === "apu_intensity";
 
-export function ScorecardBenchmarkBand({ scorecard, benchmark }: ScorecardBenchmarkBandProps) {
-  const metrics = [
-    { label: "APU on now", value: `${scorecard.activeApuCount}`, detail: "active aircraft" },
-    { label: "Runtime today", value: `${scorecard.runtimeMinutesToday} min`, detail: "event-derived" },
-    { label: "Fuel burned today", value: `${scorecard.estimatedFuelKgToday} kg`, detail: "estimated fuel" },
-    { label: "Attributed runtime", value: `${scorecard.attributedRuntimePercent}%`, detail: "reason tagged" },
-  ];
-  const activeComparison = benchmark.activeComparison;
+export function ScorecardBenchmarkBand({
+  scorecard,
+  benchmarkBaselines,
+  benchmarkCurrent,
+  trend,
+}: ScorecardBenchmarkBandProps) {
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const activeBenchmarkMode = activeBenchmarkModeForElapsed(elapsedMs);
+  const benchmark = deriveBenchmarkPanel(
+    benchmarkCurrent,
+    activeBenchmarkMode,
+    benchmarkBaselines,
+  );
+  const metrics = scorecardMetricTilesFor(scorecard, benchmark.activeComparison, trend);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setElapsedMs((currentElapsedMs) => currentElapsedMs + wallboardRotationTickMs);
+    }, wallboardRotationTickMs);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section aria-label="Daily scorecard" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => (
-          <Card key={metric.label}>
-            <CardContent className="p-4">
-              <p
-                className="text-xs font-semibold uppercase tracking-normal text-neutral-500"
-                data-testid="scorecard-label"
+    <section aria-label="APU command metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {metrics.map((metric) => (
+        <Card className="overflow-hidden" key={metric.key}>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 p-4 pb-0">
+            <CardTitle
+              className="text-xs font-semibold leading-none tracking-normal text-neutral-500"
+              data-testid="scorecard-label"
+            >
+              {metric.label}
+            </CardTitle>
+            {metric.badgeLabel ? (
+              <Badge
+                aria-live={isIntensityMetric(metric) ? "polite" : undefined}
+                className="shrink-0"
+                data-rotation-interval-ms={
+                  isIntensityMetric(metric) ? wallboardBenchmarkRotationIntervalMs : undefined
+                }
+                variant={metric.badgeVariant}
               >
-                {metric.label}
-              </p>
-              <p className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                {metric.badgeLabel}
+              </Badge>
+            ) : null}
+          </CardHeader>
+          <CardContent className="grid grid-cols-[minmax(0,1fr)_96px] items-end gap-3 p-4 pt-3">
+            <div className="min-w-0">
+              <p className="text-2xl font-semibold tracking-normal tabular-nums text-neutral-950">
                 {metric.value}
               </p>
               <p className="mt-1 text-xs font-medium text-neutral-500">{metric.detail}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <section aria-label="Benchmark comparison">
-        <Card className="h-full">
-          <CardContent className="flex h-full flex-col gap-3 p-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">
-                Benchmark
-              </p>
-              <p className="mt-1 text-sm font-semibold text-neutral-950">
-                {activeComparison.basisLabel}
-              </p>
-              {activeComparison.temperatureBandLabel ? (
-                <p className="mt-1 text-xs font-semibold text-virgin-purple">
-                  {activeComparison.temperatureBandLabel}
-                </p>
-              ) : null}
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs font-medium text-neutral-500">Fuel delta</p>
-                <p className="mt-1 text-2xl font-semibold text-neutral-950">
-                  {formatSigned(activeComparison.fuelDeltaKg)} kg
-                </p>
-                <p className="text-xs font-medium text-neutral-500">
-                  {formatSigned(activeComparison.fuelDeltaPercent)}%
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-neutral-500">Runtime delta</p>
-                <p className="mt-1 text-xl font-semibold text-neutral-800">
-                  {formatSigned(activeComparison.runtimeDeltaMinutes)} min
-                </p>
-                <p className="text-xs font-medium text-neutral-500">
-                  {formatSigned(activeComparison.runtimeDeltaPercent)}%
-                </p>
-              </div>
-            </div>
+            <ScorecardSparkline label={metric.trendLabel} values={metric.trendValues} />
           </CardContent>
         </Card>
-      </section>
-    </div>
+      ))}
+    </section>
   );
 }

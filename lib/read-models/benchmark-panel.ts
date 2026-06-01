@@ -8,11 +8,13 @@ export type BenchmarkCurrent = {
   runtimeMinutes: number;
   fuelKg: number;
   temperatureC: number;
+  apuIntensityPercent: number;
 };
 
 export type BenchmarkBaseline = {
   runtimeMinutes: number;
   fuelKg: number;
+  apuIntensityPercent?: number;
 };
 
 export type BenchmarkBaselines = Record<BenchmarkMode, BenchmarkBaseline>;
@@ -25,6 +27,8 @@ export type BenchmarkComparison = {
   fuelDeltaPercent: number;
   runtimeDeltaMinutes: number;
   runtimeDeltaPercent: number;
+  apuIntensityDeltaPoints?: number;
+  apuIntensityComparisonLabel: string;
   dollarDelta?: undefined;
 };
 
@@ -51,6 +55,13 @@ const basisLabels: Record<BenchmarkMode, string> = {
   annual_average: "Annual average",
 };
 
+const intensityBasisLabels: Record<BenchmarkMode, string> = {
+  similar_temperature: "similar temp",
+  weekly_average: "last week",
+  monthly_average: "last month",
+  annual_average: "last year",
+};
+
 const defaultBaselines: BenchmarkBaselines = {
   similar_temperature: { runtimeMinutes: 0, fuelKg: 0 },
   weekly_average: { runtimeMinutes: 0, fuelKg: 0 },
@@ -60,12 +71,40 @@ const defaultBaselines: BenchmarkBaselines = {
 
 const roundOne = (value: number) => Math.round(value * 10) / 10;
 
+const formatCompactNumber = (value: number) =>
+  Number.isInteger(value) ? `${value}` : `${value}`;
+
+const formatSignedNumber = (value: number) =>
+  value > 0 ? `+${formatCompactNumber(value)}` : formatCompactNumber(value);
+
 const percentDelta = (current: number, baseline: number) =>
   baseline === 0 ? 0 : roundOne(((current - baseline) / baseline) * 100);
 
 const temperatureBandLabel = (temperatureC: number) => {
   const rounded = Math.round(temperatureC);
   return `${rounded - 1}-${rounded + 1}°C`;
+};
+
+const intensityComparisonFor = (
+  current: BenchmarkCurrent,
+  mode: BenchmarkMode,
+  baseline: BenchmarkBaseline,
+) => {
+  if (baseline.apuIntensityPercent === undefined) {
+    return {
+      apuIntensityDeltaPoints: undefined,
+      apuIntensityComparisonLabel: "Baseline pending",
+    };
+  }
+
+  const deltaPoints = roundOne(current.apuIntensityPercent - baseline.apuIntensityPercent);
+
+  return {
+    apuIntensityDeltaPoints: deltaPoints,
+    apuIntensityComparisonLabel: `${formatSignedNumber(
+      deltaPoints,
+    )} pts vs ${intensityBasisLabels[mode]}`,
+  };
 };
 
 const comparisonFor = (
@@ -81,6 +120,7 @@ const comparisonFor = (
   fuelDeltaPercent: percentDelta(current.fuelKg, baseline.fuelKg),
   runtimeDeltaMinutes: roundOne(current.runtimeMinutes - baseline.runtimeMinutes),
   runtimeDeltaPercent: percentDelta(current.runtimeMinutes, baseline.runtimeMinutes),
+  ...intensityComparisonFor(current, activeMode, baseline),
   dollarDelta: undefined,
 });
 

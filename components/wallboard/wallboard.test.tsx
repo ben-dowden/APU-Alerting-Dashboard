@@ -1,7 +1,10 @@
-import { act, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SeniorBneWallboardPage from "@/app/senior/bne/wallboard/page";
+import { selectReason } from "@/lib/prototype/workflow-actions";
+import { clearWorkflowEvents } from "@/lib/prototype/workflow-event-store";
+import { deriveBneBoardProjection } from "@/lib/read-models";
 import type { AircraftCardReadModel } from "@/lib/read-models";
 import { WallboardAircraftCard } from "./wallboard-aircraft-card";
 import { WallboardAircraftCarousel } from "./wallboard-aircraft-carousel";
@@ -72,9 +75,82 @@ const articleNames = (stage: HTMLElement) =>
     .getAllByRole("article")
     .map((article) => article.getAttribute("aria-label"));
 
+const rectForIndex = (index: number): DOMRectReadOnly => ({
+  bottom: index * 34 + 30,
+  height: 30,
+  left: 0,
+  right: 420,
+  toJSON: () => ({}),
+  top: index * 34,
+  width: 420,
+  x: 0,
+  y: index * 34,
+});
+
+const mockLayoutAnimation = () => {
+  const animatedKeys: string[] = [];
+
+  Object.defineProperty(HTMLElement.prototype, "animate", {
+    configurable: true,
+    value: vi.fn(function (this: HTMLElement) {
+      animatedKeys.push(this.dataset.layoutKey ?? "");
+      return { cancel: vi.fn() } as unknown as Animation;
+    }),
+  });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    const siblings = this.parentElement
+      ? Array.from(this.parentElement.children).filter((element) =>
+          (element as HTMLElement).hasAttribute("data-layout-key"),
+        )
+      : [];
+    const siblingIndex = Math.max(0, siblings.indexOf(this));
+
+    return rectForIndex(siblingIndex);
+  });
+
+  return { animatedKeys };
+};
+
+const selectInfrastructureReasonFor = (tail: string) => {
+  const projection = deriveBneBoardProjection([]);
+  const aircraft = projection.board.groundAircraft.find((item) => item.tail === tail);
+
+  if (!aircraft?.apuEvent) {
+    throw new Error(`No open APU event found for ${tail}`);
+  }
+
+  selectReason({
+    port: "BNE",
+    tail,
+    apuEventId: aircraft.apuEvent.apuEventId,
+    categoryId: "infrastructure-unavailable",
+    categoryLabel: "Infrastructure unavailable",
+    detailId: "pca-unavailable",
+    detailLabel: "PCA unavailable",
+    selectedBy: "wallboard-test",
+    selectedAt: projection.board.nowIso,
+  });
+};
+
 describe("SeniorBneWallboardPage", () => {
+  beforeEach(() => {
+    clearWorkflowEvents();
+    localStorage.clear();
+  });
+
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
+    act(() => {
+      clearWorkflowEvents();
+    });
+    localStorage.clear();
+    Object.defineProperty(HTMLElement.prototype, "animate", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it("renders the read-only BNE wallboard shell", () => {
@@ -82,7 +158,7 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(screen.getByRole("heading", { name: "Daily APU Fuel Burn", level: 1 })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "BNE Wallboard", level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText("APU on now")).toBeVisible();
+    expect(screen.getByText("ACTIVE NOW")).toBeVisible();
     expect(screen.getByRole("region", { name: "Wallboard side index" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Aircraft in focus" })).toBeVisible();
     expect(screen.getByText("Page 1 of 6")).toBeVisible();
@@ -114,52 +190,58 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.queryByText(/benchmark controls/i)).not.toBeInTheDocument();
   });
 
-  it("amplifies scorecard labels and rotates the benchmark state every 5 seconds", () => {
+  it("amplifies command-derived scorecard labels and rotates only APU intensity", () => {
     vi.useFakeTimers();
 
     render(<SeniorBneWallboardPage />);
 
     const scorecard = screen.getByRole("region", { name: "Wallboard scorecard" });
     expect(within(scorecard).getAllByTestId("wallboard-scorecard-label").map((label) => label.textContent)).toEqual([
-      "APU on now",
-      "Runtime today",
-      "Fuel today",
-      "Reason coverage",
+      "ACTIVE NOW",
+      "LONG RUNNERS",
+      "UNEXPLAINED APU RUNTIME",
+      "APU INTENSITY",
     ]);
-
-    const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
-    expect(benchmark).toHaveAttribute("data-rotation-interval-ms", "5000");
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toHaveAttribute(
-      "data-interval-ms",
-      "5000",
-    );
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
-    expect(within(benchmark).getByText("23-25°C")).toBeVisible();
-    expect(within(benchmark).queryByText("Similar-temperature days")).not.toBeInTheDocument();
+    expect(within(scorecard).getByText("16 APU-on")).toBeVisible();
+    expect(within(scorecard).getByText("of 21 aircraft on ground")).toBeVisible();
+    expect(within(scorecard).queryByText("Live")).not.toBeInTheDocument();
+    expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("Over 45 min APU runtime")).toBeVisible();
+    expect(within(scorecard).getByText("7 flights need review")).toBeVisible();
+    expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("Untagged runtime today")).toBeVisible();
+    expect(within(scorecard).getByText("58%")).toBeVisible();
+    expect(within(scorecard).getByText("Ground time with APU-on today")).toBeVisible();
+    expect(within(scorecard).getByText("+12 pts vs similar temp")).toBeVisible();
+    expect(within(scorecard).getAllByRole("img", { name: /last 6 hours/i })).toHaveLength(4);
+    expect(screen.queryByTestId("wallboard-benchmark-rotator")).not.toBeInTheDocument();
+    expect(screen.queryByRole("timer", { name: /Benchmark rotates/i })).not.toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(within(benchmark).getByText("Weekly average")).toBeVisible();
-    expect(within(benchmark).queryByText("23-25°C")).not.toBeInTheDocument();
+    expect(within(scorecard).getByText("16 APU-on")).toBeVisible();
+    expect(within(scorecard).getByText("7 aircraft")).toBeVisible();
+    expect(within(scorecard).getByText("351 min")).toBeVisible();
+    expect(within(scorecard).getByText("+9 pts vs last week")).toBeVisible();
+    expect(within(scorecard).queryByText("+12 pts vs similar temp")).not.toBeInTheDocument();
   });
 
-  it("keeps section timers synchronized with card, sidebar, and benchmark rotation", () => {
+  it("keeps card and sidebar timers synchronized while benchmark text rides inside APU intensity", () => {
     vi.useFakeTimers();
 
     render(<SeniorBneWallboardPage />);
 
-    const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
+    const scorecard = screen.getByRole("region", { name: "Wallboard scorecard" });
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
+    expect(within(scorecard).getByText("+12 pts vs similar temp")).toBeVisible();
     expect(within(stage).getByText("Page 1 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(4000);
@@ -167,7 +249,7 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 1s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 16s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 1s" })).toBeVisible();
+    expect(within(scorecard).getByText("+12 pts vs similar temp")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -175,10 +257,9 @@ describe("SeniorBneWallboardPage", () => {
 
     expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 15s" })).toBeVisible();
-    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
     expect(within(stage).getByText("Page 2 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Weekly average")).toBeVisible();
+    expect(within(scorecard).getByText("+9 pts vs last week")).toBeVisible();
 
     act(() => {
       vi.advanceTimersByTime(15000);
@@ -187,7 +268,51 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
     expect(within(stage).getByText("Page 5 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 2 of 2")).toBeVisible();
-    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
+    expect(within(scorecard).getByText("+12 pts vs similar temp")).toBeVisible();
+  });
+
+  it("hydrates workflow events into the wallboard projection", () => {
+    selectInfrastructureReasonFor("VH-VUK");
+
+    render(<SeniorBneWallboardPage />);
+
+    const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
+    const table = within(sideIndex).getByRole("table", { name: "Wallboard ground aircraft ops table" });
+    const vukRow = within(table)
+      .getAllByRole("row")
+      .find((row) => row.getAttribute("data-tail") === "VH-VUK");
+
+    expect(vukRow).toBeDefined();
+    expect(
+      within(vukRow as HTMLElement).getByRole("img", {
+        name: "Reason: Infrastructure unavailable",
+      }),
+    ).toBeVisible();
+  });
+
+  it("live-syncs workflow changes and animates visible wallboard lists without resetting timers", async () => {
+    const { animatedKeys } = mockLayoutAnimation();
+
+    render(<SeniorBneWallboardPage />);
+
+    const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
+    const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
+
+    expect(within(stage).getByText("Page 1 of 6")).toBeVisible();
+    expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+
+    act(() => {
+      selectInfrastructureReasonFor("VH-VUK");
+    });
+
+    await waitFor(() =>
+      expect(animatedKeys.some((key) => key.startsWith("wallboard-card:"))).toBe(true),
+    );
+    expect(animatedKeys).toContain("wallboard-side:VH-VUK");
+    expect(within(stage).getByText("Page 1 of 6")).toBeVisible();
+    expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
   });
 
   it("renders passive aircraft cards with compact reason context and no workflow actions", () => {

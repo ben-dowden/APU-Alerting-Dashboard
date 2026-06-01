@@ -3,12 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { ReasonSegment } from "@/lib/domain/reason-chain-reducer";
-import type { DomainEvent } from "@/lib/events";
-import { fuelBurnAssumptionSettings } from "@/lib/fixtures/reference/fuel-assumptions";
-import { reasonTaxonomySettings } from "@/lib/fixtures/reference/reason-taxonomy";
-import { standCoordinateReferenceEvents } from "@/lib/fixtures/reference/stand-coordinates";
-import { bneBaselineScenario } from "@/lib/fixtures/scenarios";
-import { minutesBetweenIso } from "@/lib/domain/time";
 import {
   addReasonNote,
   changeReason,
@@ -18,12 +12,14 @@ import {
   markManualApuOff,
   selectReason,
 } from "@/lib/prototype/workflow-actions";
-import { readWorkflowEvents } from "@/lib/prototype/workflow-event-store";
 import {
-  deriveAircraftCards,
-  deriveBenchmarkPanel,
-  deriveCurrentBoard,
-  deriveDailyScorecard,
+  useRecentlyActionedWorkflowTail,
+  useWorkflowEvents,
+} from "@/lib/prototype/use-workflow-events";
+import {
+  bneBoardProjectionSettings,
+  deriveBneBoardProjection,
+  sourceFreshnessForAircraft,
   type AircraftCardReadModel,
   type GroundAircraftState,
 } from "@/lib/read-models";
@@ -35,21 +31,6 @@ import { AircraftBoard } from "./aircraft-board";
 import { GroundAircraftTable } from "./ground-aircraft-table";
 import type { DataQualityFlagActionInput } from "./data-quality-flag-action";
 import type { ReasonPickerSelection } from "./reason-picker";
-
-const boardNowIso = "2026-05-22T08:55:00.000Z";
-
-const benchmarkBaselines = {
-  similar_temperature: { runtimeMinutes: 38, fuelKg: 70 },
-  weekly_average: { runtimeMinutes: 44, fuelKg: 81 },
-  monthly_average: { runtimeMinutes: 49, fuelKg: 90 },
-  annual_average: { runtimeMinutes: 52, fuelKg: 96 },
-};
-
-const boardSettings = {
-  reasonTaxonomy: reasonTaxonomySettings.payload.snapshot,
-  fuelBurnAssumptions: fuelBurnAssumptionSettings,
-  standCoordinates: standCoordinateReferenceEvents,
-};
 
 const workflowActorId = "senior-engineer-bne";
 
@@ -79,67 +60,32 @@ const workflowIdentity = (context: WorkflowActionContext) => ({
   apuEventId: context.apuEventId,
 });
 
-const formatBneLocalTime = (iso: string) =>
-  `${new Intl.DateTimeFormat("en-AU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Australia/Brisbane",
-  }).format(new Date(iso))} AEST`;
-
-const latestSourceReceivedAt = (board: ReturnType<typeof deriveCurrentBoard>) =>
-  board.groundAircraft
-    .flatMap((aircraft) => aircraft.sourceCharms.map((source) => source.receivedAt))
-    .sort()
-    .at(-1);
-
-const sourceFreshnessLabel = (board: ReturnType<typeof deriveCurrentBoard>) => {
-  const latestReceivedAt = latestSourceReceivedAt(board);
-  return latestReceivedAt
-    ? `Feed fresh ${minutesBetweenIso(latestReceivedAt, board.nowIso)}m ago`
-    : "Feed pending";
-};
-
-const sourceFreshnessForAircraft = (aircraft: GroundAircraftState, nowIso: string) => {
-  const latestReceivedAt = aircraft.sourceCharms
-    .map((source) => source.receivedAt)
-    .sort()
-    .at(-1);
-
-  return {
-    latestReceivedAt,
-    latencyMinutes: latestReceivedAt ? minutesBetweenIso(latestReceivedAt, nowIso) : undefined,
-    sourceSystems: [...new Set(aircraft.sourceCharms.map((source) => source.sourceSystem))],
-  };
-};
-
 export function BneCommandBoard() {
-  const [workflowEvents, setWorkflowEvents] = useState<DomainEvent[]>([]);
   const [focusedTail, setFocusedTail] = useState<string>();
   const focusTimeoutRef = useRef<number | undefined>(undefined);
-  const refreshWorkflowEvents = () => setWorkflowEvents(readWorkflowEvents());
-  const boardEvents = useMemo(
-    () => [...bneBaselineScenario.events, ...workflowEvents],
+  const workflowEvents = useWorkflowEvents();
+  const recentlyActionedTail = useRecentlyActionedWorkflowTail(workflowEvents);
+  const projection = useMemo(
+    () => deriveBneBoardProjection(workflowEvents),
     [workflowEvents],
   );
-  const board = deriveCurrentBoard(boardEvents, boardSettings, boardNowIso);
-  const scorecard = deriveDailyScorecard(board);
-  const aircraftCards = deriveAircraftCards(board);
+  const {
+    aircraftCards,
+    benchmarkBaselines,
+    benchmarkCurrent,
+    board,
+    localTimeLabel,
+    scorecard,
+    scorecardTrend,
+    sourceFreshnessLabel,
+    temperatureLabel,
+  } = projection;
   const groundAircraftByTail = new Map(
     board.groundAircraft.map((aircraft) => [aircraft.tail, aircraft]),
   );
   const prioritizedGroundAircraft = aircraftCards
     .map((aircraft) => groundAircraftByTail.get(aircraft.tail))
     .filter((aircraft): aircraft is GroundAircraftState => Boolean(aircraft));
-  const benchmarkPanel = deriveBenchmarkPanel(
-    {
-      runtimeMinutes: scorecard.runtimeMinutesToday,
-      fuelKg: scorecard.estimatedFuelKgToday,
-      temperatureC: board.weather?.temperatureC ?? 0,
-    },
-    "similar_temperature",
-    benchmarkBaselines,
-  );
   const runWorkflowAction = (
     aircraft: GroundAircraftState,
     action: (context: WorkflowActionContext) => void,
@@ -150,12 +96,7 @@ export function BneCommandBoard() {
     }
 
     action(context);
-    refreshWorkflowEvents();
   };
-
-  useEffect(() => {
-    refreshWorkflowEvents();
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -269,7 +210,6 @@ export function BneCommandBoard() {
       },
       sourceFreshness: sourceFreshnessForAircraft(aircraft, board.nowIso),
     });
-    refreshWorkflowEvents();
   };
 
   const handleMarkManualApuOff = (aircraft: GroundAircraftState) => {
@@ -300,13 +240,18 @@ export function BneCommandBoard() {
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
       <CommandBar
-        localTimeLabel={formatBneLocalTime(board.nowIso)}
-        sourceFreshnessLabel={sourceFreshnessLabel(board)}
-        temperatureLabel={`${board.weather?.temperatureC ?? "--"}°C`}
+        localTimeLabel={localTimeLabel}
+        sourceFreshnessLabel={sourceFreshnessLabel}
+        temperatureLabel={temperatureLabel}
       />
 
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-6 lg:py-6">
-        <ScorecardBenchmarkBand benchmark={benchmarkPanel} scorecard={scorecard} />
+        <ScorecardBenchmarkBand
+          benchmarkBaselines={benchmarkBaselines}
+          benchmarkCurrent={benchmarkCurrent}
+          scorecard={scorecard}
+          trend={scorecardTrend}
+        />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <AircraftBoard
             aircraft={aircraftCards}
@@ -319,9 +264,14 @@ export function BneCommandBoard() {
             onKeepCurrentReason={handleKeepCurrentReason}
             onMarkManualApuOff={handleMarkManualApuOff}
             onSelectReason={handleSelectReason}
-            taxonomy={boardSettings.reasonTaxonomy}
+            recentlyActionedTail={recentlyActionedTail}
+            taxonomy={bneBoardProjectionSettings.reasonTaxonomy}
           />
-          <GroundAircraftTable aircraft={prioritizedGroundAircraft} onFocusTail={handleFocusTail} />
+          <GroundAircraftTable
+            aircraft={prioritizedGroundAircraft}
+            onFocusTail={handleFocusTail}
+            recentlyActionedTail={recentlyActionedTail}
+          />
         </div>
       </main>
     </div>

@@ -2,9 +2,12 @@ import { ApuStatusBadge, type ApuStatusBadgeState } from "@/components/senior/ap
 import { SourceQualityCharm } from "@/components/senior/source-quality-charm";
 import { Badge } from "@/components/ui/badge";
 import type { AircraftCardReadModel } from "@/lib/read-models";
+import { cn } from "@/lib/utils/cn";
 
 type WallboardAircraftCardProps = {
   aircraft: AircraftCardReadModel;
+  isRecentlyActioned?: boolean;
+  motionRef?: (node: HTMLElement | null) => void;
 };
 
 const formatDuration = (minutes: number) => {
@@ -22,11 +25,21 @@ const apuBadgeState = (aircraft: AircraftCardReadModel): ApuStatusBadgeState => 
   return aircraft.apuState === "off" ? "off" : "on";
 };
 
-export function WallboardAircraftCard({ aircraft }: WallboardAircraftCardProps) {
+export function WallboardAircraftCard({
+  aircraft,
+  isRecentlyActioned = false,
+  motionRef,
+}: WallboardAircraftCardProps) {
   return (
     <article
       aria-label={`${aircraft.tail} wallboard aircraft card`}
-      className="flex min-h-0 flex-col rounded-product border border-neutral-200 bg-white p-3"
+      className={cn(
+        "flex min-h-0 flex-col rounded-product border border-neutral-200 bg-white p-3 transition-shadow",
+        isRecentlyActioned && "shadow-lg ring-2 ring-virgin-red/50 ring-offset-2",
+      )}
+      data-layout-key={`wallboard-card:${aircraft.tail}`}
+      data-recently-actioned={isRecentlyActioned ? "true" : "false"}
+      ref={motionRef}
     >
       <AircraftHeader aircraft={aircraft} />
       <AircraftMetricGrid aircraft={aircraft} />

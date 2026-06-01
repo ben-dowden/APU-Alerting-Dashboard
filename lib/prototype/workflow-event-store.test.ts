@@ -5,6 +5,7 @@ import {
   appendWorkflowEvent,
   clearWorkflowEvents,
   readWorkflowEvents,
+  subscribeWorkflowEvents,
   WORKFLOW_EVENT_STORAGE_KEY,
 } from "./workflow-event-store";
 
@@ -59,6 +60,34 @@ describe("workflow event store", () => {
       "workflow-1",
       "workflow-2",
     ]);
+  });
+
+  it("notifies same-tab subscribers after appending workflow events", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeWorkflowEvents(listener);
+
+    appendWorkflowEvent(event("workflow-1"));
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
+
+    appendWorkflowEvent(event("workflow-2"));
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifies subscribers when another tab changes workflow storage", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeWorkflowEvents(listener);
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: WORKFLOW_EVENT_STORAGE_KEY,
+        newValue: JSON.stringify([event("from-another-tab")]),
+      }),
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
   });
 
   it("clears workflow events from memory and localStorage", () => {

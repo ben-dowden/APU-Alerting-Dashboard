@@ -27,7 +27,7 @@ const routeComponents: Record<AppRouteId, ComponentType> = {
   "admin-reference-data": AdminReferenceDataPage,
 };
 
-describe("route stubs", () => {
+describe("app routes", () => {
   it.each(appRoutes)("renders $title", ({ id, title }) => {
     const Component = routeComponents[id];
 

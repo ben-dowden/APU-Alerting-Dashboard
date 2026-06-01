@@ -16,6 +16,7 @@ import {
 type WallboardAircraftStageProps = {
   aircraft: AircraftCardReadModel[];
   elapsedMs: number;
+  recentlyActionedTail?: string;
 };
 
 const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
@@ -28,7 +29,11 @@ const chunkAircraft = (aircraft: AircraftCardReadModel[], pageSize: number) => {
   return pages;
 };
 
-export function WallboardAircraftStage({ aircraft, elapsedMs }: WallboardAircraftStageProps) {
+export function WallboardAircraftStage({
+  aircraft,
+  elapsedMs,
+  recentlyActionedTail,
+}: WallboardAircraftStageProps) {
   const sidebarPages = useMemo(
     () => chunkAircraft(aircraft, wallboardSidebarPageSize),
     [aircraft],
@@ -64,6 +69,7 @@ export function WallboardAircraftStage({ aircraft, elapsedMs }: WallboardAircraf
         intervalMs={wallboardCardRotationIntervalMs}
         pageCount={globalCardPageCount}
         pageIndex={globalCardPageIndex}
+        recentlyActionedTail={recentlyActionedTail}
         remainingMs={remainingFor(elapsedMs, wallboardCardRotationIntervalMs)}
       />
 
@@ -73,6 +79,7 @@ export function WallboardAircraftStage({ aircraft, elapsedMs }: WallboardAircraf
         intervalMs={wallboardSidebarRotationIntervalMs}
         pageCount={sidebarPageCount}
         pageIndex={sidebarPageIndex}
+        recentlyActionedTail={recentlyActionedTail}
         remainingMs={remainingFor(elapsedMs, wallboardSidebarRotationIntervalMs)}
       />
     </div>
