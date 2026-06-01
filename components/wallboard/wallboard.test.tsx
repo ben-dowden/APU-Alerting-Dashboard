@@ -103,6 +103,9 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(header).getByText("24°C")).toBeVisible();
     expect(within(header).getByText(/Feed fresh/i)).toBeVisible();
     expect(within(header).getByText("18:55 AEST")).toBeVisible();
+    expect(within(header).queryByRole("group", { name: "Wallboard rotation timers" })).not.toBeInTheDocument();
+    expect(within(header).queryByText("Rotation")).not.toBeInTheDocument();
+    expect(within(header).queryByRole("timer")).not.toBeInTheDocument();
     expect(screen.queryByText(/scenario/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /manual refresh/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /admin/i })).not.toBeInTheDocument();
@@ -126,13 +129,65 @@ describe("SeniorBneWallboardPage", () => {
 
     const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
     expect(benchmark).toHaveAttribute("data-rotation-interval-ms", "5000");
-    expect(within(benchmark).getByText("Similar-temperature days")).toBeVisible();
+    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toHaveAttribute(
+      "data-interval-ms",
+      "5000",
+    );
+    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
+    expect(within(benchmark).getByText("23-25°C")).toBeVisible();
+    expect(within(benchmark).queryByText("Similar-temperature days")).not.toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(5000);
     });
 
     expect(within(benchmark).getByText("Weekly average")).toBeVisible();
+    expect(within(benchmark).queryByText("23-25°C")).not.toBeInTheDocument();
+  });
+
+  it("keeps section timers synchronized with card, sidebar, and benchmark rotation", () => {
+    vi.useFakeTimers();
+
+    render(<SeniorBneWallboardPage />);
+
+    const benchmark = screen.getByTestId("wallboard-benchmark-rotator");
+    const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
+    const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
+
+    expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
+    expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
+    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
+    expect(within(stage).getByText("Page 1 of 6")).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 1s" })).toBeVisible();
+    expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 16s" })).toBeVisible();
+    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 1s" })).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(within(stage).getByRole("timer", { name: "Aircraft cards rotate in 5s" })).toBeVisible();
+    expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 15s" })).toBeVisible();
+    expect(within(benchmark).getByRole("timer", { name: "Benchmark rotates in 5s" })).toBeVisible();
+    expect(within(stage).getByText("Page 2 of 6")).toBeVisible();
+    expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
+    expect(within(benchmark).getByText("Weekly average")).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(15000);
+    });
+
+    expect(within(sideIndex).getByRole("timer", { name: "Sidebar page rotates in 20s" })).toBeVisible();
+    expect(within(stage).getByText("Page 5 of 6")).toBeVisible();
+    expect(within(sideIndex).getByText("Page 2 of 2")).toBeVisible();
+    expect(within(benchmark).getByText("Similar temp. days:")).toBeVisible();
   });
 
   it("renders passive aircraft cards with compact reason context and no workflow actions", () => {
@@ -216,9 +271,8 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(stage).queryByText(/\[\d+ of \d+\]/)).not.toBeInTheDocument();
   });
 
-  it("rotates cards every 5 seconds inside 20 second sidebar groups", () => {
-    vi.useFakeTimers();
-    render(<WallboardAircraftStage aircraft={numberedAircraft(21)} />);
+  it("selects card pages from the shared elapsed wallboard time", () => {
+    const { rerender } = render(<WallboardAircraftStage aircraft={numberedAircraft(21)} elapsedMs={0} />);
 
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     const sideIndex = screen.getByRole("region", { name: "Wallboard side index" });
@@ -233,9 +287,7 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
     expect(screen.getByRole("row", { name: /VH-001/ })).toHaveAttribute("data-highlighted", "true");
 
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
+    rerender(<WallboardAircraftStage aircraft={numberedAircraft(21)} elapsedMs={5000} />);
 
     expect(articleNames(stage)).toEqual([
       "VH-005 wallboard aircraft card",
@@ -248,9 +300,7 @@ describe("SeniorBneWallboardPage", () => {
     expect(screen.getByRole("row", { name: /VH-005/ })).toHaveAttribute("data-highlighted", "true");
     expect(screen.getByRole("row", { name: /VH-001/ })).toHaveAttribute("data-highlighted", "false");
 
-    act(() => {
-      vi.advanceTimersByTime(10000);
-    });
+    rerender(<WallboardAircraftStage aircraft={numberedAircraft(21)} elapsedMs={15000} />);
 
     expect(articleNames(stage)).toEqual([
       "VH-013 wallboard aircraft card",
@@ -261,9 +311,7 @@ describe("SeniorBneWallboardPage", () => {
     expect(within(stage).getByText("Page 4 of 6")).toBeVisible();
     expect(within(sideIndex).getByText("Page 1 of 2")).toBeVisible();
 
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
+    rerender(<WallboardAircraftStage aircraft={numberedAircraft(21)} elapsedMs={20000} />);
 
     expect(articleNames(stage)).toEqual([
       "VH-017 wallboard aircraft card",
@@ -277,15 +325,12 @@ describe("SeniorBneWallboardPage", () => {
   });
 
   it("renders a final incomplete card group without blank placeholders", () => {
-    vi.useFakeTimers();
-    render(<WallboardAircraftStage aircraft={numberedAircraft(5)} />);
+    const { rerender } = render(<WallboardAircraftStage aircraft={numberedAircraft(5)} elapsedMs={0} />);
 
     const stage = screen.getByRole("region", { name: "Wallboard carousel stage" });
     expect(within(stage).getAllByRole("article")).toHaveLength(4);
 
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
+    rerender(<WallboardAircraftStage aircraft={numberedAircraft(5)} elapsedMs={5000} />);
 
     expect(within(stage).getAllByRole("article")).toHaveLength(1);
     expect(within(stage).getByRole("article", { name: "VH-005 wallboard aircraft card" })).toBeVisible();

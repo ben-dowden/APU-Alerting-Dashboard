@@ -8,9 +8,7 @@ import {
   deriveCurrentBoard,
   deriveDailyScorecard,
 } from "@/lib/read-models";
-import { WallboardAircraftStage } from "./wallboard-aircraft-stage";
-import { WallboardCommandBar } from "./wallboard-command-bar";
-import { WallboardScorecardBand } from "./wallboard-scorecard-band";
+import { WallboardRotationShell } from "./wallboard-rotation-shell";
 
 const boardNowIso = "2026-05-22T08:55:00.000Z";
 
@@ -62,19 +60,15 @@ export function SeniorWallboardLayout() {
   return (
     <main className="min-h-screen bg-neutral-950 p-4 text-white">
       <div className="mx-auto flex aspect-video max-h-[calc(100vh-2rem)] min-h-[720px] w-full max-w-[1600px] flex-col overflow-hidden rounded-product border border-neutral-800 bg-neutral-100 text-neutral-950 shadow-2xl">
-        <WallboardCommandBar
+        <WallboardRotationShell
+          aircraftCards={aircraftCards}
+          benchmarkBaselines={benchmarkBaselines}
+          benchmarkCurrent={benchmarkCurrent}
           localTimeLabel={formatBneLocalTime(board.nowIso)}
+          scorecard={scorecard}
           sourceFreshnessLabel={sourceFreshnessLabel(board)}
           temperatureLabel={`${board.weather?.temperatureC ?? "--"}°C`}
         />
-
-        <WallboardScorecardBand
-          benchmarkBaselines={benchmarkBaselines}
-          benchmarkCurrent={benchmarkCurrent}
-          scorecard={scorecard}
-        />
-
-        <WallboardAircraftStage aircraft={aircraftCards} />
       </div>
     </main>
   );
